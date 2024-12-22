@@ -14,10 +14,3 @@ class Spirits(BaseModel):
     origin_nation: str = Field(..., description="Origin of the spirits")
     origin_location: str = Field(..., description="Location of the spirits")
     description: str = Field(..., description="Description of the spirits")
-
-    # class Config:
-    #     json_schema_extra = {
-    #         "schema": "https://json-schema.org/draft/2020-12/schema",
-    #         "id": "https://github.com/dongju93/cocktail-maker-backend/blob/main/schema/spirits.schema.json",
-    #         "title": "Spirits",
-    #     }

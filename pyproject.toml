@@ -9,7 +9,6 @@ dependencies = [
     "motor[zstd]>=3",
     "orjson>=3.10.12",
     "pre-commit>=4",
-    "ruff>=0.8",
 ]
 
 [tool.ruff]

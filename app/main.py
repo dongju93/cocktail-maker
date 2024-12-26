@@ -16,7 +16,24 @@ app = FastAPI(
 )
 
 
-@app.post("/spirits")
+@app.post(
+    "/spirits",
+    summary="주류 정보 등록",
+    description="""
+    <h3>[ 본문 필드 설명 ]</h3>\n
+    - spirits_id: The unique identifier for a spirits
+    - aroma: Aroma of the spirits
+    - taste: Taste of the spirits
+    - finish: Finish of the spirits
+    - kind: Kind of the spirits
+    - subKind: Sub-kind of the spirits
+    - amount: Amount of the spirits
+    - alcohol: Alcohol by volume of the spirits
+    - origin_nation: Origin of the spirits
+    - origin_location: Location of the spirits
+    - description: Description of the spirits
+    """,
+)
 async def register_spirits(item: Annotated[Spirits, Body(...)]) -> ORJSONResponse:
     inserted_object_id: str = await insert_spirits_to_mongo(item)
     return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)

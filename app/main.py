@@ -1,7 +1,7 @@
 from typing import Annotated, Any
 
 import uvloop
-from fastapi import Body, FastAPI, Query
+from fastapi import Body, FastAPI, Path
 from fastapi.responses import ORJSONResponse
 
 from app.database.query import get_spirits_from_mongo, insert_spirits_to_mongo
@@ -22,7 +22,7 @@ async def register_spirits(item: Annotated[Spirits, Body(...)]) -> ORJSONRespons
     return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)
 
 
-@app.get("/spirits")
-async def get_spirits(spirits_id: Annotated[int, Query(...)]) -> ORJSONResponse:
+@app.get("/spirits/{spirits_id}")
+async def get_spirits(spirits_id: Annotated[int, Path(...)]) -> ORJSONResponse:
     spirits: dict[str, Any] = await get_spirits_from_mongo(spirits_id)
     return ORJSONResponse(content=spirits, status_code=200)

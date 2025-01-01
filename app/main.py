@@ -1,11 +1,15 @@
 from typing import Annotated, Any
 
 import uvloop
-from fastapi import Body, FastAPI, Path
+from fastapi import Body, FastAPI, Path, Query
 from fastapi.responses import ORJSONResponse
 
-from app.database.query import get_spirits_from_mongo, insert_spirits_to_mongo
-from app.model.spirits import Spirits
+from app.database.query import (
+    get_many_spirits_from_mongo,
+    get_single_spirits_from_mongo,
+    insert_spirits_to_mongo,
+)
+from app.model.spirits import SpiritsRegister, SpiritsSearch
 
 uvloop.install()
 
@@ -43,3 +47,11 @@ async def register_spirits(item: Annotated[Spirits, Body(...)]) -> ORJSONRespons
 async def get_spirits(spirits_id: Annotated[int, Path(...)]) -> ORJSONResponse:
     spirits: dict[str, Any] = await get_spirits_from_mongo(spirits_id)
     return ORJSONResponse(content=spirits, status_code=200)
+
+
+@app.get("/spirits")
+async def spirits_search(
+    params: Annotated[SpiritsSearch, Query(...)]
+) -> ORJSONResponse:
+    data: list[dict[str, Any]] = await get_many_spirits_from_mongo(params)
+    return ORJSONResponse(content=data, status_code=200)

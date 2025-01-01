@@ -34,3 +34,20 @@ async def get_spirits_from_mongo(spirits_id: int) -> dict[str, Any]:
         result["_id"] = str(result["_id"])
 
     return result
+
+
+async def get_many_spirits_from_mongo(params: SpiritsSearch) -> list[dict[str, Any]]:
+    find_query: dict[str, dict[str, str]] = spirits_search_params(params)
+    try:
+        async with mongodb_conn("spirits") as conn:
+            result: list[dict[str, Any]] = (
+                await conn.find(find_query).sort("name", 1).to_list(10)
+            )
+    except Exception as e:
+        print("Get Spirits object from mongodb raise an error")
+        raise e
+    else:
+        for item in result:
+            item["_id"] = str(item["_id"])
+
+    return result

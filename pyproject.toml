@@ -7,7 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115",
     "motor[zstd]>=3",
-    "orjson>=3.10.12",
+    "orjson>=3",
     "pre-commit>=4",
 ]
 

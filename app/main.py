@@ -25,7 +25,7 @@ app = FastAPI(
     summary="주류 정보 등록",
     description="""
     <h3>[ 본문 필드 설명 ]</h3>\n
-    - spirits_id: The unique identifier for a spirits
+    - name: Name of the spirits
     - aroma: Aroma of the spirits
     - taste: Taste of the spirits
     - finish: Finish of the spirits
@@ -38,14 +38,18 @@ app = FastAPI(
     - description: Description of the spirits
     """,
 )
-async def register_spirits(item: Annotated[Spirits, Body(...)]) -> ORJSONResponse:
-    inserted_object_id: str = await insert_spirits_to_mongo(item)
+async def spirits_register(
+    items: Annotated[list[SpiritsRegister], Body(...)]
+) -> ORJSONResponse:
+    inserted_object_id: str = await insert_spirits_to_mongo(items)
     return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)
 
 
-@app.get("/spirits/{spirits_id}")
-async def get_spirits(spirits_id: Annotated[int, Path(...)]) -> ORJSONResponse:
-    spirits: dict[str, Any] = await get_spirits_from_mongo(spirits_id)
+@app.get("/spirits/{name}")
+async def spirits_detail(
+    name: Annotated[str, Path(..., description="haha")]
+) -> ORJSONResponse:
+    spirits: dict[str, Any] = await get_single_spirits_from_mongo("Name of the spirits")
     return ORJSONResponse(content=spirits, status_code=200)
 
 

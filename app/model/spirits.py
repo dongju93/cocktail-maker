@@ -3,10 +3,10 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 
-class Spirits(BaseModel):
+class SpiritsRegister(BaseModel):
     model_config = {"extra": "forbid"}
 
-    spirits_id: Annotated[int, Field(...)]
+    name: Annotated[str, Field(..., min_length=1)]
     aroma: Annotated[list[str], Field(..., min_length=1)]
     taste: Annotated[list[str], Field(..., min_length=1)]
     finish: Annotated[list[str], Field(..., min_length=1)]

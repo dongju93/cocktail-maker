@@ -1,30 +1,37 @@
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException
-from pymongo.results import InsertOneResult
+from pymongo.results import InsertManyResult
 
 from app.database.connector import mongodb_conn
-from app.model.spirits import Spirits
+from app.database.query_assist import spirits_search_params
+from app.model.spirits import SpiritsRegister, SpiritsSearch
 
 
-async def insert_spirits_to_mongo(item: Spirits) -> str:
+async def insert_spirits_to_mongo(items: list[SpiritsRegister]) -> str:
     try:
-        data: dict[str, Any] = item.model_dump()
+        all_data: list[dict[str, Any]] = []
+
+        for item in items:
+            data: dict[str, Any] = item.model_dump()
+            # 생성 시간 추가
+            data["created_at"] = datetime.now(tz=UTC)
+            all_data.append(data)
+
         async with mongodb_conn("spirits") as conn:
-            result: InsertOneResult = await conn.insert_one(data)
+            result: InsertManyResult = await conn.insert_many(all_data)
     except Exception as e:
         print("Insert Spirits object to mongodb raise an error")
         raise e
 
-    return str(result.inserted_id)
+    return str(result.inserted_ids)
 
 
-async def get_spirits_from_mongo(spirits_id: int) -> dict[str, Any]:
+async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:
     try:
         async with mongodb_conn("spirits") as conn:
-            result: dict[str, Any] | None = await conn.find_one(
-                {"spirits_id": spirits_id}
-            )
+            result: dict[str, Any] | None = await conn.find_one({"name": name})
             if result is None:
                 raise HTTPException(status_code=404, detail="Spirits not found")
     except Exception as e:

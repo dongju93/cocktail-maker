@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from math import ceil
 from typing import Any
 
 from fastapi import HTTPException
@@ -6,6 +7,7 @@ from pymongo.results import InsertManyResult
 
 from app.database.connector import mongodb_conn
 from app.database.query_assist import spirits_search_params
+from app.model.response import SpiritsSearchResponse
 from app.model.spirits import SpiritsRegister, SpiritsSearch
 
 
@@ -43,12 +45,21 @@ async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:
     return result
 
 
-async def get_many_spirits_from_mongo(params: SpiritsSearch) -> list[dict[str, Any]]:
+async def get_many_spirits_from_mongo(params: SpiritsSearch) -> SpiritsSearchResponse:
     find_query: dict[str, dict[str, str]] = spirits_search_params(params)
+    skip_count: int = (params.pageNumber - 1) * params.pageSize
+
     try:
         async with mongodb_conn("spirits") as conn:
+            # 총 개수 조회
+            total: int = await conn.count_documents(find_query)
+
             result: list[dict[str, Any]] = (
-                await conn.find(find_query).sort("name", 1).to_list(10)
+                await conn.find(find_query)
+                .sort("name", 1)
+                .skip(skip_count)
+                .limit(params.pageSize)
+                .to_list(10)
             )
     except Exception as e:
         print("Get Spirits object from mongodb raise an error")
@@ -57,4 +68,10 @@ async def get_many_spirits_from_mongo(params: SpiritsSearch) -> list[dict[str, A
         for item in result:
             item["_id"] = str(item["_id"])
 
-    return result
+    return SpiritsSearchResponse(
+        totalPage=ceil(total / params.pageSize),
+        currentPage=params.pageNumber,
+        totalSize=total,
+        currentPageSize=len(result),
+        items=result,
+    )

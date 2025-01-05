@@ -16,7 +16,12 @@ uvloop.install()
 
 app = FastAPI(
     title="Cocktail maker REST API",
-    version="0.1.0",
+    # version: major.minor.patch[-build]
+    version="0.1.0-dev",
+    summary="칵테일 제조법과 주류 및 재료 정보 제공",
+    servers=[
+        {"url": "http://127.0.0.1:8000", "description": "Local development server"},
+    ],
     default_response_class=ORJSONResponse,
 )
 
@@ -40,7 +45,7 @@ app = FastAPI(
     """,
 )
 async def spirits_register(
-    items: Annotated[list[SpiritsRegister], Body(...)]
+    items: Annotated[list[SpiritsRegister], Body(...)],
 ) -> ORJSONResponse:
     inserted_object_id: str = await insert_spirits_to_mongo(items)
     return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)
@@ -56,7 +61,7 @@ async def spirits_detail(
 
 @app.get("/spirits", summary="주류 정보 검색")
 async def spirits_search(
-    params: Annotated[SpiritsSearch, Query(...)]
+    params: Annotated[SpiritsSearch, Query(...)],
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)

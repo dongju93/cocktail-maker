@@ -5,10 +5,12 @@ description = "A cocktail recipe API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "cryptography>=44",
     "fastapi[standard]>=0.115",
     "motor[zstd]>=3",
     "orjson>=3",
     "pre-commit>=4",
+    "pyjwt>=2",
 ]
 
 [tool.ruff]

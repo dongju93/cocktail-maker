@@ -50,6 +50,7 @@ target-version = "py312"
 select = ["E", "F", "UP", "B", "I"]
 fixable = ["ALL"]
 unfixable = []
+ignore = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -9,6 +9,7 @@ from app.database.query import (
     get_single_spirits_from_mongo,
     insert_spirits_to_mongo,
 )
+from app.model.response import SpiritsSearchResponse
 from app.model.spirits import SpiritsRegister, SpiritsSearch
 
 uvloop.install()
@@ -57,5 +58,5 @@ async def spirits_detail(
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)]
 ) -> ORJSONResponse:
-    data: list[dict[str, Any]] = await get_many_spirits_from_mongo(params)
+    data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)

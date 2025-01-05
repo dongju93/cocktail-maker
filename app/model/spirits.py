@@ -29,3 +29,5 @@ class SpiritsSearch(BaseModel):
         list[str] | None,
         Field(min_length=1, description="주류의 향, 목록 중 정확한 일치"),
     ] = None
+    pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
+    pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10

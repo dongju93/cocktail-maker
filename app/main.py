@@ -60,3 +60,8 @@ async def spirits_search(
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)
+
+
+@app.get("/version", summary="서비스 버전 확인")
+async def version() -> ORJSONResponse:
+    return ORJSONResponse(content={"version": app.version}, status_code=200)

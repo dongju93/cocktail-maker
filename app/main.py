@@ -25,17 +25,17 @@ app = FastAPI(
     summary="주류 정보 등록",
     description="""
     <h3>[ 본문 필드 설명 ]</h3>\n
-    - name: Name of the spirits
-    - aroma: Aroma of the spirits
-    - taste: Taste of the spirits
-    - finish: Finish of the spirits
-    - kind: Kind of the spirits
-    - subKind: Sub-kind of the spirits
-    - amount: Amount of the spirits
-    - alcohol: Alcohol by volume of the spirits
-    - origin_nation: Origin of the spirits
-    - origin_location: Location of the spirits
-    - description: Description of the spirits
+    - name: 이름
+    - aroma: 향
+    - taste: 맛
+    - finish: 끝맛
+    - kind: 종류
+    - subKind: 세부 종류
+    - amount: 용량
+    - alcohol: 도수
+    - origin_nation: 원산지 국가
+    - origin_location: 원산지 지역
+    - description: 설명
     """,
 )
 async def spirits_register(
@@ -45,15 +45,15 @@ async def spirits_register(
     return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)
 
 
-@app.get("/spirits/{name}")
+@app.get("/spirits/{name}", summary="단일 주류 정보 조회")
 async def spirits_detail(
-    name: Annotated[str, Path(..., description="haha")]
+    name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
-    spirits: dict[str, Any] = await get_single_spirits_from_mongo("Name of the spirits")
+    spirits: dict[str, Any] = await get_single_spirits_from_mongo(name)
     return ORJSONResponse(content=spirits, status_code=200)
 
 
-@app.get("/spirits")
+@app.get("/spirits", summary="주류 정보 검색")
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)]
 ) -> ORJSONResponse:

@@ -1,16 +1,20 @@
 from typing import Annotated, Any
 
 import uvloop
-from fastapi import Body, FastAPI, Path, Query
+from fastapi import Body, FastAPI, Path, Query, Request, Security
 from fastapi.responses import ORJSONResponse
 
+from app.auth.jwt import refresh_access_token, sign_in_token, verify_access_token
 from app.database.query import (
     get_many_spirits_from_mongo,
     get_single_spirits_from_mongo,
     insert_spirits_to_mongo,
+    user_sign_in,
+    user_sign_up,
 )
 from app.model.response import SpiritsSearchResponse
 from app.model.spirits import SpiritsRegister, SpiritsSearch
+from app.model.user import Login, User
 
 uvloop.install()
 
@@ -24,6 +28,73 @@ app = FastAPI(
     ],
     default_response_class=ORJSONResponse,
 )
+
+
+@app.post("/signUp", summary="회원가입")
+async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
+    """
+    회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
+    """
+    if not await user_sign_up(user):
+        return ORJSONResponse(
+            content={"message": "User already exists"}, status_code=409
+        )
+
+    login = Login(
+        user_id=user.user_id,
+        password=user.password,
+    )
+    if (roles := await user_sign_in(login)) == []:
+        return ORJSONResponse(
+            content={"message": "Invalid user_id or password"}, status_code=401
+        )
+    jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+    return ORJSONResponse(
+        content={"message": "User successfully created", "tokens": jwt}, status_code=201
+    )
+
+
+@app.post("/signIn", summary="로그인")
+async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
+    """
+    로그인 성공 시 메시지와 함께 JWT 를 반환
+    """
+    if (roles := await user_sign_in(login)) == []:
+        return ORJSONResponse(
+            content={"message": "Invalid user_id or password"}, status_code=401
+        )
+    jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+    return ORJSONResponse(
+        content={"message": "Successfully login", "tokens": jwt}, status_code=200
+    )
+
+
+@app.post("/refreshToken", summary="액세스 토큰 갱신")
+async def refresh_token(request: Request) -> ORJSONResponse:
+    """
+    리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
+    """
+    auth_header: str | None = request.headers.get("Authorization")
+    if auth_header is None:
+        return ORJSONResponse(
+            content={"message": "Refresh token is required"}, status_code=401
+        )
+    if not auth_header.startswith("Bearer "):
+        return ORJSONResponse(
+            content={"message": "Invalid authorization header format"}, status_code=401
+        )
+
+    # 실제 Bearer 토큰 부분을 분리
+    refresh_token: str = auth_header.split(" ")[1]
+
+    refreshed_access_token: dict[str, str] = await refresh_access_token(refresh_token)
+    return ORJSONResponse(
+        content={
+            "message": "Successfully refresh token",
+            "token": refreshed_access_token,
+        },
+        status_code=200,
+    )
 
 
 @app.post(
@@ -62,6 +133,7 @@ async def spirits_detail(
 @app.get("/spirits", summary="주류 정보 검색")
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
+    _: Annotated[None, Security(verify_access_token(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)

@@ -1,3 +1,4 @@
+from base64 import urlsafe_b64decode
 from datetime import UTC, datetime
 from math import ceil
 from typing import Any
@@ -9,6 +10,8 @@ from app.database.connector import mongodb_conn
 from app.database.query_assist import spirits_search_params
 from app.model.response import SpiritsSearchResponse
 from app.model.spirits import SpiritsRegister, SpiritsSearch
+from app.model.user import Login, PasswordAndSalt, User
+from app.utils.encryption import Encryption
 
 
 async def insert_spirits_to_mongo(items: list[SpiritsRegister]) -> str:
@@ -75,3 +78,59 @@ async def get_many_spirits_from_mongo(params: SpiritsSearch) -> SpiritsSearchRes
         currentPageSize=len(result),
         items=result,
     )
+
+
+async def user_sign_up(user: User) -> bool:
+    encrypted_password_set: PasswordAndSalt = Encryption().passwords(user.password)
+
+    try:
+        data: dict[str, Any] = user.model_dump()
+        # 비밀번호 암호화
+        data["password"] = encrypted_password_set["encrypted_password"]
+        # 솔트 추가
+        data["salt"] = encrypted_password_set["salt"]
+        # 생성 시간 추가
+        data["created_at"] = datetime.now(tz=UTC)
+
+        async with mongodb_conn("users") as conn:
+            await conn.insert_one(data)
+    except Exception:
+        print("Insert User object to mongodb raise an error")
+        return False
+
+    return True
+
+
+async def user_sign_in(login: Login) -> list[str]:
+    try:
+        async with mongodb_conn("users") as conn:
+            result: dict[str, Any] | None = await conn.find_one(
+                {"user_id": login.user_id}
+            )
+            if result is None:
+                raise HTTPException(status_code=404, detail="User not found")
+
+            encrypted_password_set: PasswordAndSalt = Encryption().passwords(
+                login.password, urlsafe_b64decode(result["salt"].encode())
+            )
+
+            if encrypted_password_set["encrypted_password"] != result["password"]:
+                raise HTTPException(status_code=401, detail="Password is incorrect")
+    except HTTPException:
+        print("Get User object from mongodb raise an error")
+        return []
+
+    return result["roles"]
+
+
+async def get_user_roles(user_id: str) -> list[str]:
+    try:
+        async with mongodb_conn("users") as conn:
+            result: dict[str, Any] | None = await conn.find_one({"user_id": user_id})
+            if result is None:
+                raise HTTPException(status_code=404, detail="User not found")
+    except Exception as e:
+        print("Get User object from mongodb raise an error")
+        raise e
+
+    return result["roles"]

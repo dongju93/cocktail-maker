@@ -1,3 +1,4 @@
+from pathlib import Path as FilePath
 from typing import Annotated, Any
 
 import uvloop
@@ -141,4 +142,15 @@ async def spirits_search(
 
 @app.get("/version", summary="서비스 버전 확인")
 async def version() -> ORJSONResponse:
-    return ORJSONResponse(content={"version": app.version}, status_code=200)
+    return ORJSONResponse(content={"version": version}, status_code=200)
+
+
+@app.post("/write-test")
+async def write_some_files() -> ORJSONResponse:
+    if not file_writer(FilePath("files/test/1/2/3"), "test.txt", "Hello, world!"):
+        return ORJSONResponse(
+            content={"message": "Failed to write files"}, status_code=500
+        )
+    return ORJSONResponse(
+        content={"message": "Successfully write files"}, status_code=201
+    )

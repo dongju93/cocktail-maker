@@ -5,16 +5,16 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 import jwt
+from database.query import get_user_roles
 from dotenv import load_dotenv
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
+from utils.times import datetime_now, unix_to_datetime
 
-from app.database.query import get_user_roles
-from app.utils.roles import check_roles
-from app.utils.times import datetime_now, unix_to_datetime
+from auth.roles import check_roles
 
-load_dotenv(dotenv_path="app/.env")
+load_dotenv(dotenv_path=".env")
 
 # JWT 설정
 SECRET_KEY: str = os.environ["secret_key"]

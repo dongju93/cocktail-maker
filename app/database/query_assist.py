@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.model.spirits import SpiritsSearch
+from model.spirits import SpiritsSearch
 
 
 def spirits_search_params(

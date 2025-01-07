@@ -7,9 +7,10 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "app.main:app",
+                "main:app",
                 "--reload"
             ],
+            "cwd": "${workspaceFolder}/app",
             "jinja": false,
             "justMyCode": true
         }

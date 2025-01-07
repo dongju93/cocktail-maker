@@ -9,7 +9,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 
-load_dotenv(dotenv_path="app/.env")
+load_dotenv(dotenv_path=".env")
 MONGODB_URL: str = os.environ["mongodb_url"]
 
 

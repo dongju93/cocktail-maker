@@ -2,20 +2,20 @@ from pathlib import Path as FilePath
 from typing import Annotated, Any
 
 import uvloop
-from fastapi import Body, FastAPI, Path, Query, Request, Security
-from fastapi.responses import ORJSONResponse
-
-from app.auth.jwt import refresh_access_token, sign_in_token, verify_access_token
-from app.database.query import (
+from auth.jwt import refresh_access_token, sign_in_token, verify_access_token
+from database.query import (
     get_many_spirits_from_mongo,
     get_single_spirits_from_mongo,
     insert_spirits_to_mongo,
     user_sign_in,
     user_sign_up,
 )
-from app.model.response import SpiritsSearchResponse
-from app.model.spirits import SpiritsRegister, SpiritsSearch
-from app.model.user import Login, User
+from fastapi import Body, FastAPI, Path, Query, Request, Security
+from fastapi.responses import ORJSONResponse
+from model.response import SpiritsSearchResponse
+from model.spirits import SpiritsRegister, SpiritsSearch
+from model.user import Login, User
+from utils.etc import file_writer
 
 uvloop.install()
 
@@ -147,7 +147,7 @@ async def version() -> ORJSONResponse:
 
 @app.post("/write-test")
 async def write_some_files() -> ORJSONResponse:
-    if not file_writer(FilePath("files/test/1/2/3"), "test.txt", "Hello, world!"):
+    if not file_writer(FilePath("files/1/2/3"), "test.txt", "Hello, world!"):
         return ORJSONResponse(
             content={"message": "Failed to write files"}, status_code=500
         )

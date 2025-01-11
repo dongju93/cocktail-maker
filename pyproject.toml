@@ -5,13 +5,16 @@ description = "A cocktail recipe API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cryptography>=44",
+    "cryptography>=44,<45",
     "fastapi[standard]>=0.115",
-    "motor[zstd]>=3",
+    "motor[zstd]>=3,<4",
     "orjson>=3",
-    "pre-commit>=4",
-    "pyjwt>=2",
+    "pre-commit>=4,<5",
+    "pyjwt>=2,<3",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8,<9"]
 
 [tool.ruff]
 exclude = [
@@ -45,9 +48,10 @@ exclude = [
 line-length = 88
 indent-width = 4
 target-version = "py312"
+src = ["app", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "I"]
+select = ["E", "F", "UP", "B", "SIM", "ASYNC", "PL", "FAST", "RUF", "I"]
 fixable = ["ALL"]
 unfixable = []
 ignore = ["E501"]
@@ -57,3 +61,7 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-local-folder = ["app"]

@@ -2,7 +2,10 @@ from pathlib import Path as FilePath
 from typing import Annotated, Any
 
 import uvloop
-from auth.jwt import refresh_access_token, sign_in_token, verify_access_token
+from fastapi import Body, FastAPI, Path, Query, Request, Security
+from fastapi.responses import ORJSONResponse
+
+from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
     get_many_spirits_from_mongo,
     get_single_spirits_from_mongo,
@@ -10,8 +13,6 @@ from database.query import (
     user_sign_in,
     user_sign_up,
 )
-from fastapi import Body, FastAPI, Path, Query, Request, Security
-from fastapi.responses import ORJSONResponse
 from model.response import SpiritsSearchResponse
 from model.spirits import SpiritsRegister, SpiritsSearch
 from model.user import Login, User
@@ -134,7 +135,7 @@ async def spirits_detail(
 @app.get("/spirits", summary="주류 정보 검색")
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
-    _: Annotated[None, Security(verify_access_token(["admin", "user"]))],
+    _: Annotated[None, Security(verify_token(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)

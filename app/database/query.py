@@ -3,15 +3,15 @@ from datetime import UTC, datetime
 from math import ceil
 from typing import Any
 
-from auth.encryption import Encryption
 from fastapi import HTTPException
+from pymongo.results import InsertManyResult
+
+from auth.encryption import Encryption
+from database.connector import mongodb_conn
+from database.query_assist import spirits_search_params
 from model.response import SpiritsSearchResponse
 from model.spirits import SpiritsRegister, SpiritsSearch
 from model.user import Login, PasswordAndSalt, User
-from pymongo.results import InsertManyResult
-
-from database.connector import mongodb_conn
-from database.query_assist import spirits_search_params
 
 
 async def insert_spirits_to_mongo(items: list[SpiritsRegister]) -> str:

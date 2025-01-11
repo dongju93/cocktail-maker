@@ -17,8 +17,8 @@ from utils.times import datetime_now, unix_to_datetime
 load_dotenv(dotenv_path=".env")
 
 # JWT 설정
-SECRET_KEY: str = os.environ["secret_key"]
-ALGORITHM: str = os.environ["secret_algorithm"]
+SECRET_KEY: str = os.environ["SECRET_KEY"]
+ALGORITHM: str = os.environ["SECRET_ALGORITHM"]
 security = HTTPBearer()
 
 
@@ -112,7 +112,7 @@ class PublishToken:
         except jwt.ExpiredSignatureError as ese:
             raise InvalidTokenError("Refresh token has expired") from ese
         except jwt.InvalidTokenError as ite:
-            raise InvalidTokenError(f"Invalid refresh token: {str(ite)}") from ite
+            raise InvalidTokenError(f"Invalid refresh token: {ite!s}") from ite
 
 
 class VerifyToken:
@@ -120,7 +120,7 @@ class VerifyToken:
     def verify_access_token(required_roles: list[str]):
         def verify(
             credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],
-        ) -> None:
+        ):
             try:
                 payload: dict[str, Any] = jwt.decode(
                     credentials.credentials,
@@ -165,6 +165,5 @@ class VerifyToken:
                 raise HTTPException(status_code=401, detail="Invalid audience") from iae
             except jwt.InvalidTokenError as ite:
                 raise HTTPException(status_code=401, detail="Invalid token") from ite
-            return None
 
         return verify

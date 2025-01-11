@@ -10,7 +10,7 @@ from motor.motor_asyncio import (
 )
 
 load_dotenv(dotenv_path=".env")
-MONGODB_URL: str = os.environ["mongodb_url"]
+MONGODB_URL: str = os.environ["MONGODB_URL"]
 
 
 @asynccontextmanager

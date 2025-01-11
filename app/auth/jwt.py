@@ -5,14 +5,14 @@ from typing import Annotated, Any
 from uuid import uuid4
 
 import jwt
-from database.query import get_user_roles
 from dotenv import load_dotenv
 from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
-from utils.times import datetime_now, unix_to_datetime
 
 from auth.roles import check_roles
+from database.query import get_user_roles
+from utils.times import datetime_now, unix_to_datetime
 
 load_dotenv(dotenv_path=".env")
 
@@ -67,96 +67,104 @@ class CreateToken:
         return jwt.encode(token, SECRET_KEY, ALGORITHM)
 
 
-def sign_in_token(user_id: str, roles: list[str]) -> dict[str, str]:
-    """
-    로그인 성공 시 JWT 반환
-    """
-    create_token = CreateToken(str(uuid4()), datetime_now(), user_id)
-    access_payload: str = create_token.access(roles)
-    refresh_payload: str = create_token.refresh()
+class PublishToken:
+    @staticmethod
+    def sign_in_token(user_id: str, roles: list[str]) -> dict[str, str]:
+        """
+        로그인 성공 시 JWT 반환
+        """
+        create_token = CreateToken(str(uuid4()), datetime_now(), user_id)
+        access_payload: str = create_token.access(roles)
+        refresh_payload: str = create_token.refresh()
 
-    return {
-        "accessToken": access_payload,
-        "refreshToken": refresh_payload,
-    }
-
-
-async def refresh_access_token(refresh_token: str) -> dict[str, str]:
-    """
-    리프레시 토큰을 받아 액세스 토큰을 갱신
-    """
-    try:
-        refresh_payload = jwt.decode(
-            refresh_token,
-            SECRET_KEY,
-            algorithms=ALGORITHM,
-            audience="cocktail-maker.co.kr",
-        )
-
-        if refresh_payload["type"] != "refresh":
-            raise InvalidTokenError("Invalid token type")
-
-        create_token = CreateToken(
-            refresh_payload["jti"], datetime_now(), refresh_payload["sub"]
-        )
-
-        # refresh 토큰에는 roles 정보가 없기 때문에 MongoDB 조회 후 access 토큰 생성 시 활용
         return {
-            "accessToken": create_token.access(
-                await get_user_roles(refresh_payload["sub"])
-            )
+            "accessToken": access_payload,
+            "refreshToken": refresh_payload,
         }
 
-    except jwt.ExpiredSignatureError as ese:
-        raise InvalidTokenError("Refresh token has expired") from ese
-    except jwt.InvalidTokenError as ite:
-        raise InvalidTokenError(f"Invalid refresh token: {str(ite)}") from ite
-
-
-def verify_access_token(required_roles: list[str]):
-    def verify(
-        credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],
-    ) -> None:
+    @staticmethod
+    async def refresh_access_token(refresh_token: str) -> dict[str, str]:
+        """
+        리프레시 토큰을 받아 액세스 토큰을 갱신
+        """
         try:
-            payload: dict[str, Any] = jwt.decode(
-                credentials.credentials,
+            refresh_payload = jwt.decode(
+                refresh_token,
                 SECRET_KEY,
-                ALGORITHM,
+                algorithms=ALGORITHM,
                 audience="cocktail-maker.co.kr",
             )
 
-            # 시간 관련 변수 설정
-            now: datetime = datetime_now()
-            exp_time: datetime = unix_to_datetime(payload["exp"])
-            nbf_time: datetime = unix_to_datetime(payload["nbf"])
-            iat_time: datetime = unix_to_datetime(payload["iat"])
-
-            # 시간 관련 검증
-            if exp_time <= now:
-                raise InvalidTokenError("Token has expired")
-            if nbf_time > now:
-                raise InvalidTokenError("Token is not yet valid")
-            if iat_time > now:
-                raise InvalidTokenError("Token issued in the future")
-
-            # 발행자 검증
-            if payload["iss"] != "cocktail-maker.co.kr/api":
-                raise InvalidTokenError("Invalid issuer")
-
-            # 토큰 타입 검증
-            if payload["type"] != "access":
+            if refresh_payload["type"] != "refresh":
                 raise InvalidTokenError("Invalid token type")
 
-            # 권한 검증
-            if not check_roles(payload["roles"], required_roles):
-                raise HTTPException(status_code=403, detail="Insufficient permissions")
+            create_token = CreateToken(
+                refresh_payload["jti"], datetime_now(), refresh_payload["sub"]
+            )
+
+            # refresh 토큰에는 roles 정보가 없기 때문에 MongoDB 조회 후 access 토큰 생성 시 활용
+            return {
+                "accessToken": create_token.access(
+                    await get_user_roles(refresh_payload["sub"])
+                )
+            }
 
         except jwt.ExpiredSignatureError as ese:
-            raise HTTPException(status_code=401, detail="Token has expired") from ese
-        except jwt.InvalidAudienceError as iae:
-            raise HTTPException(status_code=401, detail="Invalid audience") from iae
+            raise InvalidTokenError("Refresh token has expired") from ese
         except jwt.InvalidTokenError as ite:
-            raise HTTPException(status_code=401, detail="Invalid token") from ite
-        return None
+            raise InvalidTokenError(f"Invalid refresh token: {str(ite)}") from ite
 
-    return verify
+
+class VerifyToken:
+    @staticmethod
+    def verify_access_token(required_roles: list[str]):
+        def verify(
+            credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],
+        ) -> None:
+            try:
+                payload: dict[str, Any] = jwt.decode(
+                    credentials.credentials,
+                    SECRET_KEY,
+                    ALGORITHM,
+                    audience="cocktail-maker.co.kr",
+                )
+
+                # 시간 관련 변수 설정
+                now: datetime = datetime_now()
+                exp_time: datetime = unix_to_datetime(payload["exp"])
+                nbf_time: datetime = unix_to_datetime(payload["nbf"])
+                iat_time: datetime = unix_to_datetime(payload["iat"])
+
+                # 시간 관련 검증
+                if exp_time <= now:
+                    raise InvalidTokenError("Token has expired")
+                if nbf_time > now:
+                    raise InvalidTokenError("Token is not yet valid")
+                if iat_time > now:
+                    raise InvalidTokenError("Token issued in the future")
+
+                # 발행자 검증
+                if payload["iss"] != "cocktail-maker.co.kr/api":
+                    raise InvalidTokenError("Invalid issuer")
+
+                # 토큰 타입 검증
+                if payload["type"] != "access":
+                    raise InvalidTokenError("Invalid token type")
+
+                # 권한 검증
+                if not check_roles(payload["roles"], required_roles):
+                    raise HTTPException(
+                        status_code=403, detail="Insufficient permissions"
+                    )
+
+            except jwt.ExpiredSignatureError as ese:
+                raise HTTPException(
+                    status_code=401, detail="Token has expired"
+                ) from ese
+            except jwt.InvalidAudienceError as iae:
+                raise HTTPException(status_code=401, detail="Invalid audience") from iae
+            except jwt.InvalidTokenError as ite:
+                raise HTTPException(status_code=401, detail="Invalid token") from ite
+            return None
+
+        return verify

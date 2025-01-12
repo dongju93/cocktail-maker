@@ -9,4 +9,5 @@ wheels/
 # Virtual environments
 .venv
 app/.env
+app/db.sqlite3
 uv.lock

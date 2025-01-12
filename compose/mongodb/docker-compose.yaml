@@ -1,0 +1,13 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=dongju
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - type: bind
+        source: /Volumes/Transcend/App/mongodb/data
+        target: /data/db

@@ -51,7 +51,7 @@ target-version = "py312"
 src = ["app", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "SIM", "ASYNC", "PL", "FAST", "RUF", "I"]
+select = ["E", "F", "UP", "B", "SIM", "ASYNC", "PL", "FAST", "RUF"]
 fixable = ["ALL"]
 unfixable = []
 ignore = ["E501"]

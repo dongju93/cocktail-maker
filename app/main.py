@@ -8,12 +8,19 @@ from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
     get_many_spirits_from_mongo,
     get_single_spirits_from_mongo,
+    get_spirits_metadata_from_sqlite,
+    insert_spirits_metadata_to_sqlite,
     insert_spirits_to_mongo,
     user_sign_in,
     user_sign_up,
 )
 from model.response import SpiritsSearchResponse
-from model.spirits import SpiritsRegister, SpiritsSearch
+from model.spirits import (
+    Category,
+    SpiritsMetadataRegister,
+    SpiritsRegister,
+    SpiritsSearch,
+)
 from model.user import Login, User
 
 uvloop.install()
@@ -137,6 +144,32 @@ async def spirits_search(
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
     return ORJSONResponse(content=data, status_code=200)
+
+
+@app.post("/spirits/metadata", summary="주류 정보 메타데이터 등록")
+async def spirits_metadata_register(
+    items: Annotated[SpiritsMetadataRegister, Body(...)],
+) -> ORJSONResponse:
+    try:
+        if not insert_spirits_metadata_to_sqlite(items):
+            messages = "Metadata registration failed"
+            status_code = 409
+        else:
+            messages = "Metadata registration successful"
+            status_code = 201
+    except Exception as e:
+        messages = f"Metadata registration failed: {e!s}"
+        status_code = 500
+
+    return ORJSONResponse(content={"message": messages}, status_code=status_code)
+
+
+@app.get("/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회")
+async def spirits_metadata_detail(
+    category: Annotated[Category, Path(..., description="메타데이터 카테고리")],
+) -> ORJSONResponse:
+    metadata: list[str] = get_spirits_metadata_from_sqlite(category)
+    return ORJSONResponse(content=metadata, status_code=200)
 
 
 @app.get("/version", summary="서비스 버전 확인")

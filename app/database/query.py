@@ -1,16 +1,22 @@
 from base64 import urlsafe_b64decode
 from datetime import UTC, datetime
 from math import ceil
+from sqlite3 import Cursor
 from typing import Any
 
 from fastapi import HTTPException
 from pymongo.results import InsertManyResult
 
 from auth.encryption import Encryption
-from database.connector import mongodb_conn
+from database.connector import mongodb_conn, sqlite_conn
 from database.query_assist import spirits_search_params
 from model.response import SpiritsSearchResponse
-from model.spirits import SpiritsRegister, SpiritsSearch
+from model.spirits import (
+    Category,
+    SpiritsMetadataRegister,
+    SpiritsRegister,
+    SpiritsSearch,
+)
 from model.user import Login, PasswordAndSalt, User
 
 
@@ -134,3 +140,48 @@ async def get_user_roles(user_id: str) -> list[str]:
         raise e
 
     return result["roles"]
+
+
+def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
+    category: str = items.category
+    names: list[str] = items.name
+    try:
+        with sqlite_conn() as conn:
+            cursor: Cursor = conn.cursor()
+            for name in names:
+                cursor.execute(
+                    """
+                    INSERT INTO
+                    spirits_metadata (category, name)
+                    VALUES (?, ?)
+                    """,
+                    (category, name),
+                )
+
+            conn.commit()
+    except Exception:
+        print("Insert Spirits metadata to sqlite raise an error")
+        return False
+
+    return True
+
+
+def get_spirits_metadata_from_sqlite(category: Category) -> list[str]:
+    try:
+        with sqlite_conn() as conn:
+            cursor: Cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT name
+                FROM spirits_metadata
+                WHERE category = ?
+                ORDER BY name ASC
+                """,
+                (category.value,),
+            )
+            result: list[str] = [row[0] for row in cursor.fetchall()]
+    except Exception as e:
+        print("Get Spirits metadata from sqlite raise an error")
+        raise e
+
+    return result

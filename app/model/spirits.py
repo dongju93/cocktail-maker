@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -31,3 +32,16 @@ class SpiritsSearch(BaseModel):
     ] = None
     pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
     pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
+
+
+class Category(str, Enum):
+    aroma = "aroma"
+    taste = "taste"
+    finish = "finish"
+
+
+class SpiritsMetadataRegister(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    category: Annotated[Category, Field(..., min_length=1)]
+    name: Annotated[list[str], Field(..., min_length=1)]

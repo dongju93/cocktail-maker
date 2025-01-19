@@ -5,7 +5,7 @@ from sqlite3 import Cursor
 from typing import Any
 
 from fastapi import HTTPException
-from pymongo.results import InsertManyResult
+from pymongo.results import InsertOneResult
 
 from auth.encryption import Encryption
 from database.connector import mongodb_conn, sqlite_conn
@@ -20,23 +20,15 @@ from model.spirits import (
 from model.user import Login, PasswordAndSalt, User
 
 
-async def insert_spirits_to_mongo(items: list[SpiritsRegister]) -> str:
+async def insert_spirits_to_mongo(item: SpiritsRegister) -> str:
     try:
-        all_data: list[dict[str, Any]] = []
-
-        for item in items:
-            data: dict[str, Any] = item.model_dump()
-            # 생성 시간 추가
-            data["created_at"] = datetime.now(tz=UTC)
-            all_data.append(data)
-
         async with mongodb_conn("spirits") as conn:
-            result: InsertManyResult = await conn.insert_many(all_data)
+            result: InsertOneResult = await conn.insert_one(item)
     except Exception as e:
         print("Insert Spirits object to mongodb raise an error")
         raise e
 
-    return str(result.inserted_ids)
+    return str(result.inserted_id)
 
 
 async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:

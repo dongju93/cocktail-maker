@@ -1,7 +1,19 @@
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import uvloop
-from fastapi import Body, FastAPI, Path, Query, Request, Security
+from fastapi import (
+    Body,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Security,
+    UploadFile,
+)
 from fastapi.responses import ORJSONResponse
 
 from auth import refresh_access_token, sign_in_token, verify_token
@@ -22,6 +34,7 @@ from model.spirits import (
     SpiritsSearch,
 )
 from model.user import Login, User
+from model.validation import read_image, validate_image_extension, validate_image_size
 
 uvloop.install()
 
@@ -122,11 +135,80 @@ async def refresh_token(request: Request) -> ORJSONResponse:
     - description: 설명
     """,
 )
-async def spirits_register(
-    items: Annotated[list[SpiritsRegister], Body(...)],
+async def spirits_register(  # noqa
+    name: Annotated[str, Form(..., min_length=1)],
+    aroma: Annotated[list[str], Form(..., min_length=1)],
+    taste: Annotated[list[str], Form(..., min_length=1)],
+    finish: Annotated[list[str], Form(..., min_length=1)],
+    kind: Annotated[str, Form(...)],
+    subKind: Annotated[str, Form(...)],
+    amount: Annotated[float, Form(...)],
+    alcohol: Annotated[float, Form(...)],
+    origin_nation: Annotated[str, Form(...)],
+    origin_location: Annotated[str, Form(...)],
+    description: Annotated[str, Form(...)],
+    mainImage: Annotated[
+        UploadFile,
+        File(..., description="주류의 대표 이미지, 최대 2MB"),
+    ],
+    subImage1: Annotated[UploadFile | None, File()] = None,
+    subImage2: Annotated[UploadFile | None, File()] = None,
+    subImage3: Annotated[UploadFile | None, File()] = None,
+    subImage4: Annotated[UploadFile | None, File()] = None,
 ) -> ORJSONResponse:
-    inserted_object_id: str = await insert_spirits_to_mongo(items)
-    return ORJSONResponse(content={"spirits_oid": inserted_object_id}, status_code=201)
+    try:
+        # 이미지 파일 타입 검사
+        for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
+            if not await validate_image_extension(image):
+                raise HTTPException(422, "Invalid file extension")
+
+        # 이미지 파일 앍가
+        read_main_image: bytes = await mainImage.read()
+        read_sub_image1: bytes | None = await read_image(subImage1)
+        read_sub_image2: bytes | None = await read_image(subImage2)
+        read_sub_image3: bytes | None = await read_image(subImage3)
+        read_sub_image4: bytes | None = await read_image(subImage4)
+
+        # 이미지 파일 크기 검사
+        for image_byte in [
+            read_main_image,
+            read_sub_image1,
+            read_sub_image2,
+            read_sub_image3,
+            read_sub_image4,
+        ]:
+            if not await validate_image_size(image_byte):
+                raise HTTPException(422, "File size is too large")
+
+        item: SpiritsRegister = SpiritsRegister(
+            name=name,
+            aroma=aroma,
+            taste=taste,
+            finish=finish,
+            kind=kind,
+            subKind=subKind,
+            amount=amount,
+            alcohol=alcohol,
+            origin_nation=origin_nation,
+            origin_location=origin_location,
+            description=description,
+            main_image=read_main_image,
+            sub_image1=read_sub_image1,
+            sub_image2=read_sub_image2,
+            sub_image3=read_sub_image3,
+            sub_image4=read_sub_image4,
+            created_at=datetime.now(tz=UTC),
+        )
+        data: str = await insert_spirits_to_mongo(item)
+        code: int = 201
+    except HTTPException as he:
+        data = he.detail
+        code = he.status_code
+    except Exception as e:
+        data = f"{e!s}"
+        code = 500
+
+    return ORJSONResponse(content={"data": data}, status_code=code)
 
 
 @app.get("/spirits/{name}", summary="단일 주류 정보 조회")

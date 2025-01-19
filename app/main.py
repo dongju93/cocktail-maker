@@ -34,7 +34,11 @@ from model.spirits import (
     SpiritsSearch,
 )
 from model.user import Login, User
-from model.validation import read_image, validate_image_extension, validate_image_size
+from model.validation import (
+    is_image_content_type,
+    is_image_size_too_large,
+    read_nullable_image,
+)
 
 uvloop.install()
 
@@ -159,15 +163,15 @@ async def spirits_register(  # noqa
     try:
         # 이미지 파일 타입 검사
         for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
-            if not await validate_image_extension(image):
+            if not await is_image_content_type(image):
                 raise HTTPException(422, "Invalid file extension")
 
         # 이미지 파일 앍가
         read_main_image: bytes = await mainImage.read()
-        read_sub_image1: bytes | None = await read_image(subImage1)
-        read_sub_image2: bytes | None = await read_image(subImage2)
-        read_sub_image3: bytes | None = await read_image(subImage3)
-        read_sub_image4: bytes | None = await read_image(subImage4)
+        read_sub_image1: bytes | None = await read_nullable_image(subImage1)
+        read_sub_image2: bytes | None = await read_nullable_image(subImage2)
+        read_sub_image3: bytes | None = await read_nullable_image(subImage3)
+        read_sub_image4: bytes | None = await read_nullable_image(subImage4)
 
         # 이미지 파일 크기 검사
         for image_byte in [
@@ -177,7 +181,7 @@ async def spirits_register(  # noqa
             read_sub_image3,
             read_sub_image4,
         ]:
-            if not await validate_image_size(image_byte):
+            if not await is_image_size_too_large(image_byte):
                 raise HTTPException(422, "File size is too large")
 
         item: SpiritsRegister = SpiritsRegister(

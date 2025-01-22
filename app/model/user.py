@@ -3,6 +3,8 @@ from typing import Annotated, TypedDict
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
+# // TODO: 가입 시 중복 ID, Email 확인 추가
+# // TODO: Email 인증 후 가입 완료 처리 추가
 class User(BaseModel):
     user_id: Annotated[str, Field(..., min_length=4, max_length=14)]
     password: Annotated[str, Field(..., min_length=8, max_length=20)]

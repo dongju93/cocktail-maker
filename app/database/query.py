@@ -138,15 +138,14 @@ def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
     category: str = items.category
     names: list[str] = items.name
     try:
+        with open("database/sql/insert_spirits_metadata_to_sqlite.sql") as sql_file:
+            sql: str = sql_file.read()
+
         with sqlite_conn() as conn:
             cursor: Cursor = conn.cursor()
             for name in names:
                 cursor.execute(
-                    """
-                    INSERT INTO
-                    spirits_metadata (category, name)
-                    VALUES (?, ?)
-                    """,
+                    sql,
                     (category, name),
                 )
 
@@ -160,15 +159,13 @@ def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
 
 def get_spirits_metadata_from_sqlite(category: Category) -> list[str]:
     try:
+        with open("database/sql/get_spirits_metadata_from_sqlite.sql") as sql_file:
+            sql: str = sql_file.read()
+
         with sqlite_conn() as conn:
             cursor: Cursor = conn.cursor()
             cursor.execute(
-                """
-                SELECT name
-                FROM spirits_metadata
-                WHERE category = ?
-                ORDER BY name ASC
-                """,
+                sql,
                 (category.value,),
             )
             result: list[str] = [row[0] for row in cursor.fetchall()]

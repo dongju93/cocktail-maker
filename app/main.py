@@ -182,7 +182,7 @@ async def spirits_register(  # noqa
             read_sub_image4,
         ]:
             if not await is_image_size_too_large(image_byte):
-                raise HTTPException(422, "File size is too large")
+                raise HTTPException(422, "File size is too large, maximum 2MB")
 
         item: SpiritsRegister = SpiritsRegister(
             name=name,
@@ -251,11 +251,19 @@ async def spirits_metadata_register(
 
 
 @app.get("/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회")
-async def spirits_metadata_detail(
+async def spirits_metadata_details(
     category: Annotated[Category, Path(..., description="메타데이터 카테고리")],
 ) -> ORJSONResponse:
     metadata: list[str] = get_spirits_metadata_from_sqlite(category)
     return ORJSONResponse(content=metadata, status_code=200)
+
+
+@app.delete("/spirits/metadata/{id}", summary="주류 정보 메타데이터 삭제")
+async def spirits_metadata_remover(
+    id: Annotated[int, Path(..., description="메타데이터 인덱스")],
+) -> ORJSONResponse:
+    # metadata: list[str] = get_spirits_metadata_from_sqlite(category)
+    return ORJSONResponse(content=None, status_code=200)
 
 
 @app.get("/version", summary="서비스 버전 확인")

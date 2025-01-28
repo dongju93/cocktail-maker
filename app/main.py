@@ -19,11 +19,11 @@ from fastapi.responses import ORJSONResponse
 
 from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
+    InsertSpirits,
     get_many_spirits_from_mongo,
     get_single_spirits_from_mongo,
     get_spirits_metadata_from_sqlite,
     insert_spirits_metadata_to_sqlite,
-    insert_spirits_to_mongo,
     user_sign_in,
     user_sign_up,
 )
@@ -39,6 +39,7 @@ from model.user import Login, User
 from model.validation import (
     is_image_content_type,
     is_image_size_too_large,
+    is_metadata_category_valid,
     read_nullable_image,
 )
 from utils.etc import return_formatter
@@ -166,6 +167,8 @@ async def refresh_token(request: Request) -> ORJSONResponse:
     - origin_nation: 원산지 국가
     - origin_location: 원산지 지역
     - description: 설명
+    - mainImage: 대표 이미지
+    - subImage1~4: 보조 이미지
     """,
 )
 async def spirits_register(  # noqa
@@ -189,8 +192,12 @@ async def spirits_register(  # noqa
     subImage3: Annotated[UploadFile | None, File()] = None,
     subImage4: Annotated[UploadFile | None, File()] = None,
 ) -> ORJSONResponse:
+    """
+    단일 주류 정보 등록
+    """
+
     try:
-        # 이미지 파일 타입 검사
+        """이미지 파일 타입 검사"""
         for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
             if not await is_image_content_type(image):
                 raise HTTPException(
@@ -218,6 +225,17 @@ async def spirits_register(  # noqa
                     "File size is too large, maximum 2MB",
                 )
 
+        """메타데이터 값 검사"""
+        for category, values in [
+            (SpiritsMetadataCategory.AROMA, aroma),
+            (SpiritsMetadataCategory.TASTE, taste),
+            (SpiritsMetadataCategory.FINISH, finish),
+        ]:
+            if not await is_metadata_category_valid(category, values):
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST, "Invalid metadata values provided"
+                )
+
         item: SpiritsRegister = SpiritsRegister(
             name=name,
             aroma=aroma,
@@ -230,14 +248,17 @@ async def spirits_register(  # noqa
             origin_nation=origin_nation,
             origin_location=origin_location,
             description=description,
-            main_image=read_main_image,
-            sub_image1=read_sub_image1,
-            sub_image2=read_sub_image2,
-            sub_image3=read_sub_image3,
-            sub_image4=read_sub_image4,
             created_at=datetime.now(tz=UTC),
+            updated_at=datetime.now(tz=UTC),
         )
-        data: str = await insert_spirits_to_mongo(item)
+        data: str = await InsertSpirits(
+            item,
+            read_main_image,
+            read_sub_image1,
+            read_sub_image2,
+            read_sub_image3,
+            read_sub_image4,
+        ).insert_spirits_to_mongo()
 
         formatted_response: ResponseFormat = await return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"

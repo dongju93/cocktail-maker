@@ -1,9 +1,12 @@
 from base64 import urlsafe_b64decode
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import ceil
+from pathlib import Path
 from sqlite3 import Cursor, Row
 from typing import Any
 
+from bson import ObjectId
 from fastapi import HTTPException
 from pymongo.results import InsertOneResult
 
@@ -18,17 +21,69 @@ from model.spirits import (
     SpiritsSearch,
 )
 from model.user import Login, PasswordAndSalt, User
+from utils.etc import save_image_to_local
 
 
-async def insert_spirits_to_mongo(item: SpiritsRegister) -> str:
-    try:
-        async with mongodb_conn("spirits") as conn:
-            result: InsertOneResult = await conn.insert_one(item)
-    except Exception as e:
-        print("Insert Spirits object to mongodb raise an error")
-        raise e
+@dataclass
+class InsertSpirits:
+    spirits_item: SpiritsRegister
+    main_image: bytes
+    sub_image1: bytes | None
+    sub_image2: bytes | None
+    sub_image3: bytes | None
+    sub_image4: bytes | None
 
-    return str(result.inserted_id)
+    async def insert_spirits_to_mongo(self) -> str:
+        try:
+            async with mongodb_conn("spirits") as conn:
+                result: InsertOneResult = await conn.insert_one(self.spirits_item)
+        except Exception as e:
+            print("Insert Spirits object to mongodb raise an error")
+            raise e
+        else:
+            spirits_id: str = str(result.inserted_id)
+
+        try:
+            await self._image_saver(spirits_id)
+        except Exception as e:
+            print("Save Spirits images to local raise an error")
+            raise e
+
+        return spirits_id
+
+    async def _image_saver(self, spirits_id: str):
+        spirit_images: list[tuple[str, bytes | None]] = [
+            ("main_image", self.main_image),
+            ("sub_image1", self.sub_image1),
+            ("sub_image2", self.sub_image2),
+            ("sub_image3", self.sub_image3),
+            ("sub_image4", self.sub_image4),
+        ]
+
+        saved_image_paths: list[dict[str, str]] = []
+        # 이미지 저장 및 경로 정보 수집
+        for image_key, image_data in spirit_images:
+            if image_data is not None:
+                image_path = str(Path(f"../data/images/{spirits_id}/{image_key}.png"))
+                saved_image_path = save_image_to_local(image_data, Path(image_path))
+                saved_image_paths.append({"key": image_key, "path": saved_image_path})
+
+        # 수집된 경로 정보를 SpiritsRegister에 대입
+        for image_path_info in saved_image_paths:
+            image_key = image_path_info["key"]
+            match image_key:
+                case "main_image":
+                    self.spirits_item["main_image"] = image_path_info["path"]
+                case "sub_image1":
+                    self.spirits_item["sub_image1"] = image_path_info["path"]
+                case "sub_image2":
+                    self.spirits_item["sub_image2"] = image_path_info["path"]
+                case "sub_image3":
+                    self.spirits_item["sub_image3"] = image_path_info["path"]
+                case "sub_image4":
+                    self.spirits_item["sub_image4"] = image_path_info["path"]
+
+        await update_single_spirits_to_mongo(spirits_id, self.spirits_item)
 
 
 async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:
@@ -44,6 +99,14 @@ async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:
         result["_id"] = str(result["_id"])
 
     return result
+
+
+async def update_single_spirits_to_mongo(
+    id: str, spirits_item: SpiritsRegister
+) -> None:
+    print(spirits_item)
+    async with mongodb_conn("spirits") as conn:
+        await conn.update_one({"_id": ObjectId(id)}, {"$set": spirits_item})
 
 
 async def get_many_spirits_from_mongo(params: SpiritsSearch) -> SpiritsSearchResponse:

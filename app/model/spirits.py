@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -17,12 +17,13 @@ class SpiritsRegister(TypedDict):
     origin_nation: str
     origin_location: str
     description: str
-    main_image: bytes
-    sub_image1: bytes | None
-    sub_image2: bytes | None
-    sub_image3: bytes | None
-    sub_image4: bytes | None
+    main_image: NotRequired[str]
+    sub_image1: NotRequired[str | None]
+    sub_image2: NotRequired[str | None]
+    sub_image3: NotRequired[str | None]
+    sub_image4: NotRequired[str | None]
     created_at: datetime
+    updated_at: datetime
 
 
 class SpiritsSearch(BaseModel):
@@ -40,9 +41,9 @@ class SpiritsSearch(BaseModel):
 
 
 class SpiritsMetadataCategory(str, Enum):
-    aroma = "aroma"
-    taste = "taste"
-    finish = "finish"
+    AROMA = "aroma"
+    TASTE = "taste"
+    FINISH = "finish"
 
 
 class SpiritsMetadataRegister(BaseModel):

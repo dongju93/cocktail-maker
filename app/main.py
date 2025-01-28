@@ -13,6 +13,7 @@ from fastapi import (
     Request,
     Security,
     UploadFile,
+    status,
 )
 from fastapi.responses import ORJSONResponse
 
@@ -26,6 +27,7 @@ from database.query import (
     user_sign_in,
     user_sign_up,
 )
+from model.etc import ResponseFormat
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     Category,
@@ -39,6 +41,7 @@ from model.validation import (
     is_image_size_too_large,
     read_nullable_image,
 )
+from utils.etc import return_formatter
 
 uvloop.install()
 
@@ -59,23 +62,31 @@ async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
     """
-    if not await user_sign_up(user):
-        return ORJSONResponse(
-            content={"message": "User already exists"}, status_code=409
+    try:
+        if not await user_sign_up(user):
+            raise HTTPException(status.HTTP_409_CONFLICT, "User already exists")
+
+        login = Login(
+            user_id=user.user_id,
+            password=user.password,
+        )
+        if (roles := await user_sign_in(login)) == []:
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
+            )
+
+        jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_201_CREATED, jwt, "User successfully created"
         )
 
-    login = Login(
-        user_id=user.user_id,
-        password=user.password,
-    )
-    if (roles := await user_sign_in(login)) == []:
-        return ORJSONResponse(
-            content={"message": "Invalid user_id or password"}, status_code=401
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
         )
-    jwt: dict[str, str] = sign_in_token(login.user_id, roles)
-    return ORJSONResponse(
-        content={"message": "User successfully created", "tokens": jwt}, status_code=201
-    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.post("/signIn", summary="로그인")
@@ -83,14 +94,24 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환
     """
-    if (roles := await user_sign_in(login)) == []:
-        return ORJSONResponse(
-            content={"message": "Invalid user_id or password"}, status_code=401
+    try:
+        if (roles := await user_sign_in(login)) == []:
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
+            )
+
+        jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", 200, jwt, "User successfully logged in"
         )
-    jwt: dict[str, str] = sign_in_token(login.user_id, roles)
-    return ORJSONResponse(
-        content={"message": "Successfully login", "tokens": jwt}, status_code=200
-    )
+
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.post("/refreshToken", summary="액세스 토큰 갱신")
@@ -99,26 +120,34 @@ async def refresh_token(request: Request) -> ORJSONResponse:
     리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
     """
     auth_header: str | None = request.headers.get("Authorization")
-    if auth_header is None:
-        return ORJSONResponse(
-            content={"message": "Refresh token is required"}, status_code=401
-        )
-    if not auth_header.startswith("Bearer "):
-        return ORJSONResponse(
-            content={"message": "Invalid authorization header format"}, status_code=401
+    try:
+        if auth_header is None:
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, "Refresh token is required"
+            )
+        if not auth_header.startswith("Bearer "):
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, "Invalid authorization header format"
+            )
+
+        # 실제 Bearer 토큰 부분을 분리
+        refresh_token: str = auth_header.split(" ")[1]
+        refreshed_access_token: dict[str, str] = await refresh_access_token(
+            refresh_token
         )
 
-    # 실제 Bearer 토큰 부분을 분리
-    refresh_token: str = auth_header.split(" ")[1]
+        formatted_response: ResponseFormat = await return_formatter(
+            "success",
+            status.HTTP_200_OK,
+            refreshed_access_token,
+            "Successfully refresh token",
+        )
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
 
-    refreshed_access_token: dict[str, str] = await refresh_access_token(refresh_token)
-    return ORJSONResponse(
-        content={
-            "message": "Successfully refresh token",
-            "token": refreshed_access_token,
-        },
-        status_code=200,
-    )
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.post(
@@ -164,7 +193,9 @@ async def spirits_register(  # noqa
         # 이미지 파일 타입 검사
         for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
             if not await is_image_content_type(image):
-                raise HTTPException(422, "Invalid file extension")
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid file extension"
+                )
 
         # 이미지 파일 앍가
         read_main_image: bytes = await mainImage.read()
@@ -182,7 +213,10 @@ async def spirits_register(  # noqa
             read_sub_image4,
         ]:
             if not await is_image_size_too_large(image_byte):
-                raise HTTPException(422, "File size is too large, maximum 2MB")
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    "File size is too large, maximum 2MB",
+                )
 
         item: SpiritsRegister = SpiritsRegister(
             name=name,
@@ -204,15 +238,24 @@ async def spirits_register(  # noqa
             created_at=datetime.now(tz=UTC),
         )
         data: str = await insert_spirits_to_mongo(item)
-        code: int = 201
-    except HTTPException as he:
-        data = he.detail
-        code = he.status_code
-    except Exception as e:
-        data = f"{e!s}"
-        code = 500
 
-    return ORJSONResponse(content={"data": data}, status_code=code)
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
+        )
+
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to register spirits: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.get("/spirits/{name}", summary="단일 주류 정보 조회")
@@ -220,7 +263,12 @@ async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await get_single_spirits_from_mongo(name)
-    return ORJSONResponse(content=spirits, status_code=200)
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", status.HTTP_200_OK, spirits, "Successfully get spirits"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.get("/spirits", summary="주류 정보 검색")
@@ -229,7 +277,12 @@ async def spirits_search(
     _: Annotated[None, Security(verify_token(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
-    return ORJSONResponse(content=data, status_code=200)
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, data, "Successfully search spirits"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.post("/spirits/metadata", summary="주류 정보 메타데이터 등록")
@@ -238,24 +291,43 @@ async def spirits_metadata_register(
 ) -> ORJSONResponse:
     try:
         if not insert_spirits_metadata_to_sqlite(items):
-            messages = "Metadata registration failed"
-            status_code = 409
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Metadata registration failed"
+            )
         else:
-            messages = "Metadata registration successful"
-            status_code = 201
-    except Exception as e:
-        messages = f"Metadata registration failed: {e!s}"
-        status_code = 500
+            formatted_response: ResponseFormat = await return_formatter(
+                "success",
+                status.HTTP_201_CREATED,
+                None,
+                "Metadata registration successful",
+            )
 
-    return ORJSONResponse(content={"message": messages}, status_code=status_code)
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Metadata registration failed: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.get("/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회")
 async def spirits_metadata_details(
     category: Annotated[Category, Path(..., description="메타데이터 카테고리")],
 ) -> ORJSONResponse:
-    metadata: list[str] = get_spirits_metadata_from_sqlite(category)
-    return ORJSONResponse(content=metadata, status_code=200)
+    metadata: list[dict[str, str]] = get_spirits_metadata_from_sqlite(category)
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", status.HTTP_200_OK, metadata, "Successfully get metadata"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.delete("/spirits/metadata/{id}", summary="주류 정보 메타데이터 삭제")
@@ -263,9 +335,13 @@ async def spirits_metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
     # metadata: list[str] = get_spirits_metadata_from_sqlite(category)
-    return ORJSONResponse(content=None, status_code=200)
+    return ORJSONResponse(content=None, status_code=status.HTTP_200_OK)
 
 
 @app.get("/version", summary="서비스 버전 확인")
 async def version() -> ORJSONResponse:
-    return ORJSONResponse(content={"version": version}, status_code=200)
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, {"version": app.version}, "Successfully get version"
+    )
+
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)

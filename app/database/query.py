@@ -12,7 +12,7 @@ from database.connector import mongodb_conn, sqlite_conn
 from database.query_assist import spirits_search_params
 from model.response import SpiritsSearchResponse
 from model.spirits import (
-    Category,
+    SpiritsMetadataCategory,
     SpiritsMetadataRegister,
     SpiritsRegister,
     SpiritsSearch,
@@ -157,7 +157,9 @@ def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
     return True
 
 
-def get_spirits_metadata_from_sqlite(category: Category) -> list[dict[str, str]]:
+def get_spirits_metadata_from_sqlite(
+    category: SpiritsMetadataCategory,
+) -> list[dict[str, str]]:
     try:
         data: list[Row] = []
         result: list[dict[str, str]] = []

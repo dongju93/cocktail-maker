@@ -39,7 +39,7 @@ class SpiritsSearch(BaseModel):
     pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
 
 
-class Category(str, Enum):
+class SpiritsMetadataCategory(str, Enum):
     aroma = "aroma"
     taste = "taste"
     finish = "finish"
@@ -48,5 +48,5 @@ class Category(str, Enum):
 class SpiritsMetadataRegister(BaseModel):
     model_config = {"extra": "forbid"}
 
-    category: Annotated[Category, Field(..., min_length=1)]
+    category: Annotated[SpiritsMetadataCategory, Field(..., min_length=1)]
     name: Annotated[list[str], Field(..., min_length=1)]

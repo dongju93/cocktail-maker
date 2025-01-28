@@ -30,7 +30,7 @@ from database.query import (
 from model.etc import ResponseFormat
 from model.response import SpiritsSearchResponse
 from model.spirits import (
-    Category,
+    SpiritsMetadataCategory,
     SpiritsMetadataRegister,
     SpiritsRegister,
     SpiritsSearch,
@@ -319,7 +319,9 @@ async def spirits_metadata_register(
 
 @app.get("/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회")
 async def spirits_metadata_details(
-    category: Annotated[Category, Path(..., description="메타데이터 카테고리")],
+    category: Annotated[
+        SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
+    ],
 ) -> ORJSONResponse:
     metadata: list[dict[str, str]] = get_spirits_metadata_from_sqlite(category)
 

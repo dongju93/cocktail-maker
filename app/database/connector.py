@@ -1,6 +1,6 @@
 import os
 from contextlib import asynccontextmanager, contextmanager
-from sqlite3 import Connection
+from sqlite3 import Connection, Row
 from typing import AsyncGenerator, Generator  # noqa: UP035
 
 from dotenv import load_dotenv
@@ -37,6 +37,7 @@ def sqlite_conn() -> Generator[Connection, None, None]:
         isolation_level=None,
         autocommit=False,
     )
+    conn.row_factory = Row
     try:
         yield conn
     finally:

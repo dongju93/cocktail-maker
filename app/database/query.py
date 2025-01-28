@@ -1,7 +1,7 @@
 from base64 import urlsafe_b64decode
 from datetime import UTC, datetime
 from math import ceil
-from sqlite3 import Cursor
+from sqlite3 import Cursor, Row
 from typing import Any
 
 from fastapi import HTTPException
@@ -157,8 +157,10 @@ def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
     return True
 
 
-def get_spirits_metadata_from_sqlite(category: Category) -> list[str]:
+def get_spirits_metadata_from_sqlite(category: Category) -> list[dict[str, str]]:
     try:
+        data: list[Row] = []
+        result: list[dict[str, str]] = []
         with open("database/sql/get_spirits_metadata_from_sqlite.sql") as sql_file:
             sql: str = sql_file.read()
 
@@ -168,7 +170,9 @@ def get_spirits_metadata_from_sqlite(category: Category) -> list[str]:
                 sql,
                 (category.value,),
             )
-            result: list[str] = [row[0] for row in cursor.fetchall()]
+            data = cursor.fetchall()
+            if data != []:
+                result = [{"id": row["id"], "name": row["name"]} for row in data]
     except Exception as e:
         print("Get Spirits metadata from sqlite raise an error")
         raise e

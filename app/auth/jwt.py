@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 
 from auth.roles import check_roles
-from database.query import get_user_roles
+from database.query import Users
 from utils.times import datetime_now, unix_to_datetime
 
 load_dotenv(dotenv_path=".env")
@@ -105,7 +105,7 @@ class PublishToken:
             # refresh 토큰에는 roles 정보가 없기 때문에 MongoDB 조회 후 access 토큰 생성 시 활용
             return {
                 "accessToken": create_token.access(
-                    await get_user_roles(refresh_payload["sub"])
+                    await Users.get_roles(refresh_payload["sub"])
                 )
             }
 

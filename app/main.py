@@ -19,13 +19,11 @@ from fastapi.responses import ORJSONResponse
 
 from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
-    InsertSpirits,
-    get_many_spirits_from_mongo,
-    get_single_spirits_from_mongo,
-    get_spirits_metadata_from_sqlite,
-    insert_spirits_metadata_to_sqlite,
-    user_sign_in,
-    user_sign_up,
+    CreateSpirits,
+    CreateSpiritsMetadata,
+    ReadSpirits,
+    ReadSpiritsMetadata,
+    Users,
 )
 from model.etc import ResponseFormat
 from model.response import SpiritsSearchResponse
@@ -64,14 +62,14 @@ async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
     """
     try:
-        if not await user_sign_up(user):
+        if not await Users.sign_up(user):
             raise HTTPException(status.HTTP_409_CONFLICT, "User already exists")
 
         login = Login(
             user_id=user.user_id,
             password=user.password,
         )
-        if (roles := await user_sign_in(login)) == []:
+        if (roles := await Users.sign_in(login)) == []:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
@@ -96,7 +94,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
     로그인 성공 시 메시지와 함께 JWT 를 반환
     """
     try:
-        if (roles := await user_sign_in(login)) == []:
+        if (roles := await Users.sign_in(login)) == []:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
@@ -197,21 +195,19 @@ async def spirits_register(  # noqa
     """
 
     try:
-        """이미지 파일 타입 검사"""
+        # 이미지 파일 타입 검사
         for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
             if not await is_image_content_type(image):
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid file extension"
                 )
 
-        # 이미지 파일 앍가
         read_main_image: bytes = await mainImage.read()
         read_sub_image1: bytes | None = await read_nullable_image(subImage1)
         read_sub_image2: bytes | None = await read_nullable_image(subImage2)
         read_sub_image3: bytes | None = await read_nullable_image(subImage3)
         read_sub_image4: bytes | None = await read_nullable_image(subImage4)
 
-        # 이미지 파일 크기 검사
         for image_byte in [
             read_main_image,
             read_sub_image1,
@@ -225,7 +221,7 @@ async def spirits_register(  # noqa
                     "File size is too large, maximum 2MB",
                 )
 
-        """메타데이터 값 검사"""
+        # 메타데이터 값 검사
         for category, values in [
             (SpiritsMetadataCategory.AROMA, aroma),
             (SpiritsMetadataCategory.TASTE, taste),
@@ -249,16 +245,15 @@ async def spirits_register(  # noqa
             origin_location=origin_location,
             description=description,
             created_at=datetime.now(tz=UTC),
-            updated_at=datetime.now(tz=UTC),
         )
-        data: str = await InsertSpirits(
+        data: str = await CreateSpirits(
             item,
             read_main_image,
             read_sub_image1,
             read_sub_image2,
             read_sub_image3,
             read_sub_image4,
-        ).insert_spirits_to_mongo()
+        ).save()
 
         formatted_response: ResponseFormat = await return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
@@ -283,7 +278,7 @@ async def spirits_register(  # noqa
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
-    spirits: dict[str, Any] = await get_single_spirits_from_mongo(name)
+    spirits: dict[str, Any] = await ReadSpirits.based_on_name(name)
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, spirits, "Successfully get spirits"
@@ -297,7 +292,7 @@ async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
     _: Annotated[None, Security(verify_token(["admin", "user"]))],
 ) -> ORJSONResponse:
-    data: SpiritsSearchResponse = await get_many_spirits_from_mongo(params)
+    data: SpiritsSearchResponse = await ReadSpirits.search(params)
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", 200, data, "Successfully search spirits"
@@ -311,7 +306,7 @@ async def spirits_metadata_register(
     items: Annotated[SpiritsMetadataRegister, Body(...)],
 ) -> ORJSONResponse:
     try:
-        if not insert_spirits_metadata_to_sqlite(items):
+        if not CreateSpiritsMetadata.save(items):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, "Metadata registration failed"
             )
@@ -344,7 +339,7 @@ async def spirits_metadata_details(
         SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
     ],
 ) -> ORJSONResponse:
-    metadata: list[dict[str, str]] = get_spirits_metadata_from_sqlite(category)
+    metadata: list[dict[str, str]] = ReadSpiritsMetadata.based_on_category(category)
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, metadata, "Successfully get metadata"

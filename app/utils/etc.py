@@ -19,12 +19,10 @@ async def return_formatter(
     )
 
 
-def save_image_to_local(image_data: bytes, file_path: Path) -> str:
+def save_image_to_local(image_data: bytes, file_path: Path) -> None:
     # data/images/id 폴더 생성
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     image: ImageFile = Image.open(io.BytesIO(image_data))
 
     image.save(file_path, "PNG")
-
-    return str(file_path)

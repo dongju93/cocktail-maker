@@ -25,7 +25,7 @@ from utils.etc import save_image_to_local
 
 
 @dataclass
-class InsertSpirits:
+class CreateSpirits:
     spirits_item: SpiritsRegister
     main_image: bytes
     sub_image1: bytes | None
@@ -33,7 +33,7 @@ class InsertSpirits:
     sub_image3: bytes | None
     sub_image4: bytes | None
 
-    async def insert_spirits_to_mongo(self) -> str:
+    async def save(self) -> str:
         try:
             async with mongodb_conn("spirits") as conn:
                 result: InsertOneResult = await conn.insert_one(self.spirits_item)
@@ -51,195 +51,207 @@ class InsertSpirits:
 
         return spirits_id
 
-    async def _image_saver(self, spirits_id: str):
+    async def _image_saver(self, spirits_id: str) -> None:
+        saved_image_paths: list[dict[str, str]] = []
         spirit_images: list[tuple[str, bytes | None]] = [
             ("main_image", self.main_image),
-            ("sub_image1", self.sub_image1),
-            ("sub_image2", self.sub_image2),
-            ("sub_image3", self.sub_image3),
-            ("sub_image4", self.sub_image4),
+            ("sub_image_1", self.sub_image1),
+            ("sub_image_2", self.sub_image2),
+            ("sub_image_3", self.sub_image3),
+            ("sub_image_4", self.sub_image4),
         ]
 
-        saved_image_paths: list[dict[str, str]] = []
         # 이미지 저장 및 경로 정보 수집
         for image_key, image_data in spirit_images:
             if image_data is not None:
-                image_path = str(Path(f"../data/images/{spirits_id}/{image_key}.png"))
-                saved_image_path = save_image_to_local(image_data, Path(image_path))
-                saved_image_paths.append({"key": image_key, "path": saved_image_path})
+                image_path = Path(f"../data/images/{spirits_id}/{image_key}.png")
+                save_image_to_local(image_data, image_path)
+                saved_image_paths.append({"key": image_key, "path": str(image_path)})
 
         # 수집된 경로 정보를 SpiritsRegister에 대입
         for image_path_info in saved_image_paths:
-            image_key = image_path_info["key"]
-            match image_key:
+            match image_path_info["key"]:
                 case "main_image":
                     self.spirits_item["main_image"] = image_path_info["path"]
-                case "sub_image1":
-                    self.spirits_item["sub_image1"] = image_path_info["path"]
-                case "sub_image2":
-                    self.spirits_item["sub_image2"] = image_path_info["path"]
-                case "sub_image3":
-                    self.spirits_item["sub_image3"] = image_path_info["path"]
-                case "sub_image4":
-                    self.spirits_item["sub_image4"] = image_path_info["path"]
+                case "sub_image_1":
+                    self.spirits_item["sub_image_1"] = image_path_info["path"]
+                case "sub_image_2":
+                    self.spirits_item["sub_image_2"] = image_path_info["path"]
+                case "sub_image_3":
+                    self.spirits_item["sub_image_3"] = image_path_info["path"]
+                case "sub_image_4":
+                    self.spirits_item["sub_image_4"] = image_path_info["path"]
 
-        await update_single_spirits_to_mongo(spirits_id, self.spirits_item)
+        await UpdateSpirits.save(spirits_id, self.spirits_item)
 
 
-async def get_single_spirits_from_mongo(name: str) -> dict[str, Any]:
-    try:
+class ReadSpirits:
+    @staticmethod
+    async def based_on_name(name: str) -> dict[str, Any]:
+        try:
+            async with mongodb_conn("spirits") as conn:
+                result: dict[str, Any] | None = await conn.find_one({"name": name})
+                if result is None:
+                    raise HTTPException(status_code=404, detail="Spirits not found")
+        except Exception as e:
+            print("Get Spirits object from mongodb raise an error")
+            raise e
+        else:
+            result["_id"] = str(result["_id"])
+
+        return result
+
+    @staticmethod
+    async def search(
+        params: SpiritsSearch,
+    ) -> SpiritsSearchResponse:
+        find_query: dict[str, dict[str, str]] = spirits_search_params(params)
+        skip_count: int = (params.pageNumber - 1) * params.pageSize
+
+        try:
+            async with mongodb_conn("spirits") as conn:
+                # 총 개수 조회
+                total: int = await conn.count_documents(find_query)
+
+                result: list[dict[str, Any]] = (
+                    await conn.find(find_query)
+                    .sort("name", 1)
+                    .skip(skip_count)
+                    .limit(params.pageSize)
+                    .to_list(10)
+                )
+        except Exception as e:
+            print("Get Spirits object from mongodb raise an error")
+            raise e
+        else:
+            for item in result:
+                item["_id"] = str(item["_id"])
+
+        return SpiritsSearchResponse(
+            totalPage=ceil(total / params.pageSize),
+            currentPage=params.pageNumber,
+            totalSize=total,
+            currentPageSize=len(result),
+            items=result,
+        )
+
+
+class UpdateSpirits:
+    @staticmethod
+    async def save(id: str, spirits_item: SpiritsRegister) -> None:
+        spirits_item["updated_at"] = datetime.now(tz=UTC)
         async with mongodb_conn("spirits") as conn:
-            result: dict[str, Any] | None = await conn.find_one({"name": name})
-            if result is None:
-                raise HTTPException(status_code=404, detail="Spirits not found")
-    except Exception as e:
-        print("Get Spirits object from mongodb raise an error")
-        raise e
-    else:
-        result["_id"] = str(result["_id"])
-
-    return result
+            await conn.update_one({"_id": ObjectId(id)}, {"$set": spirits_item})
 
 
-async def update_single_spirits_to_mongo(
-    id: str, spirits_item: SpiritsRegister
-) -> None:
-    print(spirits_item)
-    async with mongodb_conn("spirits") as conn:
-        await conn.update_one({"_id": ObjectId(id)}, {"$set": spirits_item})
+class CreateSpiritsMetadata:
+    @staticmethod
+    def save(items: SpiritsMetadataRegister) -> bool:
+        category: str = items.category
+        names: list[str] = items.name
+        try:
+            with open("database/sql/insert_spirits_metadata.sql") as sql_file:
+                sql: str = sql_file.read()
+
+            with sqlite_conn() as conn:
+                cursor: Cursor = conn.cursor()
+                for name in names:
+                    cursor.execute(
+                        sql,
+                        (category, name),
+                    )
+        except Exception:
+            print("Insert Spirits metadata to sqlite raise an error")
+            return False
+        else:
+            conn.commit()
+
+        return True
 
 
-async def get_many_spirits_from_mongo(params: SpiritsSearch) -> SpiritsSearchResponse:
-    find_query: dict[str, dict[str, str]] = spirits_search_params(params)
-    skip_count: int = (params.pageNumber - 1) * params.pageSize
+class ReadSpiritsMetadata:
+    @staticmethod
+    def based_on_category(
+        category: SpiritsMetadataCategory,
+    ) -> list[dict[str, str]]:
+        try:
+            data: list[Row] = []
+            result: list[dict[str, str]] = []
+            with open("database/sql/get_spirits_metadata.sql") as sql_file:
+                sql: str = sql_file.read()
 
-    try:
-        async with mongodb_conn("spirits") as conn:
-            # 총 개수 조회
-            total: int = await conn.count_documents(find_query)
-
-            result: list[dict[str, Any]] = (
-                await conn.find(find_query)
-                .sort("name", 1)
-                .skip(skip_count)
-                .limit(params.pageSize)
-                .to_list(10)
-            )
-    except Exception as e:
-        print("Get Spirits object from mongodb raise an error")
-        raise e
-    else:
-        for item in result:
-            item["_id"] = str(item["_id"])
-
-    return SpiritsSearchResponse(
-        totalPage=ceil(total / params.pageSize),
-        currentPage=params.pageNumber,
-        totalSize=total,
-        currentPageSize=len(result),
-        items=result,
-    )
-
-
-async def user_sign_up(user: User) -> bool:
-    encrypted_password_set: PasswordAndSalt = Encryption().passwords(user.password)
-
-    try:
-        data: dict[str, Any] = user.model_dump()
-        # 비밀번호 암호화
-        data["password"] = encrypted_password_set["encrypted_password"]
-        # 솔트 추가
-        data["salt"] = encrypted_password_set["salt"]
-        # 생성 시간 추가
-        data["created_at"] = datetime.now(tz=UTC)
-
-        async with mongodb_conn("users") as conn:
-            await conn.insert_one(data)
-    except Exception:
-        print("Insert User object to mongodb raise an error")
-        return False
-
-    return True
-
-
-async def user_sign_in(login: Login) -> list[str]:
-    try:
-        async with mongodb_conn("users") as conn:
-            result: dict[str, Any] | None = await conn.find_one(
-                {"user_id": login.user_id}
-            )
-            if result is None:
-                raise HTTPException(status_code=404, detail="User not found")
-
-            encrypted_password_set: PasswordAndSalt = Encryption().passwords(
-                login.password, urlsafe_b64decode(result["salt"].encode())
-            )
-
-            if encrypted_password_set["encrypted_password"] != result["password"]:
-                raise HTTPException(status_code=401, detail="Password is incorrect")
-    except HTTPException:
-        print("Get User object from mongodb raise an error")
-        return []
-
-    return result["roles"]
-
-
-async def get_user_roles(user_id: str) -> list[str]:
-    try:
-        async with mongodb_conn("users") as conn:
-            result: dict[str, Any] | None = await conn.find_one({"user_id": user_id})
-            if result is None:
-                raise HTTPException(status_code=404, detail="User not found")
-    except Exception as e:
-        print("Get User object from mongodb raise an error")
-        raise e
-
-    return result["roles"]
-
-
-def insert_spirits_metadata_to_sqlite(items: SpiritsMetadataRegister) -> bool:
-    category: str = items.category
-    names: list[str] = items.name
-    try:
-        with open("database/sql/insert_spirits_metadata_to_sqlite.sql") as sql_file:
-            sql: str = sql_file.read()
-
-        with sqlite_conn() as conn:
-            cursor: Cursor = conn.cursor()
-            for name in names:
+            with sqlite_conn() as conn:
+                cursor: Cursor = conn.cursor()
                 cursor.execute(
                     sql,
-                    (category, name),
+                    (category.value,),
                 )
-
-            conn.commit()
-    except Exception:
-        print("Insert Spirits metadata to sqlite raise an error")
-        return False
-
-    return True
-
-
-def get_spirits_metadata_from_sqlite(
-    category: SpiritsMetadataCategory,
-) -> list[dict[str, str]]:
-    try:
-        data: list[Row] = []
-        result: list[dict[str, str]] = []
-        with open("database/sql/get_spirits_metadata_from_sqlite.sql") as sql_file:
-            sql: str = sql_file.read()
-
-        with sqlite_conn() as conn:
-            cursor: Cursor = conn.cursor()
-            cursor.execute(
-                sql,
-                (category.value,),
-            )
-            data = cursor.fetchall()
+                data = cursor.fetchall()
+        except Exception as e:
+            print("Get Spirits metadata from sqlite raise an error")
+            raise e
+        finally:
             if data != []:
                 result = [{"id": row["id"], "name": row["name"]} for row in data]
-    except Exception as e:
-        print("Get Spirits metadata from sqlite raise an error")
-        raise e
 
-    return result
+        return result
+
+
+class Users:
+    @staticmethod
+    async def sign_up(user: User) -> bool:
+        encrypted_password_set: PasswordAndSalt = Encryption().passwords(user.password)
+
+        try:
+            data: dict[str, Any] = user.model_dump()
+            # 비밀번호 암호화
+            data["password"] = encrypted_password_set["encrypted_password"]
+            # 솔트 추가
+            data["salt"] = encrypted_password_set["salt"]
+            # 생성 시간 추가
+            data["created_at"] = datetime.now(tz=UTC)
+
+            async with mongodb_conn("users") as conn:
+                await conn.insert_one(data)
+        except Exception:
+            print("Insert User object to mongodb raise an error")
+            return False
+
+        return True
+
+    @staticmethod
+    async def sign_in(login: Login) -> list[str]:
+        try:
+            async with mongodb_conn("users") as conn:
+                result: dict[str, Any] | None = await conn.find_one(
+                    {"user_id": login.user_id}
+                )
+                if result is None:
+                    raise HTTPException(status_code=404, detail="User not found")
+
+                encrypted_password_set: PasswordAndSalt = Encryption().passwords(
+                    login.password, urlsafe_b64decode(result["salt"].encode())
+                )
+
+                if encrypted_password_set["encrypted_password"] != result["password"]:
+                    raise HTTPException(status_code=401, detail="Password is incorrect")
+        except HTTPException:
+            print("Get User object from mongodb raise an error")
+            return []
+
+        return result["roles"]
+
+    @staticmethod
+    async def get_roles(user_id: str) -> list[str]:
+        try:
+            async with mongodb_conn("users") as conn:
+                result: dict[str, Any] | None = await conn.find_one(
+                    {"user_id": user_id}
+                )
+                if result is None:
+                    raise HTTPException(status_code=404, detail="User not found")
+        except Exception as e:
+            print("Get User object from mongodb raise an error")
+            raise e
+
+        return result["roles"]

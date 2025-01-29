@@ -1,6 +1,6 @@
 from fastapi import UploadFile
 
-from database.query import get_spirits_metadata_from_sqlite
+from database.query import ReadSpiritsMetadata
 from model.spirits import SpiritsMetadataCategory
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
@@ -26,7 +26,7 @@ async def read_nullable_image(file: UploadFile | None) -> bytes | None:
 async def is_metadata_category_valid(
     category: SpiritsMetadataCategory, user_input_metadata: list[str]
 ) -> bool:
-    valid_metadata_list: list[dict[str, str]] = get_spirits_metadata_from_sqlite(
+    valid_metadata_list: list[dict[str, str]] = ReadSpiritsMetadata.based_on_category(
         category
     )
     valid_names: list[str] = [metadata["name"] for metadata in valid_metadata_list]

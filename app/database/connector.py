@@ -9,8 +9,9 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
     AsyncIOMotorDatabase,
 )
-from sqlalchemy import Engine
-from sqlmodel import Session, create_engine
+from sqlmodel import Session
+
+from database.table import engine
 
 load_dotenv(dotenv_path=".env")
 MONGODB_URL: str = os.environ["MONGODB_URL"]
@@ -48,10 +49,8 @@ def sqlite_conn() -> Generator[Connection, None, None]:
 
 @contextmanager
 def sqlite_conn_orm() -> Generator[Session, None, None]:
-    engine: Engine = create_engine(f"sqlite:///{SQLITE_PATH}")
     session = Session(engine)
     try:
         yield session
     finally:
         session.close()
-        engine.dispose()

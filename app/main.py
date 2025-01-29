@@ -21,6 +21,7 @@ from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
     CreateSpirits,
     CreateSpiritsMetadata,
+    DeleteSpiritsMetadata,
     ReadSpirits,
     ReadSpiritsMetadata,
     Users,
@@ -301,12 +302,15 @@ async def spirits_search(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.post("/spirits/metadata", summary="주류 정보 메타데이터 등록")
+@app.post("/spirits/metadata/{category}", summary="주류 정보 메타데이터 등록")
 async def spirits_metadata_register(
+    category: Annotated[
+        SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
+    ],
     items: Annotated[SpiritsMetadataRegister, Body(...)],
 ) -> ORJSONResponse:
     try:
-        if not CreateSpiritsMetadata.save(items):
+        if not CreateSpiritsMetadata.save(category, items):
             raise HTTPException(
                 status.HTTP_409_CONFLICT, "Metadata registration failed"
             )
@@ -352,8 +356,27 @@ async def spirits_metadata_details(
 async def spirits_metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
-    # metadata: list[str] = get_spirits_metadata_from_sqlite(category)
-    return ORJSONResponse(content=None, status_code=status.HTTP_200_OK)
+    try:
+        DeleteSpiritsMetadata.remove(id)
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_200_OK, None, "Successfully delete metadata"
+        )
+
+    except HTTPException as he:
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to delete metadata: {e!s}",
+        )
+
+    return ORJSONResponse(
+        content=formatted_response, status_code=formatted_response["code"]
+    )
 
 
 @app.get("/version", summary="서비스 버전 확인")

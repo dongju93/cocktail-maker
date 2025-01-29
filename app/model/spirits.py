@@ -49,5 +49,4 @@ class SpiritsMetadataCategory(str, Enum):
 class SpiritsMetadataRegister(BaseModel):
     model_config = {"extra": "forbid"}
 
-    category: Annotated[SpiritsMetadataCategory, Field(..., min_length=1)]
     name: Annotated[list[str], Field(..., min_length=1)]

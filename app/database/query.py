@@ -11,8 +11,9 @@ from fastapi import HTTPException
 from pymongo.results import InsertOneResult
 
 from auth.encryption import Encryption
-from database.connector import mongodb_conn, sqlite_conn
+from database.connector import mongodb_conn, sqlite_conn, sqlite_conn_orm
 from database.query_assist import spirits_search_params
+from database.table import SpritsMetadata
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     SpiritsMetadataCategory,
@@ -146,8 +147,7 @@ class UpdateSpirits:
 
 class CreateSpiritsMetadata:
     @staticmethod
-    def save(items: SpiritsMetadataRegister) -> bool:
-        category: str = items.category
+    def save(category: SpiritsMetadataCategory, items: SpiritsMetadataRegister) -> bool:
         names: list[str] = items.name
         try:
             with open("database/sql/insert_spirits_metadata.sql") as sql_file:
@@ -158,13 +158,12 @@ class CreateSpiritsMetadata:
                 for name in names:
                     cursor.execute(
                         sql,
-                        (category, name),
+                        (category.value, name),
                     )
+                conn.commit()
         except Exception:
             print("Insert Spirits metadata to sqlite raise an error")
             return False
-        else:
-            conn.commit()
 
         return True
 
@@ -195,6 +194,24 @@ class ReadSpiritsMetadata:
                 result = [{"id": row["id"], "name": row["name"]} for row in data]
 
         return result
+
+
+class DeleteSpiritsMetadata:
+    @staticmethod
+    def remove(metadata_id: int) -> None:
+        try:
+            with sqlite_conn_orm() as session:
+                metadata: SpritsMetadata | None = session.get(
+                    SpritsMetadata, metadata_id
+                )
+                if metadata is None:
+                    raise HTTPException(404, "Metadata not found")
+
+                session.delete(metadata)
+                session.commit()
+        except Exception as e:
+            print(f"Delete Spirits metadata raise an error: {e!s}")
+            raise e
 
 
 class Users:

@@ -16,11 +16,13 @@ from fastapi import (
     status,
 )
 from fastapi.responses import ORJSONResponse
+from structlog import BoundLogger
 
 from auth import refresh_access_token, sign_in_token, verify_token
 from database.query import (
     CreateSpirits,
     CreateSpiritsMetadata,
+    DeleteSpirits,
     DeleteSpiritsMetadata,
     ReadSpirits,
     ReadSpiritsMetadata,
@@ -41,9 +43,12 @@ from model.validation import (
     is_metadata_category_valid,
     read_nullable_image,
 )
-from utils.etc import return_formatter
+from utils.etc import return_formatter, single_word_list_to_many_word_list
+from utils.logger import Logger
 
 uvloop.install()
+
+logger: BoundLogger = Logger().setup()
 
 app = FastAPI(
     title="Cocktail maker REST API",
@@ -102,6 +107,8 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
 
         jwt: dict[str, str] = sign_in_token(login.user_id, roles)
 
+        logger.info("User successfully logged in", user_id=login.user_id, roles=roles)
+
         formatted_response: ResponseFormat = await return_formatter(
             "success", 200, jwt, "User successfully logged in"
         )
@@ -134,6 +141,10 @@ async def refresh_token(request: Request) -> ORJSONResponse:
         refresh_token: str = auth_header.split(" ")[1]
         refreshed_access_token: dict[str, str] = await refresh_access_token(
             refresh_token
+        )
+
+        logger.info(
+            "Access token successfully refreshed", used_token=refreshed_access_token
         )
 
         formatted_response: ResponseFormat = await return_formatter(
@@ -222,11 +233,15 @@ async def spirits_register(  # noqa
                     "File size is too large, maximum 2MB",
                 )
 
+        listed_aroma: list[str] = single_word_list_to_many_word_list(aroma)
+        listed_taste: list[str] = single_word_list_to_many_word_list(taste)
+        listed_finish: list[str] = single_word_list_to_many_word_list(finish)
+
         # 메타데이터 값 검사
         for category, values in [
-            (SpiritsMetadataCategory.AROMA, aroma),
-            (SpiritsMetadataCategory.TASTE, taste),
-            (SpiritsMetadataCategory.FINISH, finish),
+            (SpiritsMetadataCategory.AROMA, listed_aroma),
+            (SpiritsMetadataCategory.TASTE, listed_taste),
+            (SpiritsMetadataCategory.FINISH, listed_finish),
         ]:
             if not await is_metadata_category_valid(category, values):
                 raise HTTPException(
@@ -235,9 +250,9 @@ async def spirits_register(  # noqa
 
         item: SpiritsRegister = SpiritsRegister(
             name=name,
-            aroma=aroma,
-            taste=taste,
-            finish=finish,
+            aroma=listed_aroma,
+            taste=listed_taste,
+            finish=listed_finish,
             kind=kind,
             subKind=subKind,
             amount=amount,
@@ -256,15 +271,21 @@ async def spirits_register(  # noqa
             read_sub_image4,
         ).save()
 
+        logger.info("Spirits successfully registered", name=name)
+
         formatted_response: ResponseFormat = await return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
         )
 
     except HTTPException as he:
+        logger.error(
+            "Failed to register spirits", code=he.status_code, message=he.detail
+        )
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
     except Exception as e:
+        logger.error("Failed to register spirits", error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -302,6 +323,19 @@ async def spirits_search(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
+@app.delete("/spirits/{id}", summary="주류 정보 삭제")
+async def spirits_remover(
+    id: Annotated[str, Path(...)],
+) -> ORJSONResponse:
+    await DeleteSpirits(id).remove()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, None, "Successfully delete spirits"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
 @app.post("/spirits/metadata/{category}", summary="주류 정보 메타데이터 등록")
 async def spirits_metadata_register(
     category: Annotated[
@@ -310,22 +344,15 @@ async def spirits_metadata_register(
     items: Annotated[SpiritsMetadataRegister, Body(...)],
 ) -> ORJSONResponse:
     try:
-        if not CreateSpiritsMetadata.save(category, items):
-            raise HTTPException(
-                status.HTTP_409_CONFLICT, "Metadata registration failed"
-            )
-        else:
-            formatted_response: ResponseFormat = await return_formatter(
-                "success",
-                status.HTTP_201_CREATED,
-                None,
-                "Metadata registration successful",
-            )
+        CreateSpiritsMetadata.save(category, items)
 
-    except HTTPException as he:
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
+        formatted_response: ResponseFormat = await return_formatter(
+            "success",
+            status.HTTP_201_CREATED,
+            None,
+            "Metadata registration successful",
         )
+
     except Exception as e:
         formatted_response = await return_formatter(
             "failed",
@@ -343,7 +370,9 @@ async def spirits_metadata_details(
         SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
     ],
 ) -> ORJSONResponse:
-    metadata: list[dict[str, str]] = ReadSpiritsMetadata.based_on_category(category)
+    metadata: list[dict[str, int | str]] = ReadSpiritsMetadata.based_on_category(
+        category
+    )
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, metadata, "Successfully get metadata"

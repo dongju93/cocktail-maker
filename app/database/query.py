@@ -3,12 +3,14 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import ceil
 from pathlib import Path
+from shutil import rmtree
 from typing import Any
 
 from bson import ObjectId
 from fastapi import HTTPException
 from pymongo.results import InsertOneResult
 from sqlmodel import select
+from structlog import BoundLogger
 
 from auth.encryption import Encryption
 from database.connector import mongodb_conn, sqlite_conn_orm
@@ -23,6 +25,9 @@ from model.spirits import (
 )
 from model.user import Login, PasswordAndSalt, User
 from utils.etc import save_image_to_local
+from utils.logger import Logger
+
+logger: BoundLogger = Logger().setup()
 
 
 @dataclass
@@ -39,7 +44,7 @@ class CreateSpirits:
             async with mongodb_conn("spirits") as conn:
                 result: InsertOneResult = await conn.insert_one(self.spirits_item)
         except Exception as e:
-            print("Insert Spirits object to mongodb raise an error")
+            logger.error("Save Spirits object to mongodb has an error", error=str(e))
             raise e
         else:
             spirits_id: str = str(result.inserted_id)
@@ -47,7 +52,7 @@ class CreateSpirits:
         try:
             await self._image_saver(spirits_id)
         except Exception as e:
-            print("Save Spirits images to local raise an error")
+            logger.error("Save Spirits images to local has an error", error=str(e))
             raise e
 
         return spirits_id
@@ -95,7 +100,9 @@ class ReadSpirits:
                 if result is None:
                     raise HTTPException(status_code=404, detail="Spirits not found")
         except Exception as e:
-            print("Get Spirits object from mongodb raise an error")
+            logger.error(
+                "Get single Spirits object from mongodb has an error", error=str(e)
+            )
             raise e
         else:
             result["_id"] = str(result["_id"])
@@ -122,7 +129,9 @@ class ReadSpirits:
                     .to_list(10)
                 )
         except Exception as e:
-            print("Get Spirits object from mongodb raise an error")
+            logger.error(
+                "Search Spirits objects from mongodb has an error", error=str(e)
+            )
             raise e
         else:
             for item in result:
@@ -145,6 +154,40 @@ class UpdateSpirits:
             await conn.update_one({"_id": ObjectId(id)}, {"$set": spirits_item})
 
 
+@dataclass
+class DeleteSpirits:
+    id: str
+
+    async def remove(self) -> None:
+        try:
+            await self._remove_images()
+
+            async with mongodb_conn("spirits") as conn:
+                result = await conn.delete_one({"_id": ObjectId(self.id)})
+                if result.deleted_count == 0:
+                    raise HTTPException(404, "Spirits not found")
+        except Exception as e:
+            logger.error(
+                "Delete Spirits object from mongodb has an error", error=str(e)
+            )
+            raise e
+
+    async def _remove_images(self) -> None:
+        """이미지 파일 삭제"""
+        try:
+            async with mongodb_conn("spirits") as conn:
+                result: dict[str, Any] | None = await conn.find_one(
+                    {"_id": ObjectId(self.id)}
+                )
+                if result is None:
+                    raise HTTPException(404, "Spirits not found")
+        except Exception as e:
+            logger.error("Get Spirits object from mongodb has an error", error=str(e))
+            raise e
+        else:
+            rmtree(Path(result["main_image"]).parent, ignore_errors=True)
+
+
 class CreateSpiritsMetadata:
     @staticmethod
     def save(category: SpiritsMetadataCategory, items: SpiritsMetadataRegister) -> None:
@@ -155,7 +198,7 @@ class CreateSpiritsMetadata:
                     session.add(metadata)
                 session.commit()
         except Exception as e:
-            print("Insert Spirits metadata to sqlite raise an error")
+            logger.error("Insert Spirits metadata to sqlite has an error", error=str(e))
             raise e
 
 
@@ -173,7 +216,7 @@ class ReadSpiritsMetadata:
                 )
 
         except Exception as e:
-            print("Get Spirits metadata from sqlite raise an error")
+            logger.error("Get Spirits metadata from sqlite has an error", error=str(e))
             raise e
 
         return [{"index": id, "name": name} for id, name in session.exec(statement)]
@@ -193,7 +236,7 @@ class DeleteSpiritsMetadata:
                 session.delete(metadata)
                 session.commit()
         except Exception as e:
-            print(f"Delete Spirits metadata raise an error: {e!s}")
+            logger.error("Delete Spirits metadata has an error", error=str(e))
             raise e
 
 
@@ -213,8 +256,10 @@ class Users:
 
             async with mongodb_conn("users") as conn:
                 await conn.insert_one(data)
-        except Exception:
-            print("Insert User object to mongodb raise an error")
+        except Exception as e:
+            logger.error(
+                "Insert User credentials to mongodb has an error", error=str(e)
+            )
             return False
 
         return True
@@ -235,8 +280,12 @@ class Users:
 
                 if encrypted_password_set["encrypted_password"] != result["password"]:
                     raise HTTPException(status_code=401, detail="Password is incorrect")
-        except HTTPException:
-            print("Get User object from mongodb raise an error")
+        except HTTPException as he:
+            logger.error(
+                "Get User credentials from mongodb has an error",
+                code=he.status_code,
+                message=he.detail,
+            )
             return []
 
         return result["roles"]
@@ -251,7 +300,7 @@ class Users:
                 if result is None:
                     raise HTTPException(status_code=404, detail="User not found")
         except Exception as e:
-            print("Get User object from mongodb raise an error")
+            logger.error("Get User roles from mongodb has an error", error=str(e))
             raise e
 
         return result["roles"]

@@ -13,7 +13,7 @@ class SpiritsMetadata(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     category: str
-    name: str = Field(unique=True)
+    name: str
 
 
 engine: Engine = create_engine(f"sqlite:///{SQLITE_PATH}")

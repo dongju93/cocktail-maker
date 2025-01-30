@@ -14,3 +14,7 @@ wheels/
 app/.env
 app/db.sqlite3
 uv.lock
+
+# app specific
+log/
+data/sample/

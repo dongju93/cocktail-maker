@@ -3,17 +3,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import ceil
 from pathlib import Path
-from sqlite3 import Cursor, Row
 from typing import Any
 
 from bson import ObjectId
 from fastapi import HTTPException
 from pymongo.results import InsertOneResult
+from sqlmodel import select
 
 from auth.encryption import Encryption
-from database.connector import mongodb_conn, sqlite_conn, sqlite_conn_orm
+from database.connector import mongodb_conn, sqlite_conn_orm
 from database.query_assist import spirits_search_params
-from database.table import SpritsMetadata
+from database.table import SpiritsMetadata
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     SpiritsMetadataCategory,
@@ -147,53 +147,36 @@ class UpdateSpirits:
 
 class CreateSpiritsMetadata:
     @staticmethod
-    def save(category: SpiritsMetadataCategory, items: SpiritsMetadataRegister) -> bool:
-        names: list[str] = items.name
+    def save(category: SpiritsMetadataCategory, items: SpiritsMetadataRegister) -> None:
         try:
-            with open("database/sql/insert_spirits_metadata.sql") as sql_file:
-                sql: str = sql_file.read()
-
-            with sqlite_conn() as conn:
-                cursor: Cursor = conn.cursor()
-                for name in names:
-                    cursor.execute(
-                        sql,
-                        (category.value, name),
-                    )
-                conn.commit()
-        except Exception:
+            with sqlite_conn_orm() as session:
+                for name in items.name:
+                    metadata = SpiritsMetadata(category=category.value, name=name)
+                    session.add(metadata)
+                session.commit()
+        except Exception as e:
             print("Insert Spirits metadata to sqlite raise an error")
-            return False
-
-        return True
+            raise e
 
 
 class ReadSpiritsMetadata:
     @staticmethod
     def based_on_category(
         category: SpiritsMetadataCategory,
-    ) -> list[dict[str, str]]:
+    ) -> list[dict[str, int | str]]:
         try:
-            data: list[Row] = []
-            result: list[dict[str, str]] = []
-            with open("database/sql/get_spirits_metadata.sql") as sql_file:
-                sql: str = sql_file.read()
-
-            with sqlite_conn() as conn:
-                cursor: Cursor = conn.cursor()
-                cursor.execute(
-                    sql,
-                    (category.value,),
+            with sqlite_conn_orm() as session:
+                statement = (
+                    select(SpiritsMetadata.id, SpiritsMetadata.name)
+                    .where(SpiritsMetadata.category == category.value)
+                    .order_by(SpiritsMetadata.name)
                 )
-                data = cursor.fetchall()
+
         except Exception as e:
             print("Get Spirits metadata from sqlite raise an error")
             raise e
-        finally:
-            if data != []:
-                result = [{"id": row["id"], "name": row["name"]} for row in data]
 
-        return result
+        return [{"index": id, "name": name} for id, name in session.exec(statement)]
 
 
 class DeleteSpiritsMetadata:
@@ -201,8 +184,8 @@ class DeleteSpiritsMetadata:
     def remove(metadata_id: int) -> None:
         try:
             with sqlite_conn_orm() as session:
-                metadata: SpritsMetadata | None = session.get(
-                    SpritsMetadata, metadata_id
+                metadata: SpiritsMetadata | None = session.get(
+                    SpiritsMetadata, metadata_id
                 )
                 if metadata is None:
                     raise HTTPException(404, "Metadata not found")

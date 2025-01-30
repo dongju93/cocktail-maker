@@ -8,7 +8,7 @@ load_dotenv(dotenv_path=".env")
 SQLITE_PATH: str = os.environ["SQLITE_PATH"]
 
 
-class SpritsMetadata(SQLModel, table=True):
+class SpiritsMetadata(SQLModel, table=True):
     __tablename__ = "spirits_metadata"
 
     id: int = Field(primary_key=True)

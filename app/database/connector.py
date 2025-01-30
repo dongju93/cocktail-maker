@@ -1,6 +1,5 @@
 import os
 from contextlib import asynccontextmanager, contextmanager
-from sqlite3 import Connection, Row
 from typing import AsyncGenerator, Generator  # noqa: UP035
 
 from dotenv import load_dotenv
@@ -26,23 +25,6 @@ async def mongodb_conn(collection: str) -> AsyncGenerator[AsyncIOMotorCollection
     db: AsyncIOMotorDatabase = conn["cocktail-db"]
     try:
         yield db[collection]
-    finally:
-        conn.close()
-
-
-@contextmanager
-def sqlite_conn() -> Generator[Connection, None, None]:
-    conn = Connection(
-        database=SQLITE_PATH,
-        timeout=10,
-        cached_statements=100,
-        check_same_thread=True,
-        isolation_level=None,
-        autocommit=False,
-    )
-    conn.row_factory = Row
-    try:
-        yield conn
     finally:
         conn.close()
 

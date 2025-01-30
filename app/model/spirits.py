@@ -4,8 +4,10 @@ from typing import Annotated, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
 
+from model.etc import ImageField
 
-class SpiritsRegister(TypedDict):
+
+class SpiritsRegister(TypedDict, ImageField):
     name: str
     aroma: list[str]
     taste: list[str]
@@ -17,11 +19,6 @@ class SpiritsRegister(TypedDict):
     origin_nation: str
     origin_location: str
     description: str
-    main_image: NotRequired[str]
-    sub_image_1: NotRequired[str | None]
-    sub_image_2: NotRequired[str | None]
-    sub_image_3: NotRequired[str | None]
-    sub_image_4: NotRequired[str | None]
     created_at: datetime
     updated_at: NotRequired[datetime]
 

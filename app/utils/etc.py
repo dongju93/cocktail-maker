@@ -26,3 +26,9 @@ def save_image_to_local(image_data: bytes, file_path: Path) -> None:
     image: ImageFile = Image.open(io.BytesIO(image_data))
 
     image.save(file_path, "PNG")
+
+
+def single_word_list_to_many_word_list(
+    single_word_list: list[str],
+) -> list[str]:
+    return single_word_list[0].split(",")

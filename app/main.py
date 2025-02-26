@@ -42,6 +42,8 @@ from model.validation import (
     is_image_size_too_large,
     is_metadata_category_valid,
     read_nullable_image,
+    validate_images,
+    validate_metadata,
 )
 from utils.etc import return_formatter, single_word_list_to_many_word_list
 from utils.logger import Logger
@@ -207,46 +209,18 @@ async def spirits_register(  # noqa
     """
 
     try:
-        # 이미지 파일 타입 검사
-        for image in [mainImage, subImage1, subImage2, subImage3, subImage4]:
-            if not await is_image_content_type(image):
-                raise HTTPException(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid file extension"
-                )
+        # 이미지 검증 및 변환
+        read_main_image, sub_images_bytes = await validate_images(
+            mainImage, [subImage1, subImage2, subImage3, subImage4]
+        )
+        read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
+            sub_images_bytes
+        )
 
-        read_main_image: bytes = await mainImage.read()
-        read_sub_image1: bytes | None = await read_nullable_image(subImage1)
-        read_sub_image2: bytes | None = await read_nullable_image(subImage2)
-        read_sub_image3: bytes | None = await read_nullable_image(subImage3)
-        read_sub_image4: bytes | None = await read_nullable_image(subImage4)
-
-        for image_byte in [
-            read_main_image,
-            read_sub_image1,
-            read_sub_image2,
-            read_sub_image3,
-            read_sub_image4,
-        ]:
-            if not await is_image_size_too_large(image_byte):
-                raise HTTPException(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    "File size is too large, maximum 2MB",
-                )
-
-        listed_aroma: list[str] = single_word_list_to_many_word_list(aroma)
-        listed_taste: list[str] = single_word_list_to_many_word_list(taste)
-        listed_finish: list[str] = single_word_list_to_many_word_list(finish)
-
-        # 메타데이터 값 검사
-        for category, values in [
-            (SpiritsMetadataCategory.AROMA, listed_aroma),
-            (SpiritsMetadataCategory.TASTE, listed_taste),
-            (SpiritsMetadataCategory.FINISH, listed_finish),
-        ]:
-            if not await is_metadata_category_valid(category, values):
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST, "Invalid metadata values provided"
-                )
+        # 메타데이터 검증
+        listed_aroma, listed_taste, listed_finish = await validate_metadata(
+            aroma, taste, finish
+        )
 
         item: SpiritsRegister = SpiritsRegister(
             name=name,

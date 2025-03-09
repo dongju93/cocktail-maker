@@ -33,6 +33,32 @@ class SpiritsSearch(BaseModel):
         list[str] | None,
         Field(min_length=1, description="주류의 향, 목록 중 정확한 일치"),
     ] = None
+    taste: Annotated[
+        list[str] | None,
+        Field(min_length=1, description="주류의 맛, 목록 중 정확한 일치"),
+    ] = None
+    finish: Annotated[
+        list[str] | None,
+        Field(min_length=1, description="주류의 여운, 목록 중 정확한 일치"),
+    ] = None
+    kind: Annotated[
+        str | None, Field(min_length=1, description="주류의 종류, 정확한 일치")
+    ] = None
+    subKind: Annotated[
+        str | None, Field(min_length=1, description="주류의 세부 종류, 정확한 일치")
+    ] = None
+    alcohol_min: Annotated[
+        float | None, Field(ge=0, description="주류의 최소 알코올 도수")
+    ] = None
+    alcohol_max: Annotated[
+        float | None, Field(ge=0, description="주류의 최대 알코올 도수")
+    ] = None
+    origin_nation: Annotated[
+        str | None, Field(min_length=1, description="원산지 국가, 정확한 일치")
+    ] = None
+    origin_location: Annotated[
+        str | None, Field(min_length=1, description="원산지 지역, 부분 일치")
+    ] = None
     pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
     pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
 

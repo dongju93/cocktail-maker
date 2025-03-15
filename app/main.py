@@ -31,6 +31,7 @@ from database.query import (
 from model.etc import ResponseFormat
 from model.response import SpiritsSearchResponse
 from model.spirits import (
+    Spirits,
     SpiritsMetadataCategory,
     SpiritsMetadataRegister,
     SpiritsRegister,
@@ -38,12 +39,8 @@ from model.spirits import (
 )
 from model.user import Login, User
 from model.validation import (
-    is_image_content_type,
-    is_image_size_too_large,
-    is_metadata_category_valid,
-    read_nullable_image,
-    validate_images,
-    validate_metadata,
+    ImageValidation,
+    MetadataValidation,
 )
 from utils.etc import return_formatter, single_word_list_to_many_word_list
 from utils.logger import Logger
@@ -54,7 +51,7 @@ logger: BoundLogger = Logger().setup()
 
 app = FastAPI(
     title="Cocktail maker REST API",
-    # version: major.minor.patch[-build]
+    # semantic-versioning: major.minor.patch[-build]
     version="0.1.0-dev",
     summary="칵테일 제조법과 주류 및 재료 정보 제공",
     servers=[
@@ -210,7 +207,7 @@ async def spirits_register(  # noqa
 
     try:
         # 이미지 검증 및 변환
-        read_main_image, sub_images_bytes = await validate_images(
+        read_main_image, sub_images_bytes = await ImageValidation.files(
             mainImage, [subImage1, subImage2, subImage3, subImage4]
         )
         read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
@@ -218,7 +215,7 @@ async def spirits_register(  # noqa
         )
 
         # 메타데이터 검증
-        listed_aroma, listed_taste, listed_finish = await validate_metadata(
+        listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
             aroma, taste, finish
         )
 
@@ -268,6 +265,10 @@ async def spirits_register(  # noqa
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@app.put("/spirits/{id}", summary="주류 정보 수정")
+async def spirits_update(item: Spirits): ...
 
 
 @app.get("/spirits/{name}", summary="단일 주류 정보 조회")

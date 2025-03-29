@@ -18,7 +18,7 @@ SQLITE_PATH: str = os.environ["SQLITE_PATH"]
 
 
 @asynccontextmanager
-async def mongodb_conn(collection: str) -> AsyncGenerator[AsyncIOMotorCollection, None]:
+async def mongodb_conn(collection: str) -> AsyncGenerator[AsyncIOMotorCollection]:
     conn: AsyncIOMotorClient = AsyncIOMotorClient(
         MONGODB_URL, serverSelectionTimeoutMS=5000
     )
@@ -30,7 +30,7 @@ async def mongodb_conn(collection: str) -> AsyncGenerator[AsyncIOMotorCollection
 
 
 @contextmanager
-def sqlite_conn_orm() -> Generator[Session, None, None]:
+def sqlite_conn_orm() -> Generator[Session]:
     session = Session(engine)
     try:
         yield session

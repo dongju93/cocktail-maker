@@ -54,10 +54,10 @@ target-version = "py313"
 src = ["app", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "UP", "B", "SIM", "ASYNC", "PL", "FAST", "RUF"]
+select = ["E", "F", "UP", "B", "SIM", "ASYNC", "PL", "FAST", "RUF", "ANN"]
 fixable = ["ALL"]
 unfixable = []
-ignore = ["E501"]
+ignore = ["E501", "ANN401"]
 
 [tool.ruff.format]
 quote-style = "double"

@@ -42,7 +42,7 @@ from model.validation import (
     ImageValidation,
     MetadataValidation,
 )
-from utils.etc import return_formatter, single_word_list_to_many_word_list
+from utils.etc import return_formatter
 from utils.logger import Logger
 
 uvloop.install()

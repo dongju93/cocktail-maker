@@ -2,12 +2,37 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, NotRequired, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
 from model.etc import ImageField
 
+# class Spirits(BaseModel):
+#     """
+#     주류 기본 정보 등록/수정 시 사용
+#     """
 
-class SpiritsRegister(TypedDict, ImageField):
+#     model_config = {"extra": "forbid"}
+
+#     name: Annotated[str | None, Field(min_length=1)]
+#     aroma: Annotated[
+#         list[str] | None, Field(min_items=1, item_type=constr(min_length=1))
+#     ]
+#     taste: Annotated[
+#         list[str] | None, Field(min_items=1, item_type=constr(min_length=1))
+#     ]
+#     finish: Annotated[
+#         list[str] | None, Field(min_items=1, item_type=constr(min_length=1))
+#     ]
+#     kind: Annotated[str | None, Field(min_length=1)]
+#     subKind: Annotated[str | None, Field(min_length=1)]
+#     amount: Annotated[float | None, Field(ge=0)]
+#     alcohol: Annotated[float | None, Field(ge=0)]
+#     origin_nation: Annotated[str | None, Field(min_length=1)]
+#     origin_location: Annotated[str | None, Field(min_length=1)]
+#     description: Annotated[str | None, Field(min_length=1)]
+
+
+class SpiritsDict(TypedDict, ImageField):
     name: str
     aroma: list[str]
     taste: list[str]
@@ -19,7 +44,7 @@ class SpiritsRegister(TypedDict, ImageField):
     origin_nation: str
     origin_location: str
     description: str
-    created_at: datetime
+    created_at: NotRequired[datetime]
     updated_at: NotRequired[datetime]
 
 

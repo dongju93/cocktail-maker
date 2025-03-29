@@ -31,10 +31,9 @@ from database.query import (
 from model.etc import ResponseFormat
 from model.response import SpiritsSearchResponse
 from model.spirits import (
-    Spirits,
+    SpiritsDict,
     SpiritsMetadataCategory,
     SpiritsMetadataRegister,
-    SpiritsRegister,
     SpiritsSearch,
 )
 from model.user import Login, User
@@ -61,7 +60,7 @@ app = FastAPI(
 )
 
 
-@app.post("/signUp", summary="회원가입")
+@app.post("/sign-up", summary="회원가입")
 async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
@@ -93,7 +92,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.post("/signIn", summary="로그인")
+@app.post("/sign-in", summary="로그인")
 async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환
@@ -120,7 +119,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.post("/refreshToken", summary="액세스 토큰 갱신")
+@app.post("/refresh-token", summary="액세스 토큰 갱신")
 async def refresh_token(request: Request) -> ORJSONResponse:
     """
     리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
@@ -219,7 +218,7 @@ async def spirits_register(  # noqa
             aroma, taste, finish
         )
 
-        item: SpiritsRegister = SpiritsRegister(
+        item: SpiritsDict = SpiritsDict(
             name=name,
             aroma=listed_aroma,
             taste=listed_taste,
@@ -268,7 +267,91 @@ async def spirits_register(  # noqa
 
 
 @app.put("/spirits/{id}", summary="주류 정보 수정")
-async def spirits_update(item: Spirits): ...
+async def spirits_update(
+    id: Annotated[str, Path(..., min_length=1, max_length=255)],
+    name: Annotated[str, Form(..., min_length=1)],
+    aroma: Annotated[list[str], Form(..., min_length=1)],
+    taste: Annotated[list[str], Form(..., min_length=1)],
+    finish: Annotated[list[str], Form(..., min_length=1)],
+    kind: Annotated[str, Form(...)],
+    subKind: Annotated[str, Form(...)],
+    amount: Annotated[float, Form(...)],
+    alcohol: Annotated[float, Form(...)],
+    origin_nation: Annotated[str, Form(...)],
+    origin_location: Annotated[str, Form(...)],
+    description: Annotated[str, Form(...)],
+    mainImage: Annotated[
+        UploadFile,
+        File(..., description="주류의 대표 이미지, 최대 2MB"),
+    ],
+    subImage1: Annotated[UploadFile | None, File()] = None,
+    subImage2: Annotated[UploadFile | None, File()] = None,
+    subImage3: Annotated[UploadFile | None, File()] = None,
+    subImage4: Annotated[UploadFile | None, File()] = None,
+):
+    """
+    주류 정보 수정
+    """
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, sub_images_bytes = await ImageValidation.files(
+            mainImage, [subImage1, subImage2, subImage3, subImage4]
+        )
+        read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
+            sub_images_bytes
+        )
+
+        # 메타데이터 검증
+        listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
+            aroma, taste, finish
+        )
+
+        item: SpiritsDict = SpiritsDict(
+            name=name,
+            aroma=listed_aroma,
+            taste=listed_taste,
+            finish=listed_finish,
+            kind=kind,
+            subKind=subKind,
+            amount=amount,
+            alcohol=alcohol,
+            origin_nation=origin_nation,
+            origin_location=origin_location,
+            description=description,
+            updated_at=datetime.now(tz=UTC),
+        )
+        data: str = await CreateSpirits(
+            item,
+            read_main_image,
+            read_sub_image1,
+            read_sub_image2,
+            read_sub_image3,
+            read_sub_image4,
+        ).save()
+
+        logger.info("Spirits successfully registered", name=name)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            "Failed to register spirits", code=he.status_code, message=he.detail
+        )
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        logger.error("Failed to register spirits", error=str(e))
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to register spirits: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.get("/spirits/{name}", summary="단일 주류 정보 조회")

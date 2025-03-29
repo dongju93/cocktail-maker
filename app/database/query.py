@@ -18,9 +18,9 @@ from database.query_assist import spirits_search_params
 from database.table import SpiritsMetadata
 from model.response import SpiritsSearchResponse
 from model.spirits import (
+    SpiritsDict,
     SpiritsMetadataCategory,
     SpiritsMetadataRegister,
-    SpiritsRegister,
     SpiritsSearch,
 )
 from model.user import Login, PasswordAndSalt, User
@@ -32,7 +32,7 @@ logger: BoundLogger = Logger().setup()
 
 @dataclass
 class CreateSpirits:
-    spirits_item: SpiritsRegister
+    spirits_item: SpiritsDict
     main_image: bytes
     sub_image1: bytes | None
     sub_image2: bytes | None
@@ -74,21 +74,13 @@ class CreateSpirits:
                 save_image_to_local(image_data, image_path)
                 saved_image_paths.append({"key": image_key, "path": str(image_path)})
 
-        # 수집된 경로 정보를 SpiritsRegister에 대입
+        update_image: dict[str, Any] = {}
+        # 수집된 경로 정보를 SpiritsDict에 추가
         for image_path_info in saved_image_paths:
-            match image_path_info["key"]:
-                case "main_image":
-                    self.spirits_item["main_image"] = image_path_info["path"]
-                case "sub_image_1":
-                    self.spirits_item["sub_image_1"] = image_path_info["path"]
-                case "sub_image_2":
-                    self.spirits_item["sub_image_2"] = image_path_info["path"]
-                case "sub_image_3":
-                    self.spirits_item["sub_image_3"] = image_path_info["path"]
-                case "sub_image_4":
-                    self.spirits_item["sub_image_4"] = image_path_info["path"]
+            # main_image, sub_image_1, sub_image_2, sub_image_3, sub_image_4 필드 처리
+            update_image[image_path_info["key"]] = image_path_info["path"]
 
-        await UpdateSpirits.save(spirits_id, self.spirits_item)
+        await UpdateSpirits.image_updater(spirits_id, update_image)
 
 
 class ReadSpirits:
@@ -148,10 +140,10 @@ class ReadSpirits:
 
 class UpdateSpirits:
     @staticmethod
-    async def save(id: str, spirits_item: SpiritsRegister) -> None:
-        spirits_item["updated_at"] = datetime.now(tz=UTC)
+    async def image_updater(id: str, image_data: dict[str, Any]) -> None:
+        image_data["updated_at"] = datetime.now(tz=UTC)
         async with mongodb_conn("spirits") as conn:
-            await conn.update_one({"_id": ObjectId(id)}, {"$set": spirits_item})
+            await conn.update_one({"_id": ObjectId(id)}, {"$set": image_data})
 
 
 @dataclass

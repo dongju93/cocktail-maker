@@ -11,6 +11,7 @@ from fastapi import (
     Path,
     Query,
     Request,
+    Response,
     Security,
     UploadFile,
     status,
@@ -59,9 +60,12 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 
+ACCESS_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
 
 @app.post("/sign-up", summary="회원가입")
-async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
+async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
     """
@@ -80,20 +84,38 @@ async def sign_up(user: Annotated[User, Body(...)]) -> ORJSONResponse:
 
         jwt: dict[str, str] = sign_in_token(login.user_id, roles)
 
-        formatted_response: ResponseFormat = await return_formatter(
-            "success", status.HTTP_201_CREATED, jwt, "User successfully created"
-        )
-
     except HTTPException as he:
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
+        return Response(
+            await return_formatter("failed", he.status_code, None, he.detail),
+            he.status_code,
         )
 
-    return ORJSONResponse(formatted_response, formatted_response["code"])
+    response = Response(status_code=204)
+
+    response.set_cookie(
+        key="accessToken",
+        value=jwt["accessToken"],
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # 15분 (초 단위)
+        path="/",
+        secure=True,  # HTTPS에서만 전송
+        samesite="lax",  # CSRF 방지
+    )
+    response.set_cookie(
+        key="refreshToken",
+        value=jwt["refreshToken"],
+        httponly=True,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # 7일 (초 단위)
+        path="/refresh-token",  # 사용 가능 엔드포인트 제한
+        secure=True,
+        samesite="strict",
+    )
+
+    return response
 
 
 @app.post("/sign-in", summary="로그인")
-async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
+async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환
     """
@@ -107,16 +129,34 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> ORJSONResponse:
 
         logger.info("User successfully logged in", user_id=login.user_id, roles=roles)
 
-        formatted_response: ResponseFormat = await return_formatter(
-            "success", 200, jwt, "User successfully logged in"
-        )
-
     except HTTPException as he:
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
+        return Response(
+            await return_formatter("failed", he.status_code, None, he.detail),
+            he.status_code,
         )
 
-    return ORJSONResponse(formatted_response, formatted_response["code"])
+    response = Response(status_code=204)
+
+    response.set_cookie(
+        key="accessToken",
+        value=jwt["accessToken"],
+        httponly=True,  # JavaScript 접근 불가
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        secure=True,
+        samesite="lax",
+    )
+    response.set_cookie(
+        key="refreshToken",
+        value=jwt["refreshToken"],
+        httponly=True,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/refresh-token",
+        secure=True,
+        samesite="lax",
+    )
+
+    return response
 
 
 @app.post("/refresh-token", summary="액세스 토큰 갱신")
@@ -288,7 +328,7 @@ async def spirits_update(
     subImage2: Annotated[UploadFile | None, File()] = None,
     subImage3: Annotated[UploadFile | None, File()] = None,
     subImage4: Annotated[UploadFile | None, File()] = None,
-):
+) -> ORJSONResponse:
     """
     주류 정보 수정
     """

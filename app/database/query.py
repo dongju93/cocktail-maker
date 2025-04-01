@@ -2,8 +2,6 @@ from base64 import urlsafe_b64decode
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from math import ceil
-from pathlib import Path
-from shutil import rmtree
 from typing import Any
 
 from bson import ObjectId
@@ -14,7 +12,10 @@ from structlog import BoundLogger
 
 from auth.encryption import Encryption
 from database.connector import mongodb_conn, sqlite_conn_orm
-from database.query_assist import spirits_search_params
+from database.query_assist import (
+    Images,
+    spirits_search_params,
+)
 from database.table import SpiritsMetadata
 from model.response import SpiritsSearchResponse
 from model.spirits import (
@@ -24,7 +25,6 @@ from model.spirits import (
     SpiritsSearch,
 )
 from model.user import Login, PasswordAndSalt, User
-from utils.etc import save_image_to_local
 from utils.logger import Logger
 
 logger: BoundLogger = Logger().setup()
@@ -50,37 +50,19 @@ class CreateSpirits:
             spirits_id: str = str(result.inserted_id)
 
         try:
-            await self._image_saver(spirits_id)
+            await Images().save_image_files_to_local_dir(
+                spirits_id,
+                self.main_image,
+                self.sub_image1,
+                self.sub_image2,
+                self.sub_image3,
+                self.sub_image4,
+            )
         except Exception as e:
             logger.error("Save Spirits images to local has an error", error=str(e))
             raise e
 
         return spirits_id
-
-    async def _image_saver(self, spirits_id: str) -> None:
-        saved_image_paths: list[dict[str, str]] = []
-        spirit_images: list[tuple[str, bytes | None]] = [
-            ("main_image", self.main_image),
-            ("sub_image_1", self.sub_image1),
-            ("sub_image_2", self.sub_image2),
-            ("sub_image_3", self.sub_image3),
-            ("sub_image_4", self.sub_image4),
-        ]
-
-        # 이미지 저장 및 경로 정보 수집
-        for image_key, image_data in spirit_images:
-            if image_data is not None:
-                image_path = Path(f"../data/images/{spirits_id}/{image_key}.png")
-                save_image_to_local(image_data, image_path)
-                saved_image_paths.append({"key": image_key, "path": str(image_path)})
-
-        update_image: dict[str, Any] = {}
-        # 수집된 경로 정보를 SpiritsDict에 추가
-        for image_path_info in saved_image_paths:
-            # main_image, sub_image_1, sub_image_2, sub_image_3, sub_image_4 필드 처리
-            update_image[image_path_info["key"]] = image_path_info["path"]
-
-        await UpdateSpirits.image_updater(spirits_id, update_image)
 
 
 class ReadSpirits:
@@ -138,12 +120,46 @@ class ReadSpirits:
         )
 
 
+@dataclass
 class UpdateSpirits:
-    @staticmethod
-    async def image_updater(id: str, image_data: dict[str, Any]) -> None:
-        image_data["updated_at"] = datetime.now(tz=UTC)
-        async with mongodb_conn("spirits") as conn:
-            await conn.update_one({"_id": ObjectId(id)}, {"$set": image_data})
+    document_id: str
+    spirits_item: SpiritsDict
+    main_image: bytes
+    sub_image1: bytes | None
+    sub_image2: bytes | None
+    sub_image3: bytes | None
+    sub_image4: bytes | None
+
+    async def update(self) -> None:
+        # 1. 기존 이미지 삭제
+        await Images().remove_image_files_in_local_dir(self.document_id)
+
+        # 2. 문서 업데이트
+        try:
+            async with mongodb_conn("spirits") as conn:
+                self.spirits_item["updated_at"] = datetime.now(tz=UTC)
+                result = await conn.update_one(
+                    {"_id": ObjectId(self.document_id)}, {"$set": self.spirits_item}
+                )
+                if result.matched_count == 0:
+                    raise HTTPException(status_code=404, detail="Spirits not found")
+        except Exception as e:
+            logger.error("Update Spirits object has an error", error=str(e))
+            raise e
+
+        # 3. 새 이미지 저장
+        try:
+            await Images().save_image_files_to_local_dir(
+                self.document_id,
+                self.main_image,
+                self.sub_image1,
+                self.sub_image2,
+                self.sub_image3,
+                self.sub_image4,
+            )
+        except Exception as e:
+            logger.error("Save updated Spirits images has an error", error=str(e))
+            raise e
 
 
 @dataclass
@@ -152,7 +168,7 @@ class DeleteSpirits:
 
     async def remove(self) -> None:
         try:
-            await self._remove_images()
+            await Images().remove_image_files_in_local_dir(self.id)
 
             async with mongodb_conn("spirits") as conn:
                 result = await conn.delete_one({"_id": ObjectId(self.id)})
@@ -163,21 +179,6 @@ class DeleteSpirits:
                 "Delete Spirits object from mongodb has an error", error=str(e)
             )
             raise e
-
-    async def _remove_images(self) -> None:
-        """이미지 파일 삭제"""
-        try:
-            async with mongodb_conn("spirits") as conn:
-                result: dict[str, Any] | None = await conn.find_one(
-                    {"_id": ObjectId(self.id)}
-                )
-                if result is None:
-                    raise HTTPException(404, "Spirits not found")
-        except Exception as e:
-            logger.error("Get Spirits object from mongodb has an error", error=str(e))
-            raise e
-        else:
-            rmtree(Path(result["main_image"]).parent, ignore_errors=True)
 
 
 class CreateSpiritsMetadata:

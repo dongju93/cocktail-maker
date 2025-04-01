@@ -27,6 +27,7 @@ from database.query import (
     DeleteSpiritsMetadata,
     ReadSpirits,
     ReadSpiritsMetadata,
+    UpdateSpirits,
     Users,
 )
 from model.etc import ResponseFormat
@@ -307,9 +308,9 @@ async def spirits_register(  # noqa
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.put("/spirits/{id}", summary="주류 정보 수정")
-async def spirits_update(
-    id: Annotated[str, Path(..., min_length=1, max_length=255)],
+@app.put("/spirits/{document_id}", summary="주류 정보 수정")
+async def spirits_update(  # noqa: PLR0913
+    document_id: Annotated[str, Path(..., min_length=1, max_length=255)],
     name: Annotated[str, Form(..., min_length=1)],
     aroma: Annotated[list[str], Form(..., min_length=1)],
     taste: Annotated[list[str], Form(..., min_length=1)],
@@ -361,35 +362,34 @@ async def spirits_update(
             description=description,
             updated_at=datetime.now(tz=UTC),
         )
-        data: str = await CreateSpirits(
+        await UpdateSpirits(
+            document_id,
             item,
             read_main_image,
             read_sub_image1,
             read_sub_image2,
             read_sub_image3,
             read_sub_image4,
-        ).save()
+        ).update()
 
         logger.info("Spirits successfully registered", name=name)
 
         formatted_response: ResponseFormat = await return_formatter(
-            "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
+            "success", status.HTTP_204_NO_CONTENT, None, "Successfully update spirits"
         )
 
     except HTTPException as he:
-        logger.error(
-            "Failed to register spirits", code=he.status_code, message=he.detail
-        )
+        logger.error("Failed to update spirits", code=he.status_code, message=he.detail)
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
     except Exception as e:
-        logger.error("Failed to register spirits", error=str(e))
+        logger.error("Failed to update spirits", error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
-            f"Failed to register spirits: {e!s}",
+            f"Failed to update spirits: {e!s}",
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])

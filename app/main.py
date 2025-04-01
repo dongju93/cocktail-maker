@@ -160,43 +160,44 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
 
 
 @app.post("/refresh-token", summary="액세스 토큰 갱신")
-async def refresh_token(request: Request) -> ORJSONResponse:
+async def refresh_token(request: Request) -> Response:
     """
     리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
     """
-    auth_header: str | None = request.headers.get("Authorization")
-    try:
-        if auth_header is None:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Refresh token is required"
-            )
-        if not auth_header.startswith("Bearer "):
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Invalid authorization header format"
-            )
+    refresh_token: str | None = request.cookies.get("refreshToken")
 
-        # 실제 Bearer 토큰 부분을 분리
-        refresh_token: str = auth_header.split(" ")[1]
-        refreshed_access_token: dict[str, str] = await refresh_access_token(
-            refresh_token
-        )
+    try:
+        if refresh_token is None:
+            raise HTTPException(status_code=401, detail="Refresh token is missing")
+
+        # 액세스 토큰 갱신
+        new_token: dict[str, str] = await refresh_access_token(refresh_token)
 
         logger.info(
-            "Access token successfully refreshed", used_token=refreshed_access_token
+            "Access token successfully refreshed", used_token=new_token["accessToken"]
         )
 
-        formatted_response: ResponseFormat = await return_formatter(
-            "success",
-            status.HTTP_200_OK,
-            refreshed_access_token,
-            "Successfully refresh token",
-        )
     except HTTPException as he:
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
+        return Response(
+            await return_formatter("failed", he.status_code, None, he.detail),
+            he.status_code,
         )
 
-    return ORJSONResponse(formatted_response, formatted_response["code"])
+    # 응답 생성
+    response = Response(status_code=204)
+
+    # 새 액세스 토큰으로 쿠키 갱신
+    response.set_cookie(
+        key="accessToken",
+        value=new_token["accessToken"],
+        httponly=True,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+        secure=True,
+        samesite="lax",
+    )
+
+    return response
 
 
 @app.post(

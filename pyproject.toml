@@ -71,3 +71,10 @@ line-ending = "auto"
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-local-folder = ["app"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.13"
+typeCheckingMode = "standard"
+pythonPlatform = "Linux"

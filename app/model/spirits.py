@@ -32,7 +32,7 @@ from model.etc import ImageField
 #     description: Annotated[str | None, Field(min_length=1)]
 
 
-class SpiritsDict(TypedDict, ImageField):
+class SpiritsDict(TypedDict):
     name: str
     aroma: list[str]
     taste: list[str]
@@ -46,6 +46,8 @@ class SpiritsDict(TypedDict, ImageField):
     description: str
     created_at: NotRequired[datetime]
     updated_at: NotRequired[datetime]
+    image_url: NotRequired[str]
+    thumbnail_url: NotRequired[str]
 
 
 class SpiritsSearch(BaseModel):

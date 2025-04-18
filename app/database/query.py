@@ -187,7 +187,7 @@ class CreateSpiritsMetadata:
         try:
             with sqlite_conn_orm() as session:
                 for name in items.name:
-                    metadata = SpiritsMetadata(category=category.value, name=name)
+                    metadata = SpiritsMetadata(category=category.value, name=name)  # type: ignore
                     session.add(metadata)
                 session.commit()
         except Exception as e:

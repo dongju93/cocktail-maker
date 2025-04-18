@@ -9,7 +9,7 @@ class User(BaseModel):
     user_id: Annotated[str, Field(..., min_length=4, max_length=14)]
     password: Annotated[str, Field(..., min_length=8, max_length=20)]
     email: Annotated[EmailStr, Field(...)]
-    roles: Annotated[list[str], Field(..., min_items=1, max_items=4)]
+    roles: Annotated[list[str], Field(..., min_length=1, max_length=4)]
     firstname: Annotated[str, Field(..., min_length=1, max_length=30)]
     lastname: Annotated[str, Field(..., min_length=1, max_length=30)]
     address: Annotated[str, Field(..., min_length=1, max_length=100)]

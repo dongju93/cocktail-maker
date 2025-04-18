@@ -9,7 +9,7 @@ SQLITE_PATH: str = os.environ["SQLITE_PATH"]
 
 
 class SpiritsMetadata(SQLModel, table=True):
-    __tablename__ = "spirits_metadata"
+    __tablename__ = "spirits_metadata"  # type: ignore
 
     id: int = Field(primary_key=True)
     category: str

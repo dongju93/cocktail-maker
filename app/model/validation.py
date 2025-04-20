@@ -5,6 +5,7 @@ from model.spirits import SpiritsMetadataCategory
 from utils.etc import single_word_list_to_many_word_list
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
+# // TODO: Form 필드에서 media_type 로 컨텐츠 타입 제한이 가능하다면 내부 검증 로직에서 제외
 ALLOWED_CONTENT_TYPES: set[str] = {
     "image/jpeg",
     "image/png",

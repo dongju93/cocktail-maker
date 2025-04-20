@@ -65,7 +65,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
-@app.post("/sign-up", summary="회원가입")
+@app.post("/signup", summary="회원가입")
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
@@ -115,7 +115,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@app.post("/sign-in", summary="로그인")
+@app.post("/signin", summary="로그인")
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환

@@ -19,8 +19,6 @@ class SpiritsDict(TypedDict):
     description: str
     created_at: NotRequired[datetime]
     updated_at: NotRequired[datetime]
-    image_url: NotRequired[str]
-    thumbnail_url: NotRequired[str]
 
 
 class SpiritsSearch(BaseModel):

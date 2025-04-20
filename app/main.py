@@ -514,7 +514,63 @@ async def spirits_metadata_remover(
     )
 
 
-@app.get("/version", summary="서비스 버전 확인")
+@app.post(
+    "/Liqueur",
+    summary="리큐르 정보 등록",
+    tags=["리큐르"],
+)
+async def liqueur_register(  # noqa
+    name: Annotated[str, Form(..., min_length=1, max_length=100, description="이름")],
+    brand: Annotated[
+        str, Form(..., min_length=1, max_length=100, description="브랜드")
+    ],
+    taste: Annotated[
+        list[str], Form(..., min_length=1, max_length=10, description="맛")
+    ],
+    kind: Annotated[str, Form(..., min_length=1, max_length=50, description="종류")],
+    subKind: Annotated[
+        str, Form(..., min_length=1, max_length=50, description="세부 종류")
+    ],
+    mainIngredients: Annotated[
+        list[str], Form(..., min_length=1, description="주재료")
+    ],
+    volume: Annotated[
+        float, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
+    ],
+    abv: Annotated[
+        float, Form(..., ge=0, le=100, decimal_places=2, description="도수")
+    ],
+    originNation: Annotated[
+        str, Form(..., min_length=1, max_length=50, description="원산지 국가")
+    ],
+    description: Annotated[
+        str, Form(..., min_length=1, max_length=1000, description="설명")
+    ],
+    mainImage: Annotated[
+        UploadFile,
+        File(
+            ...,
+            media_type=[  # type: ignore
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/webp",
+                "image/bmp",
+                "image/gif",
+                "image/tiff",
+            ],
+            description="대표 이미지, 최대 2MB",
+        ),
+    ],
+) -> ORJSONResponse:
+    """
+    단일 리큐르 정보 등록
+    """
+
+    ...
+
+
+@app.get("/version", summary="서비스 버전 확인", tags=["기타"])
 async def version() -> ORJSONResponse:
     formatted_response: ResponseFormat = await return_formatter(
         "success", 200, {"version": app.version}, "Successfully get version"

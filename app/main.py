@@ -65,7 +65,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
-@app.post("/signup", summary="회원가입")
+@app.post("/signup", summary="회원가입", tags=["인증"])
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
@@ -115,7 +115,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@app.post("/signin", summary="로그인")
+@app.post("/signin", summary="로그인", tags=["인증"])
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환
@@ -160,7 +160,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     return response
 
 
-@app.post("/refresh-token", summary="액세스 토큰 갱신")
+@app.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
 async def refresh_token(request: Request) -> Response:
     """
     리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
@@ -204,6 +204,7 @@ async def refresh_token(request: Request) -> Response:
 @app.post(
     "/spirits",
     summary="주류 정보 등록",
+    tags=["주류"],
     description="""
     <h3>[ 본문 필드 설명 ]</h3>\n
     - name: 이름
@@ -308,7 +309,7 @@ async def spirits_register(  # noqa
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.put("/spirits/{document_id}", summary="주류 정보 수정")
+@app.put("/spirits/{document_id}", summary="주류 정보 수정", tags=["주류"])
 async def spirits_update(  # noqa: PLR0913
     document_id: Annotated[str, Path(..., min_length=1, max_length=255)],
     name: Annotated[str, Form(..., min_length=1)],
@@ -395,7 +396,7 @@ async def spirits_update(  # noqa: PLR0913
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/spirits/{name}", summary="단일 주류 정보 조회")
+@app.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
@@ -408,7 +409,7 @@ async def spirits_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/spirits", summary="주류 정보 검색")
+@app.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
     _: Annotated[None, Security(verify_token(["admin", "user"]))],
@@ -422,7 +423,7 @@ async def spirits_search(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete("/spirits/{id}", summary="주류 정보 삭제")
+@app.delete("/spirits/{id}", summary="주류 정보 삭제", tags=["주류"])
 async def spirits_remover(
     id: Annotated[str, Path(...)],
 ) -> ORJSONResponse:
@@ -435,7 +436,9 @@ async def spirits_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.post("/spirits/metadata/{category}", summary="주류 정보 메타데이터 등록")
+@app.post(
+    "/spirits/metadata/{category}", summary="주류 정보 메타데이터 등록", tags=["주류"]
+)
 async def spirits_metadata_register(
     category: Annotated[
         SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
@@ -463,7 +466,9 @@ async def spirits_metadata_register(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회")
+@app.get(
+    "/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회", tags=["주류"]
+)
 async def spirits_metadata_details(
     category: Annotated[
         SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
@@ -480,7 +485,9 @@ async def spirits_metadata_details(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete("/spirits/metadata/{id}", summary="주류 정보 메타데이터 삭제")
+@app.delete(
+    "/spirits/metadata/{id}", summary="주류 정보 메타데이터 삭제", tags=["주류"]
+)
 async def spirits_metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:

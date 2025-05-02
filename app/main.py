@@ -331,7 +331,7 @@ async def spirits_update(  # noqa: PLR0913
     subImage2: Annotated[UploadFile | None, File()] = None,
     subImage3: Annotated[UploadFile | None, File()] = None,
     subImage4: Annotated[UploadFile | None, File()] = None,
-) -> ORJSONResponse:
+) -> Response:
     """
     주류 정보 수정
     """
@@ -375,15 +375,14 @@ async def spirits_update(  # noqa: PLR0913
 
         logger.info("Spirits successfully registered", name=name)
 
-        formatted_response: ResponseFormat = await return_formatter(
-            "success", status.HTTP_204_NO_CONTENT, None, "Successfully update spirits"
-        )
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except HTTPException as he:
         logger.error("Failed to update spirits", code=he.status_code, message=he.detail)
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
+        response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
         logger.error("Failed to update spirits", error=str(e))
         formatted_response = await return_formatter(
@@ -392,8 +391,9 @@ async def spirits_update(  # noqa: PLR0913
             None,
             f"Failed to update spirits: {e!s}",
         )
+        response = Response(formatted_response, formatted_response["code"])
 
-    return ORJSONResponse(formatted_response, formatted_response["code"])
+    return response
 
 
 @app.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])

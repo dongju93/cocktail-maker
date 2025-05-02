@@ -49,24 +49,24 @@ def spirits_search_params(params: SpiritsSearch) -> dict[str, Any]:
 
     # 세부 종류 검색 (정확한 일치)
     if params.subKind is not None:
-        query["subKind"] = params.subKind
+        query["sub_kind"] = params.subKind
 
     # 알코올 도수 범위 검색
     alcohol_query: dict[str, float] = {}
-    if params.alcohol_min is not None:
-        alcohol_query["$gte"] = params.alcohol_min
-    if params.alcohol_max is not None:
-        alcohol_query["$lte"] = params.alcohol_max
+    if params.minAlcohol is not None:
+        alcohol_query["$gte"] = params.minAlcohol
+    if params.maxAlcohol is not None:
+        alcohol_query["$lte"] = params.maxAlcohol
     if alcohol_query:
         query["alcohol"] = alcohol_query
 
     # 원산지 국가 검색 (정확한 일치)
-    if params.origin_nation is not None:
-        query["origin_nation"] = params.origin_nation
+    if params.originNation is not None:
+        query["origin_nation"] = params.originNation
 
     # 원산지 지역 검색 (부분 일치)
-    if params.origin_location is not None:
-        query["origin_location"] = {"$regex": params.origin_location, "$options": "i"}
+    if params.originLocation is not None:
+        query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
 
     return query
 

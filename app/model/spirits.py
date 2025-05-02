@@ -11,7 +11,7 @@ class SpiritsDict(TypedDict):
     taste: list[str]
     finish: list[str]
     kind: str
-    subKind: str
+    sub_kind: str
     amount: float
     alcohol: float
     origin_nation: str
@@ -45,16 +45,16 @@ class SpiritsSearch(BaseModel):
     subKind: Annotated[
         str | None, Field(min_length=1, description="주류의 세부 종류, 정확한 일치")
     ] = None
-    alcohol_min: Annotated[
+    minAlcohol: Annotated[
         float | None, Field(ge=0, description="주류의 최소 알코올 도수")
     ] = None
-    alcohol_max: Annotated[
+    maxAlcohol: Annotated[
         float | None, Field(ge=0, description="주류의 최대 알코올 도수")
     ] = None
-    origin_nation: Annotated[
+    originNation: Annotated[
         str | None, Field(min_length=1, description="원산지 국가, 정확한 일치")
     ] = None
-    origin_location: Annotated[
+    originLocation: Annotated[
         str | None, Field(min_length=1, description="원산지 지역, 부분 일치")
     ] = None
     pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1

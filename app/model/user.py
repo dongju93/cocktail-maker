@@ -31,14 +31,14 @@ class User(BaseModel):
 
 
 class Login(BaseModel):
-    user_id: Annotated[str, Field(..., min_length=4, max_length=14)]
+    userId: Annotated[str, Field(..., min_length=4, max_length=14)]
     password: Annotated[str, Field(..., min_length=8, max_length=20)]
 
-    @field_validator("user_id")
+    @field_validator("userId")
     @classmethod
     def user_id_alphanumeric(cls, v):
         if not v.isalnum():
-            raise ValueError("user_id must be alphanumeric")
+            raise ValueError("userId must be alphanumeric")
         return v
 
 

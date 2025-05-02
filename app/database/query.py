@@ -33,11 +33,11 @@ logger: BoundLogger = Logger().setup()
 @dataclass
 class CreateSpirits:
     spirits_item: SpiritsDict
-    main_image: bytes
-    sub_image1: bytes | None
-    sub_image2: bytes | None
-    sub_image3: bytes | None
-    sub_image4: bytes | None
+    mainImage: bytes
+    subImage1: bytes | None
+    subImage2: bytes | None
+    subImage3: bytes | None
+    subImage4: bytes | None
 
     async def save(self) -> str:
         try:
@@ -52,11 +52,11 @@ class CreateSpirits:
         try:
             await Images().save_image_files_to_local_dir(
                 spirits_id,
-                self.main_image,
-                self.sub_image1,
-                self.sub_image2,
-                self.sub_image3,
-                self.sub_image4,
+                self.mainImage,
+                self.subImage1,
+                self.subImage2,
+                self.subImage3,
+                self.subImage4,
             )
         except Exception as e:
             logger.error("Save Spirits images to local has an error", error=str(e))
@@ -262,7 +262,7 @@ class Users:
         try:
             async with mongodb_conn("users") as conn:
                 result: dict[str, Any] | None = await conn.find_one(
-                    {"user_id": login.user_id}
+                    {"user_id": login.userId}
                 )
                 if result is None:
                     raise HTTPException(status_code=404, detail="User not found")

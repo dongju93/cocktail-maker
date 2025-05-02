@@ -75,7 +75,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
             raise HTTPException(status.HTTP_409_CONFLICT, "User already exists")
 
         login = Login(
-            user_id=user.user_id,
+            userId=user.user_id,
             password=user.password,
         )
         if (roles := await Users.sign_in(login)) == []:
@@ -83,7 +83,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
 
-        jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+        jwt: dict[str, str] = sign_in_token(login.userId, roles)
 
     except HTTPException as he:
         return Response(
@@ -126,9 +126,9 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
 
-        jwt: dict[str, str] = sign_in_token(login.user_id, roles)
+        jwt: dict[str, str] = sign_in_token(login.userId, roles)
 
-        logger.info("User successfully logged in", user_id=login.user_id, roles=roles)
+        logger.info("User successfully logged in", user_id=login.userId, roles=roles)
 
     except HTTPException as he:
         return Response(
@@ -231,8 +231,8 @@ async def spirits_register(  # noqa
     subKind: Annotated[str, Form(...)],
     amount: Annotated[float, Form(...)],
     alcohol: Annotated[float, Form(...)],
-    origin_nation: Annotated[str, Form(...)],
-    origin_location: Annotated[str, Form(...)],
+    originNation: Annotated[str, Form(...)],
+    originLocation: Annotated[str, Form(...)],
     description: Annotated[str, Form(...)],
     mainImage: Annotated[
         UploadFile,
@@ -256,8 +256,8 @@ async def spirits_register(  # noqa
             sub_images_bytes
         )
 
-        # 메타데이터 검증
-        listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
+        # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
+        listed_taste, listed_aroma, listed_finish = await MetadataValidation.data(
             aroma, taste, finish
         )
 
@@ -267,11 +267,11 @@ async def spirits_register(  # noqa
             taste=listed_taste,
             finish=listed_finish,
             kind=kind,
-            subKind=subKind,
+            sub_kind=subKind,
             amount=amount,
             alcohol=alcohol,
-            origin_nation=origin_nation,
-            origin_location=origin_location,
+            origin_nation=originNation,
+            origin_location=originLocation,
             description=description,
             created_at=datetime.now(tz=UTC),
         )
@@ -320,8 +320,8 @@ async def spirits_update(  # noqa: PLR0913
     subKind: Annotated[str, Form(...)],
     amount: Annotated[float, Form(...)],
     alcohol: Annotated[float, Form(...)],
-    origin_nation: Annotated[str, Form(...)],
-    origin_location: Annotated[str, Form(...)],
+    originNation: Annotated[str, Form(...)],
+    originLocation: Annotated[str, Form(...)],
     description: Annotated[str, Form(...)],
     mainImage: Annotated[
         UploadFile,
@@ -355,11 +355,11 @@ async def spirits_update(  # noqa: PLR0913
             taste=listed_taste,
             finish=listed_finish,
             kind=kind,
-            subKind=subKind,
+            sub_kind=subKind,
             amount=amount,
             alcohol=alcohol,
-            origin_nation=origin_nation,
-            origin_location=origin_location,
+            origin_nation=originNation,
+            origin_location=originLocation,
             description=description,
             updated_at=datetime.now(tz=UTC),
         )

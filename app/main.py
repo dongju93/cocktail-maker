@@ -19,7 +19,7 @@ from fastapi import (
 from fastapi.responses import ORJSONResponse
 from structlog import BoundLogger
 
-from auth import refresh_access_token, sign_in_token, verify_token
+from auth import VerifyToken, refresh_access_token, sign_in_token
 from database.query import (
     CreateSpirits,
     CreateSpiritsMetadata,
@@ -412,7 +412,7 @@ async def spirits_detail(
 @app.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
-    _: Annotated[None, Security(verify_token(["admin", "user"]))],
+    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SpiritsSearchResponse = await ReadSpirits.search(params)
 

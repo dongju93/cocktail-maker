@@ -116,8 +116,7 @@ class PublishToken:
 
 
 class VerifyToken:
-    @staticmethod
-    def verify_access_token(required_roles: list[str]):
+    def __call__(self, required_roles: list[str]):
         def verify(
             credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],
         ):

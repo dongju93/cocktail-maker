@@ -32,9 +32,9 @@ class CreateToken:
     iat: datetime
     user_id: str
 
-    def access(self, roles: list[str], expire_min: int = 15) -> str:
+    def access(self, roles: list[str], expire_min: int = 500) -> str:
         """
-        기본 15분 유효 기간의 액세스 토큰 생성
+        기본 15분 유효 기간의 액세스 토큰 생성 (테스트 500분)
         """
         token = {
             "sub": self.user_id,

@@ -61,7 +61,7 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
+ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 

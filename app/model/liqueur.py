@@ -8,7 +8,7 @@ class LiqueurDict(TypedDict):
     taste: list[str]
     kind: str
     sub_kind: str
-    mainIngredients: list[str]
+    main_ingredients: list[str]
     volume: float
     abv: float
     origin_nation: str

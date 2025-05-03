@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from typing import Annotated, NotRequired, TypedDict
 
 from pydantic import BaseModel, Field
@@ -7,13 +6,14 @@ from pydantic import BaseModel, Field
 
 class SpiritsDict(TypedDict):
     name: str
+    # brand ?
     aroma: list[str]
     taste: list[str]
     finish: list[str]
     kind: str
     sub_kind: str
-    amount: float
-    alcohol: float
+    amount: float  # volume
+    alcohol: float  # abv
     origin_nation: str
     origin_location: str
     description: str
@@ -59,15 +59,3 @@ class SpiritsSearch(BaseModel):
     ] = None
     pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
     pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
-
-
-class SpiritsMetadataCategory(str, Enum):
-    AROMA = "aroma"
-    TASTE = "taste"
-    FINISH = "finish"
-
-
-class SpiritsMetadataRegister(BaseModel):
-    model_config = {"extra": "forbid"}
-
-    name: Annotated[list[str], Field(..., min_length=1)]

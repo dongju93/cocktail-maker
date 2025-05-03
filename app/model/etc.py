@@ -1,4 +1,9 @@
-from typing import Any, Literal, TypedDict
+from enum import Enum
+from typing import Annotated, Any, Literal, TypedDict
+
+from pydantic import BaseModel, Field
+
+METADATA_KIND = Literal["spirits", "liqueur"]
 
 
 class ResponseFormat(TypedDict):
@@ -14,3 +19,15 @@ class ImageField(TypedDict, total=False):
     sub_image_2: str
     sub_image_3: str
     sub_image_4: str
+
+
+class MetadataCategory(str, Enum):
+    AROMA = "aroma"
+    TASTE = "taste"
+    FINISH = "finish"
+
+
+class MetadataRegister(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    names: Annotated[list[str], Field(..., min_length=1)]

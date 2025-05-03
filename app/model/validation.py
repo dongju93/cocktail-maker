@@ -1,7 +1,7 @@
 from fastapi import HTTPException, UploadFile, status
 
-from database.query import ReadSpiritsMetadata
-from model.spirits import SpiritsMetadataCategory
+from database.query import Metadata
+from model.etc import METADATA_KIND, MetadataCategory
 from utils.etc import single_word_list_to_many_word_list
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
@@ -82,12 +82,13 @@ class ImageValidation:
 
 
 class MetadataValidation:
-    async def is_validated_category(
-        self, category: SpiritsMetadataCategory, user_input_metadata: list[str]
+    async def _is_validated_category(
+        self,
+        category: MetadataCategory,
+        user_input_metadata: list[str],
+        kind: METADATA_KIND,
     ) -> bool:
-        valid_metadata_list: list[dict[str, int | str]] = (
-            ReadSpiritsMetadata.based_on_category(category)
-        )
+        valid_metadata_list: list[dict[str, int | str]] = Metadata.read(category, kind)
         # // TODO: TypedDict 을 적용하여 mypy 에러 해결해야함
         valid_names: list[str] = [
             str(metadata["name"]) for metadata in valid_metadata_list
@@ -101,6 +102,7 @@ class MetadataValidation:
         aroma: list[str],
         taste: list[str],
         finish: list[str],
+        kind: METADATA_KIND,
     ) -> tuple[list[str], list[str], list[str]]:
         """
         메타데이터 값을 검증합니다.
@@ -126,11 +128,11 @@ class MetadataValidation:
 
         # 메타데이터 값 검사
         for category, values in [
-            (SpiritsMetadataCategory.AROMA, listed_aroma),
-            (SpiritsMetadataCategory.TASTE, listed_taste),
-            (SpiritsMetadataCategory.FINISH, listed_finish),
+            (MetadataCategory.AROMA, listed_aroma),
+            (MetadataCategory.TASTE, listed_taste),
+            (MetadataCategory.FINISH, listed_finish),
         ]:
-            if not await self_cls.is_validated_category(category, values):
+            if not await self_cls._is_validated_category(category, values, kind):
                 raise HTTPException(
                     status.HTTP_400_BAD_REQUEST, "Invalid metadata values provided"
                 )

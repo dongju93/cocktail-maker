@@ -8,12 +8,13 @@ load_dotenv(dotenv_path=".env")
 SQLITE_PATH: str = os.environ["SQLITE_PATH"]
 
 
-class SpiritsMetadata(SQLModel, table=True):
-    __tablename__ = "spirits_metadata"  # type: ignore
+class MetadataTable(SQLModel, table=True):
+    __tablename__ = "metadata"  # type: ignore
 
     id: int = Field(primary_key=True)
     category: str
     name: str
+    kind: str
 
 
 engine: Engine = create_engine(f"sqlite:///{SQLITE_PATH}")

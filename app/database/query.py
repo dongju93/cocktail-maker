@@ -7,7 +7,7 @@ from typing import Any
 from bson import ObjectId
 from fastapi import HTTPException
 from pymongo.results import InsertOneResult
-from sqlmodel import select
+from sqlmodel import and_, select
 from structlog import BoundLogger
 
 from auth.encryption import Encryption
@@ -16,12 +16,11 @@ from database.query_assist import (
     Images,
     spirits_search_params,
 )
-from database.table import SpiritsMetadata
+from database.table import MetadataTable
+from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     SpiritsDict,
-    SpiritsMetadataCategory,
-    SpiritsMetadataRegister,
     SpiritsSearch,
 )
 from model.user import Login, PasswordAndSalt, User
@@ -181,31 +180,41 @@ class DeleteSpirits:
             raise e
 
 
-class CreateSpiritsMetadata:
+class Metadata:
     @staticmethod
-    def save(category: SpiritsMetadataCategory, items: SpiritsMetadataRegister) -> None:
+    def create(
+        category: MetadataCategory,
+        items: MetadataRegister,
+        kind: METADATA_KIND,
+    ) -> None:
         try:
             with sqlite_conn_orm() as session:
-                for name in items.name:
-                    metadata = SpiritsMetadata(category=category.value, name=name)  # type: ignore
+                for name in items.names:
+                    metadata = MetadataTable(
+                        category=category.value, name=name, kind=kind
+                    )  # type: ignore
                     session.add(metadata)
                 session.commit()
         except Exception as e:
             logger.error("Insert Spirits metadata to sqlite has an error", error=str(e))
             raise e
 
-
-class ReadSpiritsMetadata:
     @staticmethod
-    def based_on_category(
-        category: SpiritsMetadataCategory,
+    def read(
+        category: MetadataCategory,
+        kind: METADATA_KIND,
     ) -> list[dict[str, int | str]]:
         try:
             with sqlite_conn_orm() as session:
                 statement = (
-                    select(SpiritsMetadata.id, SpiritsMetadata.name)
-                    .where(SpiritsMetadata.category == category.value)
-                    .order_by(SpiritsMetadata.name)
+                    select(MetadataTable.id, MetadataTable.name)
+                    .where(
+                        and_(
+                            MetadataTable.category == category.value,
+                            MetadataTable.kind == kind,
+                        )
+                    )
+                    .order_by(MetadataTable.name)
                 )
 
         except Exception as e:
@@ -214,15 +223,11 @@ class ReadSpiritsMetadata:
 
         return [{"index": id, "name": name} for id, name in session.exec(statement)]
 
-
-class DeleteSpiritsMetadata:
     @staticmethod
-    def remove(metadata_id: int) -> None:
+    def delete(metadata_id: int) -> None:
         try:
             with sqlite_conn_orm() as session:
-                metadata: SpiritsMetadata | None = session.get(
-                    SpiritsMetadata, metadata_id
-                )
+                metadata: MetadataTable | None = session.get(MetadataTable, metadata_id)
                 if metadata is None:
                     raise HTTPException(404, "Metadata not found")
 

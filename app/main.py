@@ -22,20 +22,17 @@ from structlog import BoundLogger
 from auth import VerifyToken, refresh_access_token, sign_in_token
 from database.query import (
     CreateSpirits,
-    CreateSpiritsMetadata,
     DeleteSpirits,
-    DeleteSpiritsMetadata,
+    Metadata,
     ReadSpirits,
-    ReadSpiritsMetadata,
     UpdateSpirits,
     Users,
 )
-from model.etc import ResponseFormat
+from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister, ResponseFormat
+from model.liqueur import LiqueurDict
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     SpiritsDict,
-    SpiritsMetadataCategory,
-    SpiritsMetadataRegister,
     SpiritsSearch,
 )
 from model.user import Login, User
@@ -258,7 +255,7 @@ async def spirits_register(  # noqa
 
         # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
         listed_taste, listed_aroma, listed_finish = await MetadataValidation.data(
-            aroma, taste, finish
+            aroma, taste, finish, "spirits"
         )
 
         item: SpiritsDict = SpiritsDict(
@@ -346,7 +343,7 @@ async def spirits_update(  # noqa: PLR0913
 
         # 메타데이터 검증
         listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
-            aroma, taste, finish
+            aroma, taste, finish, "spirits"
         )
 
         item: SpiritsDict = SpiritsDict(
@@ -437,16 +434,17 @@ async def spirits_remover(
 
 
 @app.post(
-    "/spirits/metadata/{category}", summary="주류 정보 메타데이터 등록", tags=["주류"]
+    "/metadata/{kind}/{category}",
+    summary="주류 정보 메타데이터 등록",
+    tags=["주류"],
 )
 async def spirits_metadata_register(
-    category: Annotated[
-        SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
-    ],
-    items: Annotated[SpiritsMetadataRegister, Body(...)],
+    kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
+    category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
+    items: Annotated[MetadataRegister, Body(...)],
 ) -> ORJSONResponse:
     try:
-        CreateSpiritsMetadata.save(category, items)
+        Metadata.create(category, items, kind)
 
         formatted_response: ResponseFormat = await return_formatter(
             "success",
@@ -467,16 +465,13 @@ async def spirits_metadata_register(
 
 
 @app.get(
-    "/spirits/metadata/{category}", summary="주류 정보 메타데이터 조회", tags=["주류"]
+    "/metadata/{kind}/{category}", summary="주류 정보 메타데이터 조회", tags=["주류"]
 )
 async def spirits_metadata_details(
-    category: Annotated[
-        SpiritsMetadataCategory, Path(..., description="메타데이터 카테고리")
-    ],
+    kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
+    category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
 ) -> ORJSONResponse:
-    metadata: list[dict[str, int | str]] = ReadSpiritsMetadata.based_on_category(
-        category
-    )
+    metadata: list[dict[str, int | str]] = Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, metadata, "Successfully get metadata"
@@ -485,14 +480,12 @@ async def spirits_metadata_details(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete(
-    "/spirits/metadata/{id}", summary="주류 정보 메타데이터 삭제", tags=["주류"]
-)
+@app.delete("/metadata/{id}", summary="주류 정보 메타데이터 삭제", tags=["주류"])
 async def spirits_metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
     try:
-        DeleteSpiritsMetadata.remove(id)
+        Metadata.delete(id)
         formatted_response: ResponseFormat = await return_formatter(
             "success", status.HTTP_200_OK, None, "Successfully delete metadata"
         )
@@ -566,6 +559,28 @@ async def liqueur_register(  # noqa
     """
     단일 리큐르 정보 등록
     """
+
+    # 이미지 검증 및 변환
+    read_main_image, _ = await ImageValidation.files(mainImage, [])
+
+    # 메타데이터 검증
+    # listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
+    #     taste=taste,
+    # )
+
+    item: LiqueurDict = LiqueurDict(
+        name=name,
+        brand=brand,
+        taste=taste,
+        kind=kind,
+        sub_kind=subKind,
+        main_ingredients=mainIngredients,
+        volume=volume,
+        abv=abv,
+        origin_nation=originNation,
+        description=description,
+        created_at=datetime.now(tz=UTC),
+    )
 
     ...
 

@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from structlog import BoundLogger
 
 from database.connector import mongodb_conn
+from model.etc import METADATA_KIND
 from model.spirits import SpiritsSearch
 from utils.etc import save_image_to_local
 from utils.logger import Logger
@@ -87,19 +88,22 @@ class Images:
         else:
             rmtree(Path(result["main_image"]).parent, ignore_errors=True)
 
-    async def _image_field_updater(self, id: str, image_data: dict[str, Any]) -> None:
+    async def _image_field_updater(
+        self, collection_name: METADATA_KIND, id: str, image_data: dict[str, Any]
+    ) -> None:
         image_data["updated_at"] = datetime.now(tz=UTC)
-        async with mongodb_conn("spirits") as conn:
+        async with mongodb_conn(collection_name) as conn:
             await conn.update_one({"_id": ObjectId(id)}, {"$set": image_data})
 
     async def save_image_files_to_local_dir(  # noqa: PLR0913
         self,
-        spirits_id: str,
-        main_image: bytes | None,
-        sub_image1: bytes | None,
-        sub_image2: bytes | None,
-        sub_image3: bytes | None,
-        sub_image4: bytes | None,
+        document_id: str,
+        collection_name: METADATA_KIND,
+        main_image: bytes | None = None,
+        sub_image1: bytes | None = None,
+        sub_image2: bytes | None = None,
+        sub_image3: bytes | None = None,
+        sub_image4: bytes | None = None,
     ) -> None:
         saved_image_paths: list[dict[str, str]] = []
         spirit_images: list[tuple[str, bytes | None]] = [
@@ -113,14 +117,14 @@ class Images:
         # 이미지 저장 및 경로 정보 수집
         for image_key, image_data in spirit_images:
             if image_data is not None:
-                image_path = Path(f"../data/images/{spirits_id}/{image_key}.png")
+                image_path = Path(f"../data/images/{document_id}/{image_key}.png")
                 save_image_to_local(image_data, image_path)
                 saved_image_paths.append({"key": image_key, "path": str(image_path)})
 
         update_image: dict[str, Any] = {}
-        # 수집된 경로 정보를 SpiritsDict에 추가
+        # 수집된 경로 정보를 Dict에 추가
         for image_path_info in saved_image_paths:
             # main_image, sub_image_1, sub_image_2, sub_image_3, sub_image_4 필드 처리
             update_image[image_path_info["key"]] = image_path_info["path"]
 
-        await self._image_field_updater(spirits_id, update_image)
+        await self._image_field_updater(collection_name, document_id, update_image)

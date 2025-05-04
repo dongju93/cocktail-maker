@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated, Any
 
 import uvloop
@@ -21,6 +22,7 @@ from structlog import BoundLogger
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
 from database.query import (
+    CreateLiqueur,
     CreateSpirits,
     DeleteSpirits,
     Metadata,
@@ -254,9 +256,12 @@ async def spirits_register(  # noqa
         )
 
         # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
-        listed_taste, listed_aroma, listed_finish = await MetadataValidation.data(
-            aroma, taste, finish, "spirits"
-        )
+        listed_taste, listed_aroma, listed_finish = MetadataValidation(
+            "spirits",
+            taste,
+            aroma,
+            finish,
+        )()
 
         item: SpiritsDict = SpiritsDict(
             name=name,
@@ -342,9 +347,9 @@ async def spirits_update(  # noqa: PLR0913
         )
 
         # 메타데이터 검증
-        listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
-            aroma, taste, finish, "spirits"
-        )
+        listed_taste, listed_aroma, listed_finish = MetadataValidation(
+            "spirits", taste, aroma, finish
+        )()
 
         item: SpiritsDict = SpiritsDict(
             name=name,
@@ -508,33 +513,64 @@ async def spirits_metadata_remover(
 
 
 @app.post(
-    "/Liqueur",
+    "/liqueur",
     summary="리큐르 정보 등록",
     tags=["리큐르"],
 )
 async def liqueur_register(  # noqa
-    name: Annotated[str, Form(..., min_length=1, max_length=100, description="이름")],
+    name: Annotated[
+        str,
+        Form(
+            ..., min_length=1, max_length=100, regex="^[가-힣\\s]+$", description="이름"
+        ),
+    ],
     brand: Annotated[
-        str, Form(..., min_length=1, max_length=100, description="브랜드")
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=100,
+            regex="^[가-힣\\s]+$",
+            description="브랜드",
+        ),
     ],
     taste: Annotated[
         list[str], Form(..., min_length=1, max_length=10, description="맛")
     ],
-    kind: Annotated[str, Form(..., min_length=1, max_length=50, description="종류")],
+    kind: Annotated[
+        str,
+        Form(
+            ..., min_length=1, max_length=50, regex="^[가-힣\\s]+$", description="종류"
+        ),
+    ],
     subKind: Annotated[
-        str, Form(..., min_length=1, max_length=50, description="세부 종류")
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            regex="^[가-힣\\s]+$",
+            description="세부 종류",
+        ),
     ],
     mainIngredients: Annotated[
         list[str], Form(..., min_length=1, description="주재료")
     ],
     volume: Annotated[
-        float, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
+        Decimal, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
     ],
     abv: Annotated[
-        float, Form(..., ge=0, le=100, decimal_places=2, description="도수")
+        Decimal, Form(..., ge=0, le=100, decimal_places=2, description="도수")
     ],
     originNation: Annotated[
-        str, Form(..., min_length=1, max_length=50, description="원산지 국가")
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            regex="^[가-힣\\s]+$",
+            description="원산지 국가",
+        ),
     ],
     description: Annotated[
         str, Form(..., min_length=1, max_length=1000, description="설명")
@@ -559,30 +595,55 @@ async def liqueur_register(  # noqa
     """
     단일 리큐르 정보 등록
     """
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, _ = await ImageValidation.files(mainImage, [])
 
-    # 이미지 검증 및 변환
-    read_main_image, _ = await ImageValidation.files(mainImage, [])
+        # 메타데이터 검증
+        listed_taste, _, _ = MetadataValidation("liqueur", taste)()
 
-    # 메타데이터 검증
-    # listed_aroma, listed_taste, listed_finish = await MetadataValidation.data(
-    #     taste=taste,
-    # )
+        item: LiqueurDict = LiqueurDict(
+            name=name,
+            brand=brand,
+            taste=listed_taste,
+            kind=kind,
+            sub_kind=subKind,
+            main_ingredients=mainIngredients,
+            volume=float(volume),
+            abv=float(abv),
+            origin_nation=originNation,
+            description=description,
+            created_at=datetime.now(tz=UTC),
+        )
 
-    item: LiqueurDict = LiqueurDict(
-        name=name,
-        brand=brand,
-        taste=taste,
-        kind=kind,
-        sub_kind=subKind,
-        main_ingredients=mainIngredients,
-        volume=volume,
-        abv=abv,
-        origin_nation=originNation,
-        description=description,
-        created_at=datetime.now(tz=UTC),
-    )
+        data: str = await CreateLiqueur(
+            item,
+            read_main_image,
+        ).save()
 
-    ...
+        logger.info("Spirits successfully registered", name=name)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            "Failed to register spirits", code=he.status_code, message=he.detail
+        )
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        logger.error("Failed to register spirits", error=str(e))
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to register spirits: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @app.get("/version", summary="서비스 버전 확인", tags=["기타"])

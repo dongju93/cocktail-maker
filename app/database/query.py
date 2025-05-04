@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from database.query_assist import (
 )
 from database.table import MetadataTable
 from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
+from model.liqueur import LiqueurDict
 from model.response import SpiritsSearchResponse
 from model.spirits import (
     SpiritsDict,
@@ -51,6 +53,7 @@ class CreateSpirits:
         try:
             await Images().save_image_files_to_local_dir(
                 spirits_id,
+                "spirits",
                 self.mainImage,
                 self.subImage1,
                 self.subImage2,
@@ -117,6 +120,65 @@ class ReadSpirits:
             currentPageSize=len(result),
             items=result,
         )
+
+
+class CreateDocument(ABC):
+    async def save(self) -> str:
+        collection_name: str = ""
+
+        try:
+            collection_name: str = self.get_collection_name()
+            document: dict[str, Any] = self.get_document()
+
+            async with mongodb_conn(collection_name) as conn:
+                result: InsertOneResult = await conn.insert_one(document)
+        except Exception as e:
+            logger.error(
+                f"Save {collection_name} object to mongodb has an error",
+                error=str(e),
+            )
+            raise e
+        else:
+            document_id: str = str(result.inserted_id)
+
+        return document_id
+
+    @abstractmethod
+    def get_collection_name(self) -> str:
+        """컬랙션 이름"""
+        pass
+
+    @abstractmethod
+    def get_document(self) -> Any:
+        """문서, TypedDict"""
+        pass
+
+
+@dataclass
+class CreateLiqueur(CreateDocument):
+    liqueur_item: LiqueurDict
+    mainImage: bytes
+
+    async def save(self) -> str:
+        document_id: str = await super().save()
+
+        try:
+            await Images().save_image_files_to_local_dir(
+                document_id, "liqueur", self.mainImage
+            )
+        except Exception as e:
+            logger.error(
+                f"Save liqueur images to local has an error: {str(object=e)}",
+            )
+            raise e
+
+        return document_id
+
+    def get_collection_name(self) -> str:
+        return "liqueur"
+
+    def get_document(self) -> LiqueurDict:
+        return self.liqueur_item
 
 
 @dataclass

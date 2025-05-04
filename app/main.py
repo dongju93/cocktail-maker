@@ -8,6 +8,7 @@ from fastapi import (
     FastAPI,
     File,
     Form,
+    Header,
     HTTPException,
     Path,
     Query,
@@ -98,7 +99,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
         httponly=True,
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # 15분 (초 단위)
         path="/",
-        secure=True,  # HTTPS에서만 전송
+        secure=True,  # HTTPS에서만 전송, Reverse Proxy 환경에서 'X-Forwarded-Proto' Header 추가 필요
         samesite="lax",  # CSRF 방지
     )
     response.set_cookie(
@@ -440,8 +441,8 @@ async def spirits_remover(
 
 @app.post(
     "/metadata/{kind}/{category}",
-    summary="주류 정보 메타데이터 등록",
-    tags=["주류"],
+    summary="메타데이터 등록",
+    tags=["메타데이터"],
 )
 async def spirits_metadata_register(
     kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
@@ -475,7 +476,16 @@ async def spirits_metadata_register(
 async def spirits_metadata_details(
     kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
+    # Header 표준 값
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    date: Annotated[str | None, Header(alias="Date")] = None,
+    if_modified_since: Annotated[str | None, Header(alias="If-Modified-Since")] = None,
+    forwarded: Annotated[str | None, Header(alias="Forwarded")] = None,
 ) -> ORJSONResponse:
+    print(f"authorization: {authorization}")
+    print("date: ", date)
+    print("if_modified_since: ", if_modified_since)
+    print("forwarded: ", forwarded)
     metadata: list[dict[str, int | str]] = Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = await return_formatter(

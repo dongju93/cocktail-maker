@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from fastapi import HTTPException, UploadFile, status
 
 from database.query import Metadata
@@ -81,14 +83,21 @@ class ImageValidation:
         return main_image_bytes, sub_images_bytes
 
 
+@dataclass
 class MetadataValidation:
-    async def _is_validated_category(
+    kind: METADATA_KIND
+    taste: list[str]
+    aroma: list[str] | None = None
+    finish: list[str] | None = None
+
+    def _is_validated_category(
         self,
         category: MetadataCategory,
         user_input_metadata: list[str],
-        kind: METADATA_KIND,
     ) -> bool:
-        valid_metadata_list: list[dict[str, int | str]] = Metadata.read(category, kind)
+        valid_metadata_list: list[dict[str, int | str]] = Metadata.read(
+            category, self.kind
+        )
         # // TODO: TypedDict 을 적용하여 mypy 에러 해결해야함
         valid_names: list[str] = [
             str(metadata["name"]) for metadata in valid_metadata_list
@@ -96,13 +105,8 @@ class MetadataValidation:
 
         return all(user_input in valid_names for user_input in user_input_metadata)
 
-    @classmethod
-    async def data(
-        cls,
-        aroma: list[str],
-        taste: list[str],
-        finish: list[str],
-        kind: METADATA_KIND,
+    def __call__(
+        self,
     ) -> tuple[list[str], list[str], list[str]]:
         """
         메타데이터 값을 검증합니다.
@@ -118,13 +122,16 @@ class MetadataValidation:
         Raises:
             HTTPException: 메타데이터 검증 실패 시 발생
         """
-
-        self_cls = cls()
+        listed_taste: list[str] = []
+        listed_aroma: list[str] = []
+        listed_finish: list[str] = []
 
         # 메타데이터 변환
-        listed_aroma = single_word_list_to_many_word_list(aroma)
-        listed_taste = single_word_list_to_many_word_list(taste)
-        listed_finish = single_word_list_to_many_word_list(finish)
+        listed_taste = single_word_list_to_many_word_list(self.taste)
+        if self.aroma is not None:
+            listed_aroma = single_word_list_to_many_word_list(self.aroma)
+        if self.finish is not None:
+            listed_finish = single_word_list_to_many_word_list(self.finish)
 
         # 메타데이터 값 검사
         for category, values in [
@@ -132,9 +139,9 @@ class MetadataValidation:
             (MetadataCategory.TASTE, listed_taste),
             (MetadataCategory.FINISH, listed_finish),
         ]:
-            if not await self_cls._is_validated_category(category, values, kind):
+            if not self._is_validated_category(category, values):
                 raise HTTPException(
                     status.HTTP_400_BAD_REQUEST, "Invalid metadata values provided"
                 )
 
-        return listed_aroma, listed_taste, listed_finish
+        return listed_taste, listed_aroma, listed_finish

@@ -1,16 +1,9 @@
 from enum import Enum
-from typing import Annotated, Any, Literal, TypedDict
+from typing import Annotated, Literal, TypedDict
 
 from pydantic import BaseModel, Field
 
 METADATA_KIND = Literal["spirits", "liqueur"]
-
-
-class ResponseFormat(TypedDict):
-    status: Literal["success", "failed"]
-    code: int
-    data: Any
-    message: str
 
 
 class ImageField(TypedDict, total=False):

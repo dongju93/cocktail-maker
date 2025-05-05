@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException, UploadFile, status
 
-from database.query import Metadata
 from model.etc import METADATA_KIND, MetadataCategory
+from query.queries import Metadata
 from utils.etc import single_word_list_to_many_word_list
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024

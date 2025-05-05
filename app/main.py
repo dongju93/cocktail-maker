@@ -444,7 +444,7 @@ async def spirits_remover(
     summary="메타데이터 등록",
     tags=["메타데이터"],
 )
-async def spirits_metadata_register(
+async def metadata_register(
     kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     items: Annotated[MetadataRegister, Body(...)],
@@ -470,22 +470,20 @@ async def spirits_metadata_register(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get(
-    "/metadata/{kind}/{category}", summary="주류 정보 메타데이터 조회", tags=["주류"]
-)
-async def spirits_metadata_details(
+@app.get("/metadata/{kind}/{category}", summary="메타데이터 조회", tags=["메타데이터"])
+async def metadata_details(
     kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     # Header 표준 값
-    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
-    date: Annotated[str | None, Header(alias="Date")] = None,
-    if_modified_since: Annotated[str | None, Header(alias="If-Modified-Since")] = None,
-    forwarded: Annotated[str | None, Header(alias="Forwarded")] = None,
+    # authorization: Annotated[str | None, Header(alias="Authorization")] = None,
+    # date: Annotated[str | None, Header(alias="Date")] = None,
+    # if_modified_since: Annotated[str | None, Header(alias="If-Modified-Since")] = None,
+    # forwarded: Annotated[str | None, Header(alias="Forwarded")] = None,
 ) -> ORJSONResponse:
-    print(f"authorization: {authorization}")
-    print("date: ", date)
-    print("if_modified_since: ", if_modified_since)
-    print("forwarded: ", forwarded)
+    # print(f"authorization: {authorization}")
+    # print("date: ", date)
+    # print("if_modified_since: ", if_modified_since)
+    # print("forwarded: ", forwarded)
     metadata: list[dict[str, int | str]] = Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = await return_formatter(
@@ -495,8 +493,8 @@ async def spirits_metadata_details(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete("/metadata/{id}", summary="주류 정보 메타데이터 삭제", tags=["주류"])
-async def spirits_metadata_remover(
+@app.delete("/metadata/{id}", summary="메타데이터 삭제", tags=["메타데이터"])
+async def metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
     try:

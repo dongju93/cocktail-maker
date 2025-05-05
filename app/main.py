@@ -8,7 +8,7 @@ from fastapi import (
     FastAPI,
     File,
     Form,
-    Header,
+    # Header,
     HTTPException,
     Path,
     Query,
@@ -22,18 +22,9 @@ from fastapi.responses import ORJSONResponse
 from structlog import BoundLogger
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
-from database.query import (
-    CreateLiqueur,
-    CreateSpirits,
-    DeleteSpirits,
-    Metadata,
-    ReadSpirits,
-    UpdateSpirits,
-    Users,
-)
-from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister, ResponseFormat
-from model.liqueur import LiqueurDict
-from model.response import SpiritsSearchResponse
+from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
+from model.liqueur import LiqueurDict, LiqueurSearch
+from model.response import ResponseFormat, SearchResponse
 from model.spirits import (
     SpiritsDict,
     SpiritsSearch,
@@ -43,6 +34,7 @@ from model.validation import (
     ImageValidation,
     MetadataValidation,
 )
+from query import queries
 from utils.etc import return_formatter
 from utils.logger import Logger
 
@@ -71,14 +63,14 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
     """
     try:
-        if not await Users.sign_up(user):
+        if not await queries.Users.sign_up(user):
             raise HTTPException(status.HTTP_409_CONFLICT, "User already exists")
 
         login = Login(
             userId=user.user_id,
             password=user.password,
         )
-        if (roles := await Users.sign_in(login)) == []:
+        if (roles := await queries.Users.sign_in(login)) == []:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
@@ -121,7 +113,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     로그인 성공 시 메시지와 함께 JWT 를 반환
     """
     try:
-        if (roles := await Users.sign_in(login)) == []:
+        if (roles := await queries.Users.sign_in(login)) == []:
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid user_id or password"
             )
@@ -278,7 +270,7 @@ async def spirits_register(  # noqa
             description=description,
             created_at=datetime.now(tz=UTC),
         )
-        data: str = await CreateSpirits(
+        data: str = await queries.CreateSpirits(
             item,
             read_main_image,
             read_sub_image1,
@@ -366,7 +358,7 @@ async def spirits_update(  # noqa: PLR0913
             description=description,
             updated_at=datetime.now(tz=UTC),
         )
-        await UpdateSpirits(
+        await queries.UpdateSpirits(
             document_id,
             item,
             read_main_image,
@@ -403,7 +395,7 @@ async def spirits_update(  # noqa: PLR0913
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
-    spirits: dict[str, Any] = await ReadSpirits.based_on_name(name)
+    spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, spirits, "Successfully get spirits"
@@ -417,7 +409,7 @@ async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
-    data: SpiritsSearchResponse = await ReadSpirits.search(params)
+    data: SearchResponse = await queries.SearchSpirits(params).query()
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", 200, data, "Successfully search spirits"
@@ -430,7 +422,7 @@ async def spirits_search(
 async def spirits_remover(
     id: Annotated[str, Path(...)],
 ) -> ORJSONResponse:
-    await DeleteSpirits(id).remove()
+    await queries.DeleteSpirits(id).remove()
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", 200, None, "Successfully delete spirits"
@@ -450,7 +442,7 @@ async def metadata_register(
     items: Annotated[MetadataRegister, Body(...)],
 ) -> ORJSONResponse:
     try:
-        Metadata.create(category, items, kind)
+        queries.Metadata.create(category, items, kind)
 
         formatted_response: ResponseFormat = await return_formatter(
             "success",
@@ -484,7 +476,7 @@ async def metadata_details(
     # print("date: ", date)
     # print("if_modified_since: ", if_modified_since)
     # print("forwarded: ", forwarded)
-    metadata: list[dict[str, int | str]] = Metadata.read(category, kind)
+    metadata: list[dict[str, int | str]] = queries.Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = await return_formatter(
         "success", status.HTTP_200_OK, metadata, "Successfully get metadata"
@@ -498,7 +490,7 @@ async def metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
     try:
-        Metadata.delete(id)
+        queries.Metadata.delete(id)
         formatted_response: ResponseFormat = await return_formatter(
             "success", status.HTTP_200_OK, None, "Successfully delete metadata"
         )
@@ -624,7 +616,7 @@ async def liqueur_register(  # noqa
             created_at=datetime.now(tz=UTC),
         )
 
-        data: str = await CreateLiqueur(
+        data: str = await queries.CreateLiqueur(
             item,
             read_main_image,
         ).save()
@@ -661,3 +653,30 @@ async def version() -> ORJSONResponse:
     )
 
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+
+
+@app.get("/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"])
+async def liqueur_detail(
+    name: Annotated[str, Path(..., description="리큐르의 이름, 정확한 일치")],
+) -> ORJSONResponse:
+    spirits: dict[str, Any] = await queries.RetrieveLiqueur(name).only_name()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", status.HTTP_200_OK, spirits, "Successfully get liqueur"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@app.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
+async def liqueur_search(
+    params: Annotated[LiqueurSearch, Query(...)],
+    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+) -> ORJSONResponse:
+    data: SearchResponse = await queries.SearchLiqueur(params).query()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, data, "Successfully search spirits"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])

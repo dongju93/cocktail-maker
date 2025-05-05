@@ -9,6 +9,7 @@ from structlog import BoundLogger
 
 from database.connector import mongodb_conn
 from model.etc import METADATA_KIND
+from model.liqueur import LiqueurSearch
 from model.spirits import SpiritsSearch
 from utils.etc import save_image_to_local
 from utils.logger import Logger
@@ -16,7 +17,7 @@ from utils.logger import Logger
 logger: BoundLogger = Logger().setup()
 
 
-def spirits_search_params(params: SpiritsSearch) -> dict[str, Any]:
+def spirits_search_query(params: SpiritsSearch) -> dict[str, Any]:
     """
     SpiritsSearch 클래스의 모든 필드를 MongoDB 쿼리로 변환합니다.
 
@@ -68,6 +69,75 @@ def spirits_search_params(params: SpiritsSearch) -> dict[str, Any]:
     # 원산지 지역 검색 (부분 일치)
     if params.originLocation is not None:
         query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
+
+    return query
+
+
+def liqueur_search_query(params: LiqueurSearch) -> dict[str, Any]:
+    """
+    LiqueurSearch 클래스의 모든 필드를 MongoDB 쿼리로 변환합니다.
+
+    Args:
+        params: 검색 파라미터
+
+    Returns:
+        MongoDB 쿼리 딕셔너리
+    """
+    query: dict[str, Any] = {}
+
+    # 이름 검색 (부분 일치)
+    if params.name is not None:
+        query["name"] = {"$regex": params.name, "$options": "i"}  # 대소문자 무시 옵션
+
+    # 브랜드 검색 (정확한 일치)
+    if params.brand is not None:
+        query["brand"] = params.brand
+
+    # 맛 검색 (목록 중 정확한 일치)
+    if params.taste is not None and len(params.taste) > 0:
+        query["taste"] = {"$all": params.taste}
+
+    # 종류 검색 (정확한 일치)
+    if params.kind is not None:
+        query["kind"] = params.kind
+
+    # 세부 종류 검색 (정확한 일치)
+    if params.subKind is not None:
+        query["sub_kind"] = params.subKind
+
+    # 주재료 검색 (목록 중 정확한 일치)
+    if params.mainIngredients is not None and len(params.mainIngredients) > 0:
+        query["main_ingredients"] = {"$all": params.mainIngredients}
+
+    # 용량 범위 검색
+    volume_query: dict[str, float] = {}
+    if params.minVolume is not None:
+        volume_query["$gte"] = params.minVolume
+    if params.maxVolume is not None:
+        volume_query["$lte"] = params.maxVolume
+    if volume_query:
+        query["volume"] = volume_query
+
+    # 알코올 도수 범위 검색
+    abv_query: dict[str, float] = {}
+    if params.minAbv is not None:
+        abv_query["$gte"] = params.minAbv
+    if params.maxAbv is not None:
+        abv_query["$lte"] = params.maxAbv
+    if abv_query:
+        query["abv"] = abv_query
+
+    # 원산지 국가 검색 (정확한 일치)
+    if params.originNation is not None:
+        query["origin_nation"] = params.originNation
+
+    # 원산지 지역 검색 (부분 일치)
+    if params.originLocation is not None:
+        query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
+
+    # 설명 검색 (부분 일치)
+    if params.description is not None:
+        query["description"] = {"$regex": params.description, "$options": "i"}
 
     return query
 

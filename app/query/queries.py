@@ -1,163 +1,36 @@
-from abc import ABC, abstractmethod
 from base64 import urlsafe_b64decode
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from math import ceil
 from typing import Any
 
 from bson import ObjectId
 from fastapi import HTTPException
-from pymongo.results import InsertOneResult
 from sqlmodel import and_, select
 from structlog import BoundLogger
 
 from auth.encryption import Encryption
 from database.connector import mongodb_conn, sqlite_conn_orm
-from database.query_assist import (
-    Images,
-    spirits_search_params,
-)
 from database.table import MetadataTable
 from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
-from model.liqueur import LiqueurDict
-from model.response import SpiritsSearchResponse
-from model.spirits import (
-    SpiritsDict,
-    SpiritsSearch,
-)
+from model.liqueur import LiqueurDict, LiqueurSearch
+from model.response import SearchResponse
+from model.spirits import SpiritsDict, SpiritsSearch
 from model.user import Login, PasswordAndSalt, User
+from query.query_child import Images, liqueur_search_query, spirits_search_query
+from query.query_parents import CreateDocument, RetrieveDocument, SearchDocument
 from utils.logger import Logger
 
 logger: BoundLogger = Logger().setup()
 
 
 @dataclass
-class CreateSpirits:
+class CreateSpirits(CreateDocument):
     spirits_item: SpiritsDict
     mainImage: bytes
     subImage1: bytes | None
     subImage2: bytes | None
     subImage3: bytes | None
     subImage4: bytes | None
-
-    async def save(self) -> str:
-        try:
-            async with mongodb_conn("spirits") as conn:
-                result: InsertOneResult = await conn.insert_one(self.spirits_item)
-        except Exception as e:
-            logger.error("Save Spirits object to mongodb has an error", error=str(e))
-            raise e
-        else:
-            spirits_id: str = str(result.inserted_id)
-
-        try:
-            await Images().save_image_files_to_local_dir(
-                spirits_id,
-                "spirits",
-                self.mainImage,
-                self.subImage1,
-                self.subImage2,
-                self.subImage3,
-                self.subImage4,
-            )
-        except Exception as e:
-            logger.error("Save Spirits images to local has an error", error=str(e))
-            raise e
-
-        return spirits_id
-
-
-class ReadSpirits:
-    @staticmethod
-    async def based_on_name(name: str) -> dict[str, Any]:
-        try:
-            async with mongodb_conn("spirits") as conn:
-                result: dict[str, Any] | None = await conn.find_one({"name": name})
-                if result is None:
-                    raise HTTPException(status_code=404, detail="Spirits not found")
-        except Exception as e:
-            logger.error(
-                "Get single Spirits object from mongodb has an error", error=str(e)
-            )
-            raise e
-        else:
-            result["_id"] = str(result["_id"])
-
-        return result
-
-    @staticmethod
-    async def search(
-        params: SpiritsSearch,
-    ) -> SpiritsSearchResponse:
-        find_query: dict[str, dict[str, str]] = spirits_search_params(params)
-        skip_count: int = (params.pageNumber - 1) * params.pageSize
-
-        try:
-            async with mongodb_conn("spirits") as conn:
-                # 총 개수 조회
-                total: int = await conn.count_documents(find_query)
-
-                result: list[dict[str, Any]] = (
-                    await conn.find(find_query)
-                    .sort("name", 1)
-                    .skip(skip_count)
-                    .limit(params.pageSize)
-                    .to_list(10)
-                )
-        except Exception as e:
-            logger.error(
-                "Search Spirits objects from mongodb has an error", error=str(e)
-            )
-            raise e
-        else:
-            for item in result:
-                item["_id"] = str(item["_id"])
-
-        return SpiritsSearchResponse(
-            totalPage=ceil(total / params.pageSize),
-            currentPage=params.pageNumber,
-            totalSize=total,
-            currentPageSize=len(result),
-            items=result,
-        )
-
-
-class CreateDocument(ABC):
-    async def save(self) -> str:
-        collection_name: str = ""
-
-        try:
-            collection_name: str = self.get_collection_name()
-            document: dict[str, Any] = self.get_document()
-
-            async with mongodb_conn(collection_name) as conn:
-                result: InsertOneResult = await conn.insert_one(document)
-        except Exception as e:
-            logger.error(
-                f"Save {collection_name} object to mongodb has an error",
-                error=str(e),
-            )
-            raise e
-        else:
-            document_id: str = str(result.inserted_id)
-
-        return document_id
-
-    @abstractmethod
-    def get_collection_name(self) -> str:
-        """컬랙션 이름"""
-        pass
-
-    @abstractmethod
-    def get_document(self) -> Any:
-        """문서, TypedDict"""
-        pass
-
-
-@dataclass
-class CreateLiqueur(CreateDocument):
-    liqueur_item: LiqueurDict
-    mainImage: bytes
 
     async def save(self) -> str:
         document_id: str = await super().save()
@@ -175,10 +48,112 @@ class CreateLiqueur(CreateDocument):
         return document_id
 
     def get_collection_name(self) -> str:
-        return "liqueur"
+        return "spirits"
+
+    def get_document(self) -> SpiritsDict:
+        return self.spirits_item
+
+
+@dataclass
+class CreateLiqueur(CreateDocument):
+    liqueur_item: LiqueurDict
+    mainImage: bytes
+    collection_name: str = "liqueur"
+
+    async def save(self) -> str:
+        document_id: str = await super().save()
+
+        try:
+            await Images().save_image_files_to_local_dir(
+                document_id, "liqueur", self.mainImage
+            )
+        except Exception as e:
+            logger.error(
+                f"Save liqueur images to local has an error: {str(object=e)}",
+            )
+            raise e
+
+        return document_id
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
 
     def get_document(self) -> LiqueurDict:
         return self.liqueur_item
+
+
+@dataclass
+class RetrieveSpirits(RetrieveDocument):
+    name: str
+    collection_name: str = "spirits"
+
+    async def only_name(self) -> dict[str, Any]:
+        document: dict[str, Any] = await super().only_name()
+
+        return document
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_name(self) -> str:
+        return self.name
+
+
+@dataclass
+class SearchSpirits(SearchDocument):
+    params: SpiritsSearch
+    collection_name: str = "spirits"
+
+    async def query(self) -> SearchResponse:
+        documents: SearchResponse = await super().query()
+
+        return documents
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_query(self) -> dict[str, Any]:
+        return spirits_search_query(self.params)
+
+    def get_params(self) -> SpiritsSearch:
+        return self.params
+
+
+@dataclass
+class RetrieveLiqueur(RetrieveDocument):
+    name: str
+    collection_name: str = "liqueur"
+
+    async def only_name(self) -> dict[str, Any]:
+        document: dict[str, Any] = await super().only_name()
+
+        return document
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_name(self) -> str:
+        return self.name
+
+
+@dataclass
+class SearchLiqueur(SearchDocument):
+    params: LiqueurSearch
+    collection_name: str = "liqueur"
+
+    async def query(self) -> SearchResponse:
+        documents: SearchResponse = await super().query()
+
+        return documents
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_query(self) -> dict[str, Any]:
+        return liqueur_search_query(self.params)
+
+    def get_params(self) -> LiqueurSearch:
+        return self.params
 
 
 @dataclass
@@ -212,6 +187,7 @@ class UpdateSpirits:
         try:
             await Images().save_image_files_to_local_dir(
                 self.document_id,
+                "spirits",
                 self.main_image,
                 self.sub_image1,
                 self.sub_image2,

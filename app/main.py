@@ -680,3 +680,136 @@ async def liqueur_search(
     )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@app.put("/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"])
+async def liqueur_update(  # noqa: PLR0913
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    name: Annotated[
+        str,
+        Form(
+            ..., min_length=1, max_length=100, regex="^[가-힣\\s]+$", description="이름"
+        ),
+    ],
+    brand: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=100,
+            regex="^[가-힣\\s]+$",
+            description="브랜드",
+        ),
+    ],
+    taste: Annotated[
+        list[str], Form(..., min_length=1, max_length=10, description="맛")
+    ],
+    kind: Annotated[
+        str,
+        Form(
+            ..., min_length=1, max_length=50, regex="^[가-힣\\s]+$", description="종류"
+        ),
+    ],
+    subKind: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            regex="^[가-힣\\s]+$",
+            description="세부 종류",
+        ),
+    ],
+    mainIngredients: Annotated[
+        list[str], Form(..., min_length=1, description="주재료")
+    ],
+    volume: Annotated[
+        Decimal, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
+    ],
+    abv: Annotated[
+        Decimal, Form(..., ge=0, le=100, decimal_places=2, description="도수")
+    ],
+    originNation: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            regex="^[가-힣\\s]+$",
+            description="원산지 국가",
+        ),
+    ],
+    description: Annotated[
+        str, Form(..., min_length=1, max_length=1000, description="설명")
+    ],
+    mainImage: Annotated[
+        UploadFile,
+        File(
+            ...,
+            media_type=[  # type: ignore
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/webp",
+                "image/bmp",
+                "image/gif",
+                "image/tiff",
+            ],
+            description="대표 이미지, 최대 2MB",
+        ),
+    ],
+) -> Response:
+    """
+    주류 정보 수정
+    """
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, _ = await ImageValidation.files(mainImage, [])
+
+        # 메타데이터 검증
+        listed_taste, _, _ = MetadataValidation("liqueur", taste)()
+
+        item: LiqueurDict = LiqueurDict(
+            name=name,
+            brand=brand,
+            taste=listed_taste,
+            kind=kind,
+            sub_kind=subKind,
+            main_ingredients=mainIngredients,
+            volume=float(volume),
+            abv=float(abv),
+            origin_nation=originNation,
+            description=description,
+            updated_at=datetime.now(tz=UTC),
+        )
+        # await queries.UpdateSpirits(
+        #     document_id,
+        #     item,
+        #     read_main_image,
+        #     read_sub_image1,
+        #     read_sub_image2,
+        #     read_sub_image3,
+        #     read_sub_image4,
+        # ).update()
+
+        logger.info("Liqueur successfully registered", name=name)
+
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except HTTPException as he:
+        logger.error("Failed to update spirits", code=he.status_code, message=he.detail)
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+        response = Response(formatted_response, formatted_response["code"])
+    except Exception as e:
+        logger.error("Failed to update spirits", error=str(e))
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to update spirits: {e!s}",
+        )
+        response = Response(formatted_response, formatted_response["code"])
+
+    return response

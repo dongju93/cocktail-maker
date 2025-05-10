@@ -107,7 +107,9 @@ class MetadataValidation:
 
     def __call__(
         self,
-    ) -> tuple[list[str], list[str], list[str]]:
+    ) -> tuple[
+        list[str], list[str], list[str]
+    ]:  # // TODO: empty list 를 명시할 방법 찾기
         """
         메타데이터 값을 검증합니다.
 

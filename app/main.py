@@ -517,7 +517,7 @@ async def metadata_remover(
     summary="리큐르 정보 등록",
     tags=["리큐르"],
 )
-async def liqueur_register(  # noqa
+async def liqueur_register(  # noqa: PLR0913
     name: Annotated[
         str,
         Form(

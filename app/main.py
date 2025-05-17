@@ -1,8 +1,8 @@
+from asyncio import set_event_loop_policy as set_global_asyncio_event_loop_policy
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated, Any
 
-import uvloop
 from fastapi import (
     Body,
     FastAPI,
@@ -20,6 +20,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 from structlog import BoundLogger
+from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
 from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
@@ -38,7 +39,7 @@ from query import queries
 from utils.etc import return_formatter
 from utils.logger import Logger
 
-uvloop.install()
+set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
 
 logger: BoundLogger = Logger().setup()
 
@@ -813,3 +814,27 @@ async def liqueur_update(  # noqa: PLR0913
         response = Response(formatted_response, formatted_response["code"])
 
     return response
+
+
+@app.get("/check-loop", summary="이벤트 루프 확인", tags=["기타"])
+async def check_event_loop() -> ORJSONResponse:
+    """현재 사용 중인 이벤트 루프가 asyncio인지 uvloop인지 확인합니다."""
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    loop_type = type(loop).__module__ + "." + type(loop).__name__
+    is_uvloop = "uvloop" in loop_type
+
+    loop_info = {
+        "loop_type": loop_type,
+        "is_uvloop": is_uvloop,
+        "policy_type": type(asyncio.get_event_loop_policy()).__name__,
+    }
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", status.HTTP_200_OK, loop_info, "Current event loop information"
+    )
+
+    logger.info("Event loop check", **loop_info)
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])

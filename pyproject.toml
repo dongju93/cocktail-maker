@@ -73,6 +73,16 @@ line-ending = "auto"
 combine-as-imports = true
 known-local-folder = ["app"]
 
+[tool.ty.src] # ty is alpha state, just trying it out
+root = "./app"
+
+[tool.ty.rules]
+unused-ignore-comment = "warn"
+redundant-cast = "ignore"
+possibly-unbound-attribute = "error"
+possibly-unbound-import = "error"
+index-out-of-bounds = "ignore"
+
 [tool.pyright]
 venvPath = "."
 venv = ".venv"

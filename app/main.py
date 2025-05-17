@@ -832,25 +832,13 @@ async def liqueur_update(  # noqa: PLR0913
     return response
 
 
-@app.get("/check-loop", summary="이벤트 루프 확인", tags=["기타"])
-async def check_event_loop() -> ORJSONResponse:
-    """현재 사용 중인 이벤트 루프가 asyncio인지 uvloop인지 확인합니다."""
-    import asyncio
-
-    loop = asyncio.get_event_loop()
-    loop_type = type(loop).__module__ + "." + type(loop).__name__
-    is_uvloop = "uvloop" in loop_type
-
-    loop_info = {
-        "loop_type": loop_type,
-        "is_uvloop": is_uvloop,
-        "policy_type": type(asyncio.get_event_loop_policy()).__name__,
-    }
-
+@app.get("/health", summary="상태 확인", tags=["기타"])
+async def health_check() -> ORJSONResponse:
+    """
+    서비스 상태 확인
+    """
     formatted_response: ResponseFormat = await return_formatter(
-        "success", status.HTTP_200_OK, loop_info, "Current event loop information"
+        "success", 200, {"status": "ok"}, "Service is running"
     )
 
-    logger.info("Event loop check", **loop_info)
-
-    return ORJSONResponse(formatted_response, formatted_response["code"])
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)

@@ -12,12 +12,17 @@ wheels/
 # Virtual environments
 .venv
 app/.env
-app/db.sqlite3
 uv.lock
 
 # app specific
 log/
 data/sample/
+app/db.sqlite3
 
 # github-codeql
 codeql/
+
+# cache
+.pytest_cache/
+.ruff_cache/
+.coverage

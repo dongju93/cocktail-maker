@@ -522,7 +522,11 @@ async def liqueur_register(  # noqa: PLR0913
     name: Annotated[
         str,
         Form(
-            ..., min_length=1, max_length=100, regex="^[가-힣\\s]+$", description="이름"
+            ...,
+            min_length=1,
+            max_length=100,
+            pattern="^[가-힣\\s]+$",
+            description="이름",
         ),
     ],
     brand: Annotated[
@@ -531,7 +535,7 @@ async def liqueur_register(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=100,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="브랜드",
         ),
     ],
@@ -541,7 +545,11 @@ async def liqueur_register(  # noqa: PLR0913
     kind: Annotated[
         str,
         Form(
-            ..., min_length=1, max_length=50, regex="^[가-힣\\s]+$", description="종류"
+            ...,
+            min_length=1,
+            max_length=50,
+            pattern="^[가-힣\\s]+$",
+            description="종류",
         ),
     ],
     subKind: Annotated[
@@ -550,7 +558,7 @@ async def liqueur_register(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=50,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="세부 종류",
         ),
     ],
@@ -569,7 +577,7 @@ async def liqueur_register(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=50,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="원산지 국가",
         ),
     ],
@@ -689,7 +697,11 @@ async def liqueur_update(  # noqa: PLR0913
     name: Annotated[
         str,
         Form(
-            ..., min_length=1, max_length=100, regex="^[가-힣\\s]+$", description="이름"
+            ...,
+            min_length=1,
+            max_length=100,
+            pattern="^[가-힣\\s]+$",
+            description="이름",
         ),
     ],
     brand: Annotated[
@@ -698,7 +710,7 @@ async def liqueur_update(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=100,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="브랜드",
         ),
     ],
@@ -708,7 +720,11 @@ async def liqueur_update(  # noqa: PLR0913
     kind: Annotated[
         str,
         Form(
-            ..., min_length=1, max_length=50, regex="^[가-힣\\s]+$", description="종류"
+            ...,
+            min_length=1,
+            max_length=50,
+            pattern="^[가-힣\\s]+$",
+            description="종류",
         ),
     ],
     subKind: Annotated[
@@ -717,7 +733,7 @@ async def liqueur_update(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=50,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="세부 종류",
         ),
     ],
@@ -736,7 +752,7 @@ async def liqueur_update(  # noqa: PLR0913
             ...,
             min_length=1,
             max_length=50,
-            regex="^[가-힣\\s]+$",
+            pattern="^[가-힣\\s]+$",
             description="원산지 국가",
         ),
     ],

@@ -92,6 +92,33 @@ class CreateLiqueur(CreateDocument):
 
 
 @dataclass
+class CreateIngredient(CreateDocument):
+    ingredient_item: IngredientDict
+    mainImage: bytes
+
+    async def save(self) -> str:
+        document_id: str = await super().save()
+
+        try:
+            await Images().save_image_files_to_local_dir(
+                document_id, "ingredient", self.mainImage
+            )
+        except Exception as e:
+            logger.error(
+                f"Save ingredient images to local has an error: {str(object=e)}",
+            )
+            raise e
+
+        return document_id
+
+    def get_collection_name(self) -> str:
+        return "ingredient"
+
+    def get_document(self) -> IngredientDict:
+        return self.ingredient_item
+
+
+@dataclass
 class RetrieveSpirits(RetrieveDocument):
     name: str
     collection_name: str = "spirits"

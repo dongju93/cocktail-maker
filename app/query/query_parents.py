@@ -8,6 +8,7 @@ from structlog import BoundLogger
 
 from database import mongodb_conn
 from model import (
+    IngredientDict,
     LiqueurDict,
     LiqueurSearch,
     SearchResponse,
@@ -25,7 +26,7 @@ class CreateDocument(ABC):
 
         try:
             collection_name: str = self.get_collection_name()
-            document: SpiritsDict | LiqueurDict = self.get_document()
+            document: SpiritsDict | LiqueurDict | IngredientDict = self.get_document()
 
             async with mongodb_conn(collection_name) as conn:
                 result: InsertOneResult = await conn.insert_one(document)
@@ -46,7 +47,7 @@ class CreateDocument(ABC):
         pass
 
     @abstractmethod
-    def get_document(self) -> SpiritsDict | LiqueurDict:
+    def get_document(self) -> SpiritsDict | LiqueurDict | IngredientDict:
         """문서, TypedDict"""
         pass
 

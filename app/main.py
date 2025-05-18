@@ -851,3 +851,102 @@ async def liqueur_update(  # noqa: PLR0913
         response = Response(formatted_response, formatted_response["code"])
 
     return response
+
+
+@cocktail_maker.post(
+    "/ingredient",
+    summary="기타 재료 정보 등록",
+    tags=["기타 재료"],
+)
+async def ingredient_register(
+    name: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=100,
+            pattern="^[가-힣\\s]+$",
+            description="이름",
+        ),
+    ],
+    kind: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            pattern="^[가-힣\\s]+$",
+            description="종류",
+        ),
+    ],
+    description: Annotated[
+        str, Form(..., min_length=1, max_length=1000, description="설명")
+    ],
+    mainImage: Annotated[
+        UploadFile,
+        File(
+            ...,
+            media_type=[  # type: ignore
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/webp",
+                "image/bmp",
+                "image/gif",
+                "image/tiff",
+            ],
+            description="대표 이미지, 최대 2MB",
+        ),
+    ],
+    brand: Annotated[
+        list[str] | None,
+        Form(
+            min_length=1,
+            max_length=10,
+            description="브랜드",
+        ),
+    ] = None,
+) -> ORJSONResponse:
+    """
+    단일 기타 재료 정보 등록
+    """
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, _ = await ImageValidation.files(mainImage, [])
+
+        item: IngredientDict = IngredientDict(
+            name=name,
+            brand=brand,
+            kind=kind,
+            description=description,
+            created_at=datetime.now(tz=UTC),
+        )
+
+        data: str = await queries.CreateIngredient(
+            item,
+            read_main_image,
+        ).save()
+
+        logger.info("Ingredient successfully registered", name=name)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", status.HTTP_201_CREATED, data, "Successfully register ingredient"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            "Failed to register ingredient", code=he.status_code, message=he.detail
+        )
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        logger.error("Failed to register ingredient", error=str(e))
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"Failed to register ingredient: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])

@@ -18,6 +18,7 @@ uv.lock
 log/
 data/sample/
 app/db.sqlite3
+compose/nginx/certs/
 
 # github-codeql
 codeql/

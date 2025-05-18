@@ -1,6 +1,6 @@
-FROM python:3.13.2-alpine
+FROM python:3.13.3-alpine
 
-WORKDIR /maker
+WORKDIR /cocktail-maker
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -12,17 +12,17 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-COPY . /maker
+COPY . /cocktail-maker
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-    
-RUN rm -f /maker/uv.lock /maker/pyproject.toml
 
-ENV PATH="/maker/.venv/bin:$PATH"
+RUN rm -f /cocktail-maker/uv.lock /cocktail-maker/pyproject.toml
 
-WORKDIR /maker/app
+ENV PATH="/cocktail-maker/.venv/bin:$PATH"
+
+WORKDIR /cocktail-maker/app
 
 ENTRYPOINT []
 
-CMD ["fastapi", "run"]
+CMD ["gunicorn", "main:app", "--config", "gunicorn.conf.py"]

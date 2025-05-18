@@ -2,9 +2,9 @@ from fastapi import status
 from fastapi.testclient import TestClient
 from httpx import Response
 
-from conftest import cocktail_maker
+from conftest import api_service
 
-client = TestClient(cocktail_maker)
+client = TestClient(api_service)
 
 
 def test_health_check_success() -> None:

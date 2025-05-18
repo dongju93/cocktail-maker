@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from PIL.ImageFile import Image, ImageFile
 
-from model.response import ResponseFormat
+from model import ResponseFormat
 
 
 async def return_formatter(

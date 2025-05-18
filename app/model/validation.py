@@ -2,9 +2,10 @@ from dataclasses import dataclass
 
 from fastapi import HTTPException, UploadFile, status
 
-from model.etc import METADATA_KIND, MetadataCategory
 from query.queries import Metadata
-from utils.etc import single_word_list_to_many_word_list
+from utils import single_word_list_to_many_word_list
+
+from .etc import METADATA_KIND, MetadataCategory
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
 # // TODO: Form 필드에서 media_type 로 컨텐츠 타입 제한이 가능하다면 내부 검증 로직에서 제외

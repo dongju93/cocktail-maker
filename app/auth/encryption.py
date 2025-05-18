@@ -5,7 +5,7 @@ from secrets import token_bytes
 from cryptography.hazmat.primitives.hashes import SHA3_256
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
-from model.user import PasswordAndSalt
+from model import PasswordAndSalt
 
 
 @dataclass

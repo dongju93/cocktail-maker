@@ -6,14 +6,15 @@ from fastapi import HTTPException
 from pymongo.results import InsertOneResult
 from structlog import BoundLogger
 
-from database.connector import mongodb_conn
-from model.liqueur import LiqueurDict, LiqueurSearch
-from model.response import SearchResponse
-from model.spirits import (
+from database import mongodb_conn
+from model import (
+    LiqueurDict,
+    LiqueurSearch,
+    SearchResponse,
     SpiritsDict,
     SpiritsSearch,
 )
-from utils.logger import Logger
+from utils import Logger
 
 logger: BoundLogger = Logger().setup()
 

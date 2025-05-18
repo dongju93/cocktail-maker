@@ -8,17 +8,25 @@ from fastapi import HTTPException
 from sqlmodel import and_, select
 from structlog import BoundLogger
 
-from auth.encryption import Encryption
-from database.connector import mongodb_conn, sqlite_conn_orm
-from database.table import MetadataTable
-from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
-from model.liqueur import LiqueurDict, LiqueurSearch
-from model.response import SearchResponse
-from model.spirits import SpiritsDict, SpiritsSearch
-from model.user import Login, PasswordAndSalt, User
-from query.query_child import Images, liqueur_search_query, spirits_search_query
-from query.query_parents import CreateDocument, RetrieveDocument, SearchDocument
-from utils.logger import Logger
+from auth import Encryption
+from database import MetadataTable, mongodb_conn, sqlite_conn_orm
+from model import (
+    METADATA_KIND,
+    LiqueurDict,
+    LiqueurSearch,
+    Login,
+    MetadataCategory,
+    MetadataRegister,
+    PasswordAndSalt,
+    SearchResponse,
+    SpiritsDict,
+    SpiritsSearch,
+    User,
+)
+from utils import Logger
+
+from .query_child import Images, liqueur_search_query, spirits_search_query
+from .query_parents import CreateDocument, RetrieveDocument, SearchDocument
 
 logger: BoundLogger = Logger().setup()
 

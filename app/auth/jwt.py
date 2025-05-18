@@ -10,9 +10,10 @@ from fastapi import HTTPException, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 
-from auth.roles import check_roles
 from query.queries import Users
-from utils.times import datetime_now, unix_to_datetime
+from utils import datetime_now, unix_to_datetime
+
+from .roles import check_roles
 
 load_dotenv(dotenv_path=".env")
 

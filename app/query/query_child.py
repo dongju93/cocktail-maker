@@ -7,12 +7,9 @@ from bson import ObjectId
 from fastapi import HTTPException
 from structlog import BoundLogger
 
-from database.connector import mongodb_conn
-from model.etc import METADATA_KIND
-from model.liqueur import LiqueurSearch
-from model.spirits import SpiritsSearch
-from utils.etc import save_image_to_local
-from utils.logger import Logger
+from database import mongodb_conn
+from model import METADATA_KIND, LiqueurSearch, SpiritsSearch
+from utils import Logger, save_image_to_local
 
 logger: BoundLogger = Logger().setup()
 

@@ -23,21 +23,25 @@ from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
-from model.etc import METADATA_KIND, MetadataCategory, MetadataRegister
-from model.liqueur import LiqueurDict, LiqueurSearch
-from model.response import ResponseFormat, SearchResponse
-from model.spirits import (
+from model import (
+    METADATA_KIND,
+    LiqueurDict,
+    LiqueurSearch,
+    Login,
+    MetadataCategory,
+    MetadataRegister,
+    ResponseFormat,
+    SearchResponse,
     SpiritsDict,
     SpiritsSearch,
+    User,
 )
-from model.user import Login, User
 from model.validation import (
     ImageValidation,
     MetadataValidation,
 )
 from query import queries
-from utils.etc import return_formatter
-from utils.logger import Logger
+from utils import Logger, return_formatter
 
 set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
 
@@ -660,7 +664,19 @@ async def liqueur_register(  # noqa: PLR0913
 @cocktail_maker.get("/version", summary="서비스 버전 확인", tags=["기타"])
 async def version() -> ORJSONResponse:
     formatted_response: ResponseFormat = await return_formatter(
-        "success", 200, {"version": app.version}, "Successfully get version"
+        "success", 200, {"version": cocktail_maker.version}, "Successfully get version"
+    )
+
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+
+
+@cocktail_maker.get("/health", summary="상태 확인", tags=["기타"])
+async def health_check() -> ORJSONResponse:
+    """
+    서비스 상태 확인
+    """
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, {"status": "ok"}, "Service is running"
     )
 
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
@@ -834,15 +850,3 @@ async def liqueur_update(  # noqa: PLR0913
         response = Response(formatted_response, formatted_response["code"])
 
     return response
-
-
-@cocktail_maker.get("/health", summary="상태 확인", tags=["기타"])
-async def health_check() -> ORJSONResponse:
-    """
-    서비스 상태 확인
-    """
-    formatted_response: ResponseFormat = await return_formatter(
-        "success", 200, {"status": "ok"}, "Service is running"
-    )
-
-    return ORJSONResponse(formatted_response, status.HTTP_200_OK)

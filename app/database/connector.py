@@ -10,7 +10,7 @@ from motor.motor_asyncio import (
 )
 from sqlmodel import Session
 
-from database.table import engine
+from .table import engine
 
 load_dotenv(dotenv_path=".env")
 MONGODB_URL: str = os.environ["MONGODB_URL"]

@@ -199,6 +199,27 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
+@cocktail_maker.get("/version", summary="서비스 버전 확인", tags=["기타"])
+async def version() -> ORJSONResponse:
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, {"version": cocktail_maker.version}, "Successfully get version"
+    )
+
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+
+
+@cocktail_maker.get("/health", summary="상태 확인", tags=["기타"])
+async def health_check() -> ORJSONResponse:
+    """
+    서비스 상태 확인
+    """
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, {"status": "ok"}, "Service is running"
+    )
+
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+
+
 @cocktail_maker.post(
     "/spirits",
     summary="주류 정보 등록",
@@ -660,27 +681,6 @@ async def liqueur_register(  # noqa: PLR0913
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
-
-
-@cocktail_maker.get("/version", summary="서비스 버전 확인", tags=["기타"])
-async def version() -> ORJSONResponse:
-    formatted_response: ResponseFormat = await return_formatter(
-        "success", 200, {"version": cocktail_maker.version}, "Successfully get version"
-    )
-
-    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
-
-
-@cocktail_maker.get("/health", summary="상태 확인", tags=["기타"])
-async def health_check() -> ORJSONResponse:
-    """
-    서비스 상태 확인
-    """
-    formatted_response: ResponseFormat = await return_formatter(
-        "success", 200, {"status": "ok"}, "Service is running"
-    )
-
-    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
 @cocktail_maker.get("/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"])

@@ -184,7 +184,9 @@ class Images:
         # 이미지 저장 및 경로 정보 수집
         for image_key, image_data in spirit_images:
             if image_data is not None:
-                image_path = Path(f"../data/images/{document_id}/{image_key}.png")
+                image_path = Path(
+                    f"../data/images/{collection_name}/{document_id}/{image_key}.png"
+                )
                 save_image_to_local(image_data, image_path)
                 saved_image_paths.append({"key": image_key, "path": str(image_path)})
 

@@ -24,7 +24,8 @@ from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
 from model import (
-    METADATA_KIND,
+    COCKTAIL_DATA_KIND,
+    IngredientDict,
     LiqueurDict,
     LiqueurSearch,
     Login,
@@ -442,7 +443,7 @@ async def spirits_remover(
     tags=["메타데이터"],
 )
 async def metadata_register(
-    kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
+    kind: Annotated[COCKTAIL_DATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     items: Annotated[MetadataRegister, Body(...)],
 ) -> ORJSONResponse:
@@ -471,7 +472,7 @@ async def metadata_register(
     "/metadata/{kind}/{category}", summary="메타데이터 조회", tags=["메타데이터"]
 )
 async def metadata_details(
-    kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
+    kind: Annotated[COCKTAIL_DATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     # Header 표준 값
     # authorization: Annotated[str | None, Header(alias="Authorization")] = None,

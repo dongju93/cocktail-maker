@@ -11,7 +11,8 @@ from structlog import BoundLogger
 from auth import Encryption
 from database import MetadataTable, mongodb_conn, sqlite_conn_orm
 from model import (
-    METADATA_KIND,
+    COCKTAIL_DATA_KIND,
+    IngredientDict,
     LiqueurDict,
     LiqueurSearch,
     Login,
@@ -231,7 +232,7 @@ class Metadata:
     def create(
         category: MetadataCategory,
         items: MetadataRegister,
-        kind: METADATA_KIND,
+        kind: COCKTAIL_DATA_KIND,
     ) -> None:
         try:
             with sqlite_conn_orm() as session:
@@ -248,7 +249,7 @@ class Metadata:
     @staticmethod
     def read(
         category: MetadataCategory,
-        kind: METADATA_KIND,
+        kind: COCKTAIL_DATA_KIND,
     ) -> list[dict[str, int | str]]:
         try:
             with sqlite_conn_orm() as session:

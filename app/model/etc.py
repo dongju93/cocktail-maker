@@ -3,7 +3,7 @@ from typing import Annotated, Literal, TypedDict
 
 from pydantic import BaseModel, Field
 
-METADATA_KIND = Literal["spirits", "liqueur"]
+COCKTAIL_DATA_KIND = Literal["spirits", "liqueur", "ingredient"]
 
 
 class ImageField(TypedDict, total=False):

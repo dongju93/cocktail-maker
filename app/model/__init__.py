@@ -1,4 +1,4 @@
-from .etc import METADATA_KIND, ImageField, MetadataCategory, MetadataRegister
+from .etc import COCKTAIL_DATA_KIND, ImageField, MetadataCategory, MetadataRegister
 from .ingredients import IngredientDict
 from .liqueur import LiqueurDict, LiqueurSearch
 from .response import ResponseFormat, SearchResponse
@@ -18,6 +18,6 @@ __all__ = [
     "ImageField",
     "MetadataRegister",
     "MetadataCategory",
-    "METADATA_KIND",
+    "COCKTAIL_DATA_KIND",
     "SearchResponse",
 ]

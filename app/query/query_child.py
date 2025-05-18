@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from structlog import BoundLogger
 
 from database import mongodb_conn
-from model import METADATA_KIND, LiqueurSearch, SpiritsSearch
+from model import COCKTAIL_DATA_KIND, LiqueurSearch, SpiritsSearch
 from utils import Logger, save_image_to_local
 
 logger: BoundLogger = Logger().setup()
@@ -156,7 +156,7 @@ class Images:
             rmtree(Path(result["main_image"]).parent, ignore_errors=True)
 
     async def _image_field_updater(
-        self, collection_name: METADATA_KIND, id: str, image_data: dict[str, Any]
+        self, collection_name: COCKTAIL_DATA_KIND, id: str, image_data: dict[str, Any]
     ) -> None:
         image_data["updated_at"] = datetime.now(tz=UTC)
         async with mongodb_conn(collection_name) as conn:
@@ -165,7 +165,7 @@ class Images:
     async def save_image_files_to_local_dir(  # noqa: PLR0913
         self,
         document_id: str,
-        collection_name: METADATA_KIND,
+        collection_name: COCKTAIL_DATA_KIND,
         main_image: bytes | None = None,
         sub_image1: bytes | None = None,
         sub_image2: bytes | None = None,

@@ -5,7 +5,7 @@ from fastapi import HTTPException, UploadFile, status
 from query.queries import Metadata
 from utils import single_word_list_to_many_word_list
 
-from .etc import METADATA_KIND, MetadataCategory
+from .etc import COCKTAIL_DATA_KIND, MetadataCategory
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
 # // TODO: Form 필드에서 media_type 로 컨텐츠 타입 제한이 가능하다면 내부 검증 로직에서 제외
@@ -86,7 +86,7 @@ class ImageValidation:
 
 @dataclass
 class MetadataValidation:
-    kind: METADATA_KIND
+    kind: COCKTAIL_DATA_KIND
     taste: list[str]
     aroma: list[str] | None = None
     finish: list[str] | None = None

@@ -43,7 +43,7 @@ set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
 
 logger: BoundLogger = Logger().setup()
 
-app = FastAPI(
+cocktail_maker = FastAPI(
     title="Cocktail maker REST API",
     # semantic-versioning: major.minor.patch[-build]
     version="0.1.0-dev",
@@ -58,7 +58,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
-@app.post("/signup", summary="회원가입", tags=["인증"])
+@cocktail_maker.post("/signup", summary="회원가입", tags=["인증"])
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """
     회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
@@ -108,7 +108,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@app.post("/signin", summary="로그인", tags=["인증"])
+@cocktail_maker.post("/signin", summary="로그인", tags=["인증"])
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """
     로그인 성공 시 메시지와 함께 JWT 를 반환
@@ -153,7 +153,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     return response
 
 
-@app.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
+@cocktail_maker.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
 async def refresh_token(request: Request) -> Response:
     """
     리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
@@ -194,7 +194,7 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
-@app.post(
+@cocktail_maker.post(
     "/spirits",
     summary="주류 정보 등록",
     tags=["주류"],
@@ -305,7 +305,7 @@ async def spirits_register(  # noqa
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.put("/spirits/{document_id}", summary="주류 정보 수정", tags=["주류"])
+@cocktail_maker.put("/spirits/{document_id}", summary="주류 정보 수정", tags=["주류"])
 async def spirits_update(  # noqa: PLR0913
     document_id: Annotated[str, Path(..., min_length=1, max_length=255)],
     name: Annotated[str, Form(..., min_length=1)],
@@ -392,7 +392,7 @@ async def spirits_update(  # noqa: PLR0913
     return response
 
 
-@app.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
+@cocktail_maker.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
@@ -405,7 +405,7 @@ async def spirits_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/spirits", summary="주류 정보 검색", tags=["주류"])
+@cocktail_maker.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
     params: Annotated[SpiritsSearch, Query(...)],
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
@@ -419,7 +419,7 @@ async def spirits_search(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete("/spirits/{id}", summary="주류 정보 삭제", tags=["주류"])
+@cocktail_maker.delete("/spirits/{id}", summary="주류 정보 삭제", tags=["주류"])
 async def spirits_remover(
     id: Annotated[str, Path(...)],
 ) -> ORJSONResponse:
@@ -432,7 +432,7 @@ async def spirits_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.post(
+@cocktail_maker.post(
     "/metadata/{kind}/{category}",
     summary="메타데이터 등록",
     tags=["메타데이터"],
@@ -463,7 +463,9 @@ async def metadata_register(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/metadata/{kind}/{category}", summary="메타데이터 조회", tags=["메타데이터"])
+@cocktail_maker.get(
+    "/metadata/{kind}/{category}", summary="메타데이터 조회", tags=["메타데이터"]
+)
 async def metadata_details(
     kind: Annotated[METADATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
@@ -486,7 +488,7 @@ async def metadata_details(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.delete("/metadata/{id}", summary="메타데이터 삭제", tags=["메타데이터"])
+@cocktail_maker.delete("/metadata/{id}", summary="메타데이터 삭제", tags=["메타데이터"])
 async def metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
@@ -513,7 +515,7 @@ async def metadata_remover(
     )
 
 
-@app.post(
+@cocktail_maker.post(
     "/liqueur",
     summary="리큐르 정보 등록",
     tags=["리큐르"],
@@ -655,7 +657,7 @@ async def liqueur_register(  # noqa: PLR0913
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/version", summary="서비스 버전 확인", tags=["기타"])
+@cocktail_maker.get("/version", summary="서비스 버전 확인", tags=["기타"])
 async def version() -> ORJSONResponse:
     formatted_response: ResponseFormat = await return_formatter(
         "success", 200, {"version": app.version}, "Successfully get version"
@@ -664,7 +666,7 @@ async def version() -> ORJSONResponse:
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
-@app.get("/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"])
+@cocktail_maker.get("/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"])
 async def liqueur_detail(
     name: Annotated[str, Path(..., description="리큐르의 이름, 정확한 일치")],
 ) -> ORJSONResponse:
@@ -677,7 +679,7 @@ async def liqueur_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
+@cocktail_maker.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
 async def liqueur_search(
     params: Annotated[LiqueurSearch, Query(...)],
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
@@ -691,7 +693,9 @@ async def liqueur_search(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@app.put("/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"])
+@cocktail_maker.put(
+    "/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
+)
 async def liqueur_update(  # noqa: PLR0913
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
     name: Annotated[
@@ -832,7 +836,7 @@ async def liqueur_update(  # noqa: PLR0913
     return response
 
 
-@app.get("/health", summary="상태 확인", tags=["기타"])
+@cocktail_maker.get("/health", summary="상태 확인", tags=["기타"])
 async def health_check() -> ORJSONResponse:
     """
     서비스 상태 확인

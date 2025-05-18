@@ -1,0 +1,11 @@
+services:
+  cocktail-maker:
+    image: cocktail-maker:0.1.1
+    container_name: cocktail-maker
+    networks:
+      - cocktail_maker_network
+
+networks:
+  cocktail_maker_network:
+    external: true
+    name: cocktail_maker_main_network

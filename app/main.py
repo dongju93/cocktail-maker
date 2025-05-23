@@ -18,6 +18,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
@@ -57,6 +58,26 @@ cocktail_maker = FastAPI(
         {"url": "http://127.0.0.1:8000", "description": "Local development server"},
     ],
     default_response_class=ORJSONResponse,
+    docs_url="/api/docs",
+)
+
+cocktail_maker.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Authorization",  # bearer token
+        "Accept-Encoding",  # encoding (gzip, deflate)
+        "Origin",  # origin of request
+        "X-Requested-With",  # ajax request identification
+        "User-Agent",  # client information
+        "Cache-Control",  # cache policy
+    ],
+    expose_headers=["X-Expire-Seconds"],
+    max_age=3600,
 )
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
@@ -217,7 +238,9 @@ async def health_check() -> ORJSONResponse:
         "success", 200, {"status": "ok"}, "Service is running"
     )
 
-    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+    return ORJSONResponse(
+        formatted_response, status.HTTP_200_OK, headers={"X-Expire-Seconds": "30"}
+    )
 
 
 @cocktail_maker.post(

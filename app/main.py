@@ -200,9 +200,9 @@ SecWeb(
         "xcdp": "none",  # X-Permitted-Cross-Domain-Policies: none - block Adobe Flash/PDF cross-domain requests
         "xdo": True,  # X-Download-Options: noopen - prevent Internet Explorer from opening downloads in security context
         "oac": True,  # Origin-Agent-Cluster: ?1 - isolate agent cluster by origin for better security
-        "corp": "same-origin",  # Cross-Origin-Resource-Policy: same-origin - prevent cross-origin resource sharing
-        "coop": "same-origin",  # Cross-Origin-Opener-Policy: same-origin - prevent cross-origin window references
-        "coep": "require-corp",  # Cross-Origin-Embedder-Policy: require-corp - require CORP header for cross-origin resources
+        "corp": "cross-origin",  # Cross-Origin-Resource-Policy: same-origin - prevent cross-origin resource sharing, e.g. cross-origin, same-origin, same-site
+        "coop": "unsafe-none",  # Cross-Origin-Opener-Policy: same-origin - prevent cross-origin window references, e.g. same-origin, same-origin-allow-popups, unsafe-none
+        "coep": "require-corp",  # Cross-Origin-Embedder-Policy: require-corp - require CORP header for cross-origin resources, e.g. require-corp, credentialless, unsafe-none
     },
     Routes=[],  # List of routes for Clear-Site-Data header (empty - not using this feature)
     script_nonce=False,  # Disable automatic nonce generation for script tags in CSP

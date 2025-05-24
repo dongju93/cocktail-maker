@@ -21,18 +21,20 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-from secure import (
-    CacheControl,
-    ContentSecurityPolicy,
-    CustomHeader,
-    PermissionsPolicy,
-    ReferrerPolicy,
-    Secure,
-    # Server,
-    StrictTransportSecurity,
-    XContentTypeOptions,
-    XFrameOptions,
-)
+
+# from secure import (
+#     CacheControl,
+#     ContentSecurityPolicy,
+#     CustomHeader,
+#     PermissionsPolicy,
+#     ReferrerPolicy,
+#     Secure,
+#     # Server,
+#     StrictTransportSecurity,
+#     XContentTypeOptions,
+#     XFrameOptions,
+# )
+from Secweb import SecWeb
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
@@ -103,49 +105,119 @@ cocktail_maker.add_middleware(
     max_age=3600,  # Preflight cache duration in seconds
 )
 
-secure_headers = Secure(
-    cache=CacheControl().no_store(),  # no-store cache
-    csp=ContentSecurityPolicy()
-    .default_src("'self'")  # all resources are loaded from the same origin
-    .script_src(
-        "'self'", "'unsafe-inline'", "'unsafe-eval'"
-    )  # allow inline scripts, development only
-    .style_src("'self'", "'unsafe-inline'")  # allow inline styles, development only
-    .img_src(
-        "'self'", "data:", "blob:", "https:"
-    )  # allow images from self, data, blob, and https
-    .font_src("'self'", "data:")  # allow fonts from self and data
-    .connect_src(
-        "'self'", "http://localhost:5173", "ws://localhost:5173"
-    )  # allow connections to self and development server
-    .media_src("'self'", "blob:")  # allow media from self and blob
-    .object_src("'none'")  # disallow all object sources, <object>, <embed>, <applet>
-    .base_uri("'self'")  # allow <base> tag to load from self
-    .form_action("'self'")  # allow <form> action to load from self
-    .frame_ancestors("'none'"),  # disallow iframe load
-    hsts=StrictTransportSecurity()
-    .max_age(31536000)
-    .include_subdomains(),  # include subdomains, max-age 1 year, https only
-    permissions=PermissionsPolicy()
-    .camera()
-    .microphone()
-    .geolocation(),  # disallow camera, microphone, and geolocation
-    referrer=ReferrerPolicy().strict_origin_when_cross_origin(),  # if cors only origin are sent, same-origin send full URL
-    # server=Server().set(
-    #     ""
-    # ),  # Hide server information, disable this in uvicorn or gunicorn settings
-    xcto=XContentTypeOptions().nosniff(),  # prevent MIME type sniffing
-    xfo=XFrameOptions().deny(),  # disallow x-frame loading
-    custom=[
-        CustomHeader("X-Server-Version", "0.1.0-dev"),
-    ],
+# secure_headers = Secure(
+#     cache=CacheControl().no_store(),  # no-store cache
+#     csp=ContentSecurityPolicy()
+#     .default_src("'self'")  # all resources are loaded from the same origin
+#     .script_src(
+#         "'self'", "'unsafe-inline'", "'unsafe-eval'"
+#     )  # allow inline scripts, development only
+#     .style_src("'self'", "'unsafe-inline'")  # allow inline styles, development only
+#     .img_src(
+#         "'self'", "data:", "blob:", "https:"
+#     )  # allow images from self, data, blob, and https
+#     .font_src("'self'", "data:")  # allow fonts from self and data
+#     .connect_src(
+#         "'self'", "http://localhost:5173", "ws://localhost:5173"
+#     )  # allow connections to self and development server
+#     .media_src("'self'", "blob:")  # allow media from self and blob
+#     .object_src("'none'")  # disallow all object sources, <object>, <embed>, <applet>
+#     .base_uri("'self'")  # allow <base> tag to load from self
+#     .form_action("'self'")  # allow <form> action to load from self
+#     .frame_ancestors("'none'"),  # disallow iframe load
+#     hsts=StrictTransportSecurity()
+#     .max_age(31536000)
+#     .include_subdomains(),  # include subdomains, max-age 1 year, https only
+#     permissions=PermissionsPolicy()
+#     .camera()
+#     .microphone()
+#     .geolocation(),  # disallow camera, microphone, and geolocation
+#     referrer=ReferrerPolicy().strict_origin_when_cross_origin(),  # if cors only origin are sent, same-origin send full URL
+#     # server=Server().set(
+#     #     ""
+#     # ),  # Hide server information, disable this in uvicorn or gunicorn settings
+#     xcto=XContentTypeOptions().nosniff(),  # prevent MIME type sniffing
+#     xfo=XFrameOptions().deny(),  # disallow x-frame loading
+#     custom=[
+#         CustomHeader("X-Server-Version", "0.1.0-dev"),
+#     ],
+# )
+
+SecWeb(
+    app=cocktail_maker,  # Pass FastAPI application instance to SecWeb
+    Option={  # Dictionary containing security header configurations
+        "csp": {  # Content Security Policy configuration
+            "default-src": ["'self'"],  # Allow resources only from same origin
+            "script-src": [
+                "'self'",
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+            ],  # Allow scripts from self, inline scripts, and eval() - development only
+            "style-src": [
+                "'self'",
+                "'unsafe-inline'",
+            ],  # Allow styles from self and inline styles - development only
+            "img-src": [
+                "'self'",
+                "data:",
+                "blob:",
+                "https:",
+            ],  # Allow images from self, data URLs, blob URLs, and HTTPS sources
+            "font-src": ["'self'", "data:"],  # Allow fonts from self and data URLs
+            "connect-src": [
+                "'self'",
+                "http://localhost:5173",
+                "ws://localhost:5173",
+            ],  # Allow connections to self and development server (HTTP/WebSocket)
+            "media-src": [
+                "'self'",
+                "blob:",
+            ],  # Allow media files from self and blob URLs
+            "object-src": [
+                "'none'"
+            ],  # Disallow all object sources (<object>, <embed>, <applet> tags)
+            "base-uri": ["'self'"],  # Allow <base> tag to reference only same origin
+            "form-action": ["'self'"],  # Allow form submissions only to same origin
+            "frame-ancestors": [
+                "'none'"
+            ],  # Prevent this page from being embedded in frames/iframes
+        },
+        "hsts": {
+            "max-age": 31536000,
+            "includeSubDomains": True,
+            "preload": True,
+        },  # HTTP Strict Transport Security: 1 year max-age, include subdomains, enable preload
+        "referrer": [
+            "strict-origin-when-cross-origin"
+        ],  # Referrer Policy: send full URL for same-origin, only origin for cross-origin requests
+        "xcto": True,  # X-Content-Type-Options: nosniff - prevent MIME type sniffing attacks
+        "xframe": "DENY",  # X-Frame-Options: DENY - prevent clickjacking by blocking iframe embedding
+        "cacheControl": {
+            "no-store": True
+        },  # Cache-Control: no-store - prevent caching of responses
+        "xss": True,  # X-XSS-Protection: enable XSS filtering (legacy header, mostly deprecated)
+        "xdns": "off",  # X-DNS-Prefetch-Control: off - disable DNS prefetching for privacy
+        "xcdp": "none",  # X-Permitted-Cross-Domain-Policies: none - block Adobe Flash/PDF cross-domain requests
+        "xdo": True,  # X-Download-Options: noopen - prevent Internet Explorer from opening downloads in security context
+        "oac": True,  # Origin-Agent-Cluster: ?1 - isolate agent cluster by origin for better security
+        "corp": "same-origin",  # Cross-Origin-Resource-Policy: same-origin - prevent cross-origin resource sharing
+        "coop": "same-origin",  # Cross-Origin-Opener-Policy: same-origin - prevent cross-origin window references
+        "coep": "require-corp",  # Cross-Origin-Embedder-Policy: require-corp - require CORP header for cross-origin resources
+    },
+    Routes=[],  # List of routes for Clear-Site-Data header (empty - not using this feature)
+    script_nonce=False,  # Disable automatic nonce generation for script tags in CSP
+    style_nonce=False,  # Disable automatic nonce generation for style tags in CSP
+    report_only=False,  # Disable CSP Report-Only mode - enforce policies instead of just reporting violations
 )
 
 
 @cocktail_maker.middleware("http")
-async def add_security_headers(request: Request, call_next):  # noqa: ANN001, ANN201
+async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN201
     response = await call_next(request)
-    secure_headers.set_headers(response)
+
+    # Application global custom headers
+    response.headers["X-Server-Version"] = cocktail_maker.version
+
     return response
 
 

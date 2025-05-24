@@ -62,6 +62,13 @@ cocktail_maker = FastAPI(
     docs_url="/api/docs",
 )
 
+"""
+Preflight is OPTIONS method
+This request occurs when resources on the server may change
+
+PUT, DELETE, PATCH: mandatory for preflight requests
+POST: preflight requests were made except for "text/plain", "application/x-www-form-urlencoded", "multipart/form-data"
+"""
 cocktail_maker.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

@@ -13,6 +13,7 @@ dependencies = [
     "pillow>=11,<12",
     "pyjwt>=2,<3",
     "secure>=1.0.1",
+    "secweb>=1.18.1",
     "sqlmodel>=0.0.22",
     "structlog>=25,<26",
 ]

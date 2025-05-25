@@ -19,9 +19,11 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.middleware.cors import CORSMiddleware
+
+# from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-from Secweb import SecWeb
+
+# from Secweb import SecWeb
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
@@ -70,100 +72,100 @@ This request occurs when resources on the server may change
 PUT, DELETE, PATCH: mandatory for preflight requests
 POST: preflight requests were made except for "text/plain", "application/x-www-form-urlencoded", "multipart/form-data"
 """
-cocktail_maker.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=[
-        "http://localhost:5173",
-    ],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=[  # Headers that API server accepts
-        "Authorization",  # bearer token, e.g. Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        "Accept-Encoding",  # encoding,  e.g. gzip, deflate, br
-        "Origin",  # origin of request, e.g. http://localhost:5173
-        "X-Requested-With",  # ajax request identification, e.g. XMLHttpRequest
-        "User-Agent",  # client information, e.g. Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...
-        "Cache-Control",  # cache policy, e.g. no-cache, no-store, must-revalidate
-    ],
-    expose_headers=[
-        "X-Server-Version",
-    ],  # Headers that client can see and access via JavaScript
-    max_age=3600,  # Preflight cache duration in seconds
-)
+# cocktail_maker.add_middleware(
+#     CORSMiddleware,
+#     allow_credentials=True,
+#     allow_origins=[
+#         "http://localhost:5173",
+#     ],
+#     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+#     allow_headers=[  # Headers that API server accepts
+#         "Authorization",  # bearer token, e.g. Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+#         "Accept-Encoding",  # encoding,  e.g. gzip, deflate, br
+#         "Origin",  # origin of request, e.g. http://localhost:5173
+#         "X-Requested-With",  # ajax request identification, e.g. XMLHttpRequest
+#         "User-Agent",  # client information, e.g. Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)...
+#         "Cache-Control",  # cache policy, e.g. no-cache, no-store, must-revalidate
+#     ],
+#     expose_headers=[
+#         "X-Server-Version",
+#     ],  # Headers that client can see and access via JavaScript
+#     # max_age=3600,  # Preflight cache duration in seconds
+# )
 
 
-SecWeb(
-    app=cocktail_maker,  # Pass FastAPI application instance to SecWeb
-    Option={  # Dictionary containing security header configurations
-        "csp": {  # Content Security Policy configuration
-            "default-src": ["'self'"],  # Allow resources only from same origin
-            "script-src": [
-                "'self'",
-                "'unsafe-inline'",
-                # "'unsafe-eval'",
-                "https://cdn.jsdelivr.net",
-            ],  # Allow scripts from self, inline scripts, and eval() - development only
-            "style-src": [
-                "'self'",
-                # "'unsafe-inline'",
-                "https://cdn.jsdelivr.net",
-            ],  # Allow styles from self and inline styles - development only
-            "img-src": [
-                "'self'",
-                "data:",
-                "blob:",
-                "https:",
-            ],  # Allow images from self, data URLs, blob URLs, and HTTPS sources
-            "font-src": ["'self'", "data:"],  # Allow fonts from self and data URLs
-            "connect-src": [
-                "'self'",
-                "http://localhost:5173",
-                "ws://localhost:5173",
-            ],  # Allow connections to self and development server (HTTP/WebSocket)
-            "media-src": [
-                "'self'",
-                "blob:",
-            ],  # Allow media files from self and blob URLs
-            "object-src": [
-                "'none'"
-            ],  # Disallow all object sources (<object>, <embed>, <applet> tags)
-            "base-uri": ["'self'"],  # Allow <base> tag to reference only same origin
-            "form-action": ["'self'"],  # Allow form submissions only to same origin
-            "frame-ancestors": [
-                "'none'"
-            ],  # Prevent this page from being embedded in frames/iframes
-        },
-        "hsts": {
-            "max-age": 31536000,
-            "includeSubDomains": True,
-            "preload": True,
-        },  # HTTP Strict Transport Security: 1 year max-age, include subdomains, enable preload
-        "referrer": [
-            "strict-origin-when-cross-origin"
-        ],  # Referrer Policy: send full URL for same-origin, only origin for cross-origin requests
-        "xcto": True,  # X-Content-Type-Options: nosniff - prevent MIME type sniffing attacks
-        "xframe": "DENY",  # X-Frame-Options: DENY - prevent clickjacking by blocking iframe embedding
-        "cacheControl": {
-            "max-age": 10,  # Seconds
-            "private": True,  # Cache only in browser, not shared caches
-        },
-        # "cacheControl": {
-        #     "no-store": True
-        # },  # Cache-Control: no-store - prevent caching of responses
-        "xss": True,  # X-XSS-Protection: enable XSS filtering (legacy header, mostly deprecated)
-        "xdns": "off",  # X-DNS-Prefetch-Control: off - disable DNS prefetching for privacy
-        "xcdp": "none",  # X-Permitted-Cross-Domain-Policies: none - block Adobe Flash/PDF cross-domain requests
-        "xdo": True,  # X-Download-Options: noopen - prevent Internet Explorer from opening downloads in security context
-        "oac": True,  # Origin-Agent-Cluster: ?1 - isolate agent cluster by origin for better security
-        "corp": "cross-origin",  # Cross-Origin-Resource-Policy: same-origin - prevent cross-origin resource sharing, e.g. cross-origin, same-origin, same-site
-        "coop": "unsafe-none",  # Cross-Origin-Opener-Policy: same-origin - prevent cross-origin window references, e.g. same-origin, same-origin-allow-popups, unsafe-none
-        "coep": "require-corp",  # Cross-Origin-Embedder-Policy: require-corp - require CORP header for cross-origin resources, e.g. require-corp, credentialless, unsafe-none
-    },
-    Routes=[],  # List of routes for Clear-Site-Data header (empty - not using this feature)
-    script_nonce=False,  # Disable automatic nonce generation for script tags in CSP
-    style_nonce=False,  # Disable automatic nonce generation for style tags in CSP
-    report_only=False,  # Disable CSP Report-Only mode - enforce policies instead of just reporting violations
-)
+# SecWeb(
+#     app=cocktail_maker,  # Pass FastAPI application instance to SecWeb
+#     Option={  # Dictionary containing security header configurations
+#         "csp": {  # Content Security Policy configuration
+#             "default-src": ["'self'"],  # Allow resources only from same origin
+#             "script-src": [
+#                 "'self'",
+#                 "'unsafe-inline'",
+#                 # "'unsafe-eval'",
+#                 "https://cdn.jsdelivr.net",
+#             ],  # Allow scripts from self, inline scripts, and eval() - development only
+#             "style-src": [
+#                 "'self'",
+#                 # "'unsafe-inline'",
+#                 "https://cdn.jsdelivr.net",
+#             ],  # Allow styles from self and inline styles - development only
+#             "img-src": [
+#                 "'self'",
+#                 "data:",
+#                 "blob:",
+#                 "https:",
+#             ],  # Allow images from self, data URLs, blob URLs, and HTTPS sources
+#             "font-src": ["'self'", "data:"],  # Allow fonts from self and data URLs
+#             "connect-src": [
+#                 "'self'",
+#                 "http://localhost:5173",
+#                 "ws://localhost:5173",
+#             ],  # Allow connections to self and development server (HTTP/WebSocket)
+#             "media-src": [
+#                 "'self'",
+#                 "blob:",
+#             ],  # Allow media files from self and blob URLs
+#             "object-src": [
+#                 "'none'"
+#             ],  # Disallow all object sources (<object>, <embed>, <applet> tags)
+#             "base-uri": ["'self'"],  # Allow <base> tag to reference only same origin
+#             "form-action": ["'self'"],  # Allow form submissions only to same origin
+#             "frame-ancestors": [
+#                 "'none'"
+#             ],  # Prevent this page from being embedded in frames/iframes
+#         },
+#         "hsts": {
+#             "max-age": 31536000,
+#             "includeSubDomains": True,
+#             "preload": True,
+#         },  # HTTP Strict Transport Security: 1 year max-age, include subdomains, enable preload
+#         "referrer": [
+#             "strict-origin-when-cross-origin"
+#         ],  # Referrer Policy: send full URL for same-origin, only origin for cross-origin requests
+#         "xcto": True,  # X-Content-Type-Options: nosniff - prevent MIME type sniffing attacks
+#         "xframe": "DENY",  # X-Frame-Options: DENY - prevent clickjacking by blocking iframe embedding
+#         "cacheControl": {
+#             "max-age": 10,  # Seconds
+#             "private": True,  # Cache only in browser, not shared caches
+#         },
+#         # "cacheControl": {
+#         #     "no-store": True
+#         # },  # Cache-Control: no-store - prevent caching of responses
+#         "xss": True,  # X-XSS-Protection: enable XSS filtering (legacy header, mostly deprecated)
+#         "xdns": "off",  # X-DNS-Prefetch-Control: off - disable DNS prefetching for privacy
+#         "xcdp": "none",  # X-Permitted-Cross-Domain-Policies: none - block Adobe Flash/PDF cross-domain requests
+#         "xdo": True,  # X-Download-Options: noopen - prevent Internet Explorer from opening downloads in security context
+#         "oac": True,  # Origin-Agent-Cluster: ?1 - isolate agent cluster by origin for better security
+#         "corp": "cross-origin",  # Cross-Origin-Resource-Policy: same-origin - prevent cross-origin resource sharing, e.g. cross-origin, same-origin, same-site
+#         "coop": "unsafe-none",  # Cross-Origin-Opener-Policy: same-origin - prevent cross-origin window references, e.g. same-origin, same-origin-allow-popups, unsafe-none
+#         "coep": "require-corp",  # Cross-Origin-Embedder-Policy: require-corp - require CORP header for cross-origin resources, e.g. require-corp, credentialless, unsafe-none
+#     },
+#     Routes=[],  # List of routes for Clear-Site-Data header (empty - not using this feature)
+#     script_nonce=False,  # Disable automatic nonce generation for script tags in CSP
+#     style_nonce=False,  # Disable automatic nonce generation for style tags in CSP
+#     report_only=False,  # Disable CSP Report-Only mode - enforce policies instead of just reporting violations
+# )
 
 
 @cocktail_maker.middleware("http")

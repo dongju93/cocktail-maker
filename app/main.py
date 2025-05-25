@@ -21,19 +21,6 @@ from fastapi import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
-
-# from secure import (
-#     CacheControl,
-#     ContentSecurityPolicy,
-#     CustomHeader,
-#     PermissionsPolicy,
-#     ReferrerPolicy,
-#     Secure,
-#     # Server,
-#     StrictTransportSecurity,
-#     XContentTypeOptions,
-#     XFrameOptions,
-# )
 from Secweb import SecWeb
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
@@ -105,43 +92,6 @@ cocktail_maker.add_middleware(
     max_age=3600,  # Preflight cache duration in seconds
 )
 
-# secure_headers = Secure(
-#     cache=CacheControl().no_store(),  # no-store cache
-#     csp=ContentSecurityPolicy()
-#     .default_src("'self'")  # all resources are loaded from the same origin
-#     .script_src(
-#         "'self'", "'unsafe-inline'", "'unsafe-eval'"
-#     )  # allow inline scripts, development only
-#     .style_src("'self'", "'unsafe-inline'")  # allow inline styles, development only
-#     .img_src(
-#         "'self'", "data:", "blob:", "https:"
-#     )  # allow images from self, data, blob, and https
-#     .font_src("'self'", "data:")  # allow fonts from self and data
-#     .connect_src(
-#         "'self'", "http://localhost:5173", "ws://localhost:5173"
-#     )  # allow connections to self and development server
-#     .media_src("'self'", "blob:")  # allow media from self and blob
-#     .object_src("'none'")  # disallow all object sources, <object>, <embed>, <applet>
-#     .base_uri("'self'")  # allow <base> tag to load from self
-#     .form_action("'self'")  # allow <form> action to load from self
-#     .frame_ancestors("'none'"),  # disallow iframe load
-#     hsts=StrictTransportSecurity()
-#     .max_age(31536000)
-#     .include_subdomains(),  # include subdomains, max-age 1 year, https only
-#     permissions=PermissionsPolicy()
-#     .camera()
-#     .microphone()
-#     .geolocation(),  # disallow camera, microphone, and geolocation
-#     referrer=ReferrerPolicy().strict_origin_when_cross_origin(),  # if cors only origin are sent, same-origin send full URL
-#     # server=Server().set(
-#     #     ""
-#     # ),  # Hide server information, disable this in uvicorn or gunicorn settings
-#     xcto=XContentTypeOptions().nosniff(),  # prevent MIME type sniffing
-#     xfo=XFrameOptions().deny(),  # disallow x-frame loading
-#     custom=[
-#         CustomHeader("X-Server-Version", "0.1.0-dev"),
-#     ],
-# )
 
 SecWeb(
     app=cocktail_maker,  # Pass FastAPI application instance to SecWeb

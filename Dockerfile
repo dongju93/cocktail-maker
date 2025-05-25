@@ -25,4 +25,4 @@ WORKDIR /cocktail-maker/app
 
 ENTRYPOINT []
 
-CMD ["gunicorn", "main:app", "--config", "gunicorn.conf.py"]
+CMD ["gunicorn", "main:cocktail_maker", "--config", "gunicorn.conf.py"]

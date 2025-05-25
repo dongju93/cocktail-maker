@@ -1,9 +1,9 @@
 services:
   cocktail-maker:
-    image: cocktail-maker:0.1.1
+    image: cocktail-maker:0.1.2
     container_name: cocktail-maker
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8000/api/v1/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5

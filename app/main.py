@@ -229,8 +229,21 @@ cocktail_maker_v1 = APIRouter(prefix="/api/v1")
 
 @cocktail_maker_v1.post("/signup", summary="회원가입", tags=["인증"])
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
-    """
-    회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
+    """회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
+
+    Args:
+        user (Annotated[User, Body): 회원가입에 필요한 사용자 정보
+
+    Raises:
+        HTTPException: 409 - 이미 존재하는 사용자인 경우
+        HTTPException: 401 - 회원가입 후 로그인 검증에 실패한 경우
+
+    Returns:
+        Response:
+            - 성공 시: 204 No Content, JWT 토큰이 쿠키로 설정됨
+                - accessToken: httponly 쿠키 (15분 만료)
+                - refreshToken: httponly 쿠키 (7일 만료, /refresh-token 경로 제한)
+            - 실패 시: 해당 상태 코드와 에러 메시지가 포함된 JSON 응답
     """
     try:
         if not await queries.Users.sign_up(user):

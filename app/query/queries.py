@@ -34,6 +34,26 @@ logger: BoundLogger = Logger().setup()
 
 @dataclass
 class CreateSpirits(CreateDocument):
+    """Create a new spirits document.
+
+    Args:
+        CreateDocument (_type_): Factory class for creating documents in the database.
+
+    Attributes:
+        spirits_item (SpiritsDict): The spirits item to be saved.
+        mainImage (bytes): The main image of the spirits.
+        subImage1 (bytes | None): Optional sub-image 1 of the spirits.
+        subImage2 (bytes | None): Optional sub-image 2 of the spirits.
+        subImage3 (bytes | None): Optional sub-image 3 of the spirits.
+        subImage4 (bytes | None): Optional sub-image 4 of the spirits.
+
+    Raises:
+        e: If an error occurs while saving the document or its images.
+
+    Returns:
+        _type_: The ID of the saved document.
+    """
+
     spirits_item: SpiritsDict
     mainImage: bytes
     subImage1: bytes | None
@@ -42,6 +62,14 @@ class CreateSpirits(CreateDocument):
     subImage4: bytes | None
 
     async def save(self) -> str:
+        """Save the spirits document to the database and store its images.
+
+        Raises:
+            e: If an error occurs while saving the document or its images.
+
+        Returns:
+            str: The ID of the saved document.
+        """
         document_id: str = await super().save()
 
         try:

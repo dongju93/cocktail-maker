@@ -86,7 +86,6 @@ cocktail_maker.add_middleware(
         "Cache-Control",  # cache policy, e.g. no-cache, no-store, must-revalidate
     ],
     expose_headers=[
-        "X-Expire-Seconds",
         "X-Server-Version",
     ],  # Headers that client can see and access via JavaScript
     max_age=3600,  # Preflight cache duration in seconds
@@ -101,11 +100,13 @@ SecWeb(
             "script-src": [
                 "'self'",
                 "'unsafe-inline'",
-                "'unsafe-eval'",
+                # "'unsafe-eval'",
+                "https://cdn.jsdelivr.net",
             ],  # Allow scripts from self, inline scripts, and eval() - development only
             "style-src": [
                 "'self'",
-                "'unsafe-inline'",
+                # "'unsafe-inline'",
+                "https://cdn.jsdelivr.net",
             ],  # Allow styles from self and inline styles - development only
             "img-src": [
                 "'self'",
@@ -143,8 +144,12 @@ SecWeb(
         "xcto": True,  # X-Content-Type-Options: nosniff - prevent MIME type sniffing attacks
         "xframe": "DENY",  # X-Frame-Options: DENY - prevent clickjacking by blocking iframe embedding
         "cacheControl": {
-            "no-store": True
-        },  # Cache-Control: no-store - prevent caching of responses
+            "max-age": 10,  # Seconds
+            "private": True,  # Cache only in browser, not shared caches
+        },
+        # "cacheControl": {
+        #     "no-store": True
+        # },  # Cache-Control: no-store - prevent caching of responses
         "xss": True,  # X-XSS-Protection: enable XSS filtering (legacy header, mostly deprecated)
         "xdns": "off",  # X-DNS-Prefetch-Control: off - disable DNS prefetching for privacy
         "xcdp": "none",  # X-Permitted-Cross-Domain-Policies: none - block Adobe Flash/PDF cross-domain requests
@@ -344,9 +349,7 @@ async def health_check() -> ORJSONResponse:
         "success", 200, {"status": "ok"}, "Service is running"
     )
 
-    return ORJSONResponse(
-        formatted_response, status.HTTP_200_OK, headers={"X-Expire-Seconds": "30"}
-    )
+    return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
 @cocktail_maker_v1.post(

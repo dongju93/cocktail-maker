@@ -1,6 +1,6 @@
-import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from os import environ
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -18,8 +18,8 @@ from .roles import check_roles
 load_dotenv(dotenv_path=".env")
 
 # JWT 설정
-SECRET_KEY: str = os.environ["SECRET_KEY"]
-ALGORITHM: str = os.environ["SECRET_ALGORITHM"]
+SECRET_KEY: str = environ["SECRET_KEY"]
+ALGORITHM: str = environ["SECRET_ALGORITHM"]
 security = HTTPBearer()
 
 

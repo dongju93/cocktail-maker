@@ -1,11 +1,11 @@
-import os
+from os import environ
 
 from dotenv import load_dotenv
 from sqlalchemy import Engine
 from sqlmodel import Field, SQLModel, create_engine
 
 load_dotenv(dotenv_path=".env")
-SQLITE_PATH: str = os.environ["SQLITE_PATH"]
+SQLITE_PATH: str = environ["SQLITE_PATH"]
 
 
 class MetadataTable(SQLModel, table=True):

@@ -1,5 +1,5 @@
-import os
 from contextlib import asynccontextmanager, contextmanager
+from os import environ
 from typing import AsyncGenerator, Generator  # noqa: UP035
 
 from dotenv import load_dotenv
@@ -13,8 +13,8 @@ from sqlmodel import Session
 from .table import engine
 
 load_dotenv(dotenv_path=".env")
-MONGODB_URL: str = os.environ["MONGODB_URL"]
-SQLITE_PATH: str = os.environ["SQLITE_PATH"]
+MONGODB_URL: str = environ["MONGODB_URL"]
+SQLITE_PATH: str = environ["SQLITE_PATH"]
 
 
 @asynccontextmanager

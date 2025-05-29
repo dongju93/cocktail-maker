@@ -19,9 +19,10 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import ORJSONResponse
 
-# from Secweb import SecWeb
+# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
+from starlette_compress import CompressMiddleware
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
@@ -62,6 +63,13 @@ cocktail_maker = FastAPI(
     default_response_class=ORJSONResponse,
     docs_url="/api/docs",
 )
+# cocktail_maker.add_middleware(
+#     CORSMiddleware,
+#     allow_credentials=True,
+#     allow_origins=["http://localhost:5173"],
+#     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+#     allow_headers=["*"],
+# )
 
 """
 Preflight is OPTIONS method

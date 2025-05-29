@@ -15,7 +15,9 @@ dependencies = [
     "pyjwt>=2,<3",
     "secweb>=1.18.1",
     "sqlmodel>=0.0.22",
+    "starlette-compress>=1.6.0",
     "structlog>=25,<26",
+    "uvicorn-worker>=0.3.0",
 ]
 
 [dependency-groups]

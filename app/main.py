@@ -26,7 +26,6 @@ from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import VerifyToken, refresh_access_token, sign_in_token
-from middleware.brotli import BrotliMiddleware
 from model import (
     COCKTAIL_DATA_KIND,
     IngredientDict,
@@ -176,12 +175,6 @@ async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN2
 
     return response
 
-
-cocktail_maker.add_middleware(
-    BrotliMiddleware,
-    quality=6,
-    minimum_size=1,
-)
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7

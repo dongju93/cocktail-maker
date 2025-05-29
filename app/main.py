@@ -184,6 +184,10 @@ async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN2
     return response
 
 
+cocktail_maker.add_middleware(
+    CompressMiddleware, minimum_size=1, zstd_level=4, brotli_quality=4, gzip_level=6
+)
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 

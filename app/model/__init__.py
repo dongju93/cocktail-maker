@@ -3,7 +3,7 @@ from .ingredients import IngredientDict
 from .liqueur import LiqueurDict, LiqueurSearch
 from .response import ResponseFormat, SearchResponse
 from .spirits import SpiritsDict, SpiritsSearch
-from .user import Login, PasswordAndSalt, User
+from .user import ApiKeyPublish, Login, PasswordAndSalt, User
 
 __all__ = [
     "Login",
@@ -20,4 +20,5 @@ __all__ = [
     "MetadataCategory",
     "COCKTAIL_DATA_KIND",
     "SearchResponse",
+    "ApiKeyPublish",
 ]

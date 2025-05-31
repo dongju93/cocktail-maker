@@ -45,3 +45,8 @@ class Login(BaseModel):
 class PasswordAndSalt(TypedDict):
     encrypted_password: str
     salt: str
+
+
+class ApiKeyPublish(BaseModel):
+    domain: Annotated[str, Field(..., min_length=1, max_length=50)]
+    purpose: Annotated[str, Field(..., min_length=1, max_length=100)]

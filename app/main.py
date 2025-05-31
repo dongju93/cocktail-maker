@@ -1,6 +1,7 @@
 from asyncio import set_event_loop_policy as set_global_asyncio_event_loop_policy
 from datetime import UTC, datetime
 from decimal import Decimal
+from time import time_ns
 from typing import Annotated, Any
 
 from fastapi import (
@@ -26,9 +27,15 @@ from starlette_compress import CompressMiddleware
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
-from auth import VerifyToken, refresh_access_token, sign_in_token
+from auth import (
+    ProductionAPIKeyGenerator,
+    VerifyToken,
+    refresh_access_token,
+    sign_in_token,
+)
 from model import (
     COCKTAIL_DATA_KIND,
+    ApiKeyPublish,
     IngredientDict,
     LiqueurDict,
     LiqueurSearch,
@@ -350,6 +357,21 @@ async def version() -> ORJSONResponse:
     )
 
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
+
+
+@cocktail_maker_v1.post("/publish-api-key", summary="API 키 발급", tags=["인증"])
+async def publish_api_key(
+    api_key_publish: Annotated[ApiKeyPublish, Body(...)],
+    _: Annotated[None, Security(VerifyToken(["admin"]))],
+) -> ORJSONResponse:
+    generator: ProductionAPIKeyGenerator = ProductionAPIKeyGenerator.from_env()
+    api_key: str = generator.generate_api_key(api_key_publish.domain, time_ns())
+
+    return ORJSONResponse(
+        await return_formatter(
+            "success", 200, {"api_key": api_key}, "API key generated successfully"
+        )
+    )
 
 
 @cocktail_maker_v1.get("/health", summary="상태 확인", tags=["기타"])

@@ -350,10 +350,20 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
-@cocktail_maker_v1.get("/version", summary="서비스 버전 확인", tags=["기타"])
-async def version() -> ORJSONResponse:
+@cocktail_maker_v1.get("/my-role", summary="내 JWT 권한 확인", tags=["인증"])
+async def my_role(
+    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+) -> ORJSONResponse:
+    """현재 로그인된 사용자의 권한 확인
+
+    Args:
+        _ (Annotated[None, Security]): 보안 검증을 위한 필드
+
+    Returns:
+        ORJSONResponse: 사용자 권한 정보
+    """
     formatted_response: ResponseFormat = await return_formatter(
-        "success", 200, {"version": cocktail_maker.version}, "Successfully get version"
+        "success", 200, {"roles": ["admin", "user"]}, "Successfully get user roles"
     )
 
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)

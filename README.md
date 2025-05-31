@@ -60,7 +60,7 @@
   - [ ] 리큐르 정보 자음 검색 - Name
   - [ ] 리큐르 정보 수정 - ID
   - [ ] 리큐르 정보 삭제 - ID
-  - [ ] 기타 재료 정보 단일 등록
+  - [x] 기타 재료 정보 단일 등록
   - [ ] 기타 재료 정보 검색 - All attributes
   - [ ] 기타 재료 정보 단일 조회 - Name
   - [ ] 기타 재료 자음 검색 - Name
@@ -75,3 +75,6 @@
   - [x] 모든 응답에 규격화된 JSON 적용
   - [x] 이벤트 로거
   - [x] 상태 체크
+
+## Test
+`TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html`

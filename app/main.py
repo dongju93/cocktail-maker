@@ -266,8 +266,16 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
 
 @cocktail_maker_v1.post("/signin", summary="로그인", tags=["인증"])
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
-    """
-    로그인 성공 시 메시지와 함께 JWT 를 반환
+    """로그인
+
+    Args:
+        login (Annotated[Login, Body): 로그인 정보
+
+    Raises:
+        HTTPException: 로그인 실패 시
+
+    Returns:
+        Response: 로그인 성공 시 JWT 쿠키 설정
     """
     try:
         if (roles := await queries.Users.sign_in(login)) == []:
@@ -311,8 +319,16 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
 
 @cocktail_maker_v1.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
 async def refresh_token(request: Request) -> Response:
-    """
-    리프레시 토큰을 Header에서 받아 액세스 토큰을 갱신
+    """액세스 토큰 갱신
+
+    Args:
+        request (Request): 요청 객체
+
+    Raises:
+        HTTPException: 리프레시 토큰이 없는 경우
+
+    Returns:
+        Response: 204 No Content
     """
     refresh_token: str | None = request.cookies.get("refreshToken")
 

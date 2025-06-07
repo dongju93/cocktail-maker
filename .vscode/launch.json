@@ -7,7 +7,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "main:app",
+                "main:cocktail_maker",
                 "--reload"
             ],
             "cwd": "${workspaceFolder}/app",

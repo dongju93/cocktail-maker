@@ -7,9 +7,9 @@ refresh_access_token = PublishToken.refresh_access_token
 VerifyToken = VerifyToken()
 
 __all__ = [
-    "refresh_access_token",
-    "sign_in_token",
-    "VerifyToken",
     "Encryption",
     "ProductionAPIKeyGenerator",
+    "VerifyToken",
+    "refresh_access_token",
+    "sign_in_token",
 ]

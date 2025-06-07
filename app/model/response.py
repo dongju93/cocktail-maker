@@ -19,3 +19,13 @@ class ResponseFormat(TypedDict):
     code: int
     data: Any
     message: str
+
+
+class ProblemDetails(TypedDict, total=False):
+    """RFC 9457 Problem Details format for HTTP APIs"""
+
+    type: str
+    title: str
+    status: int
+    detail: str
+    instance: str

@@ -1,24 +1,25 @@
 from .etc import COCKTAIL_DATA_KIND, ImageField, MetadataCategory, MetadataRegister
 from .ingredients import IngredientDict
 from .liqueur import LiqueurDict, LiqueurSearch
-from .response import ResponseFormat, SearchResponse
+from .response import ProblemDetails, ResponseFormat, SearchResponse
 from .spirits import SpiritsDict, SpiritsSearch
 from .user import ApiKeyPublish, Login, PasswordAndSalt, User
 
 __all__ = [
-    "Login",
-    "PasswordAndSalt",
-    "User",
-    "ResponseFormat",
-    "SpiritsDict",
-    "SpiritsSearch",
+    "COCKTAIL_DATA_KIND",
+    "ApiKeyPublish",
+    "ImageField",
+    "IngredientDict",
     "LiqueurDict",
     "LiqueurSearch",
-    "IngredientDict",
-    "ImageField",
-    "MetadataRegister",
+    "Login",
     "MetadataCategory",
-    "COCKTAIL_DATA_KIND",
+    "MetadataRegister",
+    "PasswordAndSalt",
+    "ProblemDetails",
+    "ResponseFormat",
     "SearchResponse",
-    "ApiKeyPublish",
+    "SpiritsDict",
+    "SpiritsSearch",
+    "User",
 ]

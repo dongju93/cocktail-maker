@@ -20,9 +20,11 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.exception_handlers import http_exception_handler
 
 # from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette_compress import CompressMiddleware
 from structlog import BoundLogger
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
@@ -53,7 +55,7 @@ from model.validation import (
     MetadataValidation,
 )
 from query import queries
-from utils import Logger, return_formatter
+from utils import Logger, problem_details_formatter, return_formatter
 
 set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
 
@@ -194,6 +196,66 @@ async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN2
 cocktail_maker.add_middleware(
     CompressMiddleware, minimum_size=1, zstd_level=4, brotli_quality=4, gzip_level=6
 )
+
+
+@cocktail_maker.exception_handler(Exception)
+async def general_exception_handler_rfc(
+    request: Request, exc: Exception
+) -> ORJSONResponse:
+    """General exception handler for server errors using RFC 9457 format"""
+    logger.error("Unhandled server error", error=str(exc), path=request.url.path)
+
+    problem_details = await problem_details_formatter(
+        status=500,
+        title="Internal Server Error",
+        detail="An unexpected error occurred while processing the request",
+        type_uri="https://httpstatuses.com/500",
+    )
+
+    return ORJSONResponse(
+        content=problem_details, status_code=500, media_type="application/problem+json"
+    )
+
+
+@cocktail_maker.exception_handler(StarletteHTTPException)
+async def http_exception_handler_rfc(
+    request: Request, exc: StarletteHTTPException
+) -> Response:
+    """Handle FastAPI HTTPExceptions with RFC 9457 format"""
+
+    if exc.status_code >= status.HTTP_400_BAD_REQUEST:
+        if exc.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+            logger.error(
+                "HTTP server error",
+                code=exc.status_code,
+                detail=exc.detail,
+                path=request.url.path,
+            )
+            title = f"Server Error {exc.status_code}"
+        else:
+            logger.warning(
+                "HTTP client error",
+                code=exc.status_code,
+                detail=exc.detail,
+                path=request.url.path,
+            )
+            title = f"Client Error {exc.status_code}"
+
+        problem_details = await problem_details_formatter(
+            status=exc.status_code,
+            title=title,
+            detail=exc.detail,
+            type_uri=f"https://httpstatuses.com/{exc.status_code}",
+        )
+
+        return ORJSONResponse(
+            content=problem_details,
+            status_code=exc.status_code,
+            media_type="application/problem+json",
+        )
+
+    return await http_exception_handler(request, exc)
+
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7

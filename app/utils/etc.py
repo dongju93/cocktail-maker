@@ -2,10 +2,11 @@ import io
 from os import makedirs, path
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
 from PIL.ImageFile import Image, ImageFile
 
-from model import ResponseFormat
+from model import ResponseFormat, ProblemDetails
 
 
 async def return_formatter(
@@ -16,6 +17,23 @@ async def return_formatter(
         code=code,
         data=data,
         message=message,
+    )
+
+
+async def problem_details_formatter(
+    status: int,
+    title: str,
+    detail: str,
+    type_uri: str = "about:blank",
+    instance: str | None = None,
+) -> ProblemDetails:
+    """Format error responses according to RFC 9457 Problem Details standard"""
+    return ProblemDetails(
+        type=type_uri,
+        title=title,
+        status=status,
+        detail=detail,
+        instance=instance or f"urn:uuid:{uuid4()}",
     )
 
 

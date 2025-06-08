@@ -520,6 +520,8 @@ async def spirits_register(  # noqa
     단일 주류 정보 등록
     """
 
+    SPIRITS_REGISTER_FAILURE_MESSAGE = "Failed to register spirits"
+
     try:
         # 이미지 검증 및 변환
         read_main_image, sub_images_bytes = await ImageValidation.files(
@@ -568,18 +570,18 @@ async def spirits_register(  # noqa
 
     except HTTPException as he:
         logger.error(
-            "Failed to register spirits", code=he.status_code, message=he.detail
+            SPIRITS_REGISTER_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
     except Exception as e:
-        logger.error("Failed to register spirits", error=str(e))
+        logger.error(SPIRITS_REGISTER_FAILURE_MESSAGE, error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
-            f"Failed to register spirits: {e!s}",
+            f"{SPIRITS_REGISTER_FAILURE_MESSAGE}: {e!s}",
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
@@ -613,6 +615,9 @@ async def spirits_update(  # noqa: PLR0913
     """
     주류 정보 수정
     """
+
+    SPIRITS_UPDATE_FAILURE_MESSAGE = "Failed to update spirits"
+
     try:
         # 이미지 검증 및 변환
         read_main_image, sub_images_bytes = await ImageValidation.files(
@@ -651,23 +656,25 @@ async def spirits_update(  # noqa: PLR0913
             read_sub_image4,
         ).update()
 
-        logger.info("Spirits successfully registered", name=name)
+        logger.info("Spirits successfully updated", name=name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except HTTPException as he:
-        logger.error("Failed to update spirits", code=he.status_code, message=he.detail)
+        logger.error(
+            SPIRITS_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
         response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
-        logger.error("Failed to update spirits", error=str(e))
+        logger.error(SPIRITS_UPDATE_FAILURE_MESSAGE, error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
-            f"Failed to update spirits: {e!s}",
+            f"{SPIRITS_UPDATE_FAILURE_MESSAGE}: {e!s}",
         )
         response = Response(formatted_response, formatted_response["code"])
 
@@ -890,6 +897,8 @@ async def liqueur_register(  # noqa: PLR0913
     """
     단일 리큐르 정보 등록
     """
+    LIQUEUR_REGISTER_FAILURE_MESSAGE = "Failed to register liqueur"
+
     try:
         # 이미지 검증 및 변환
         read_main_image, _ = await ImageValidation.files(mainImage, [])
@@ -924,18 +933,18 @@ async def liqueur_register(  # noqa: PLR0913
 
     except HTTPException as he:
         logger.error(
-            "Failed to register spirits", code=he.status_code, message=he.detail
+            LIQUEUR_REGISTER_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
     except Exception as e:
-        logger.error("Failed to register spirits", error=str(e))
+        logger.error(LIQUEUR_REGISTER_FAILURE_MESSAGE, error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
-            f"Failed to register spirits: {e!s}",
+            f"{LIQUEUR_REGISTER_FAILURE_MESSAGE}: {e!s}",
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
@@ -1060,6 +1069,7 @@ async def liqueur_update(  # noqa: PLR0913
     """
     주류 정보 수정
     """
+    LIQUEUR_UPDATE_FAILURE_MESSAGE = "Failed to update liqueur"
     try:
         # 이미지 검증 및 변환
         read_main_image, _ = await ImageValidation.files(mainImage, [])
@@ -1090,23 +1100,25 @@ async def liqueur_update(  # noqa: PLR0913
         #     read_sub_image4,
         # ).update()
 
-        logger.info("Liqueur successfully registered", name=name)
+        logger.info(LIQUEUR_UPDATE_FAILURE_MESSAGE, name=name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
     except HTTPException as he:
-        logger.error("Failed to update spirits", code=he.status_code, message=he.detail)
+        logger.error(
+            LIQUEUR_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
         formatted_response = await return_formatter(
             "failed", he.status_code, None, he.detail
         )
         response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
-        logger.error("Failed to update spirits", error=str(e))
+        logger.error(LIQUEUR_UPDATE_FAILURE_MESSAGE, error=str(e))
         formatted_response = await return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
-            f"Failed to update spirits: {e!s}",
+            f"{LIQUEUR_UPDATE_FAILURE_MESSAGE}: {e!s}",
         )
         response = Response(formatted_response, formatted_response["code"])
 

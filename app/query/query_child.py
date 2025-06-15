@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from structlog import BoundLogger
 
 from database import mongodb_conn
-from model import COCKTAIL_DATA_KIND, LiqueurSearch, SpiritsSearch
+from model import COCKTAIL_DATA_KIND, IngredientSearch, LiqueurSearch, SpiritsSearch
 from utils import Logger, save_image_to_local
 
 logger: BoundLogger = Logger().setup()
@@ -131,6 +131,37 @@ def liqueur_search_query(params: LiqueurSearch) -> dict[str, Any]:
     # 원산지 지역 검색 (부분 일치)
     if params.originLocation is not None:
         query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
+
+    # 설명 검색 (부분 일치)
+    if params.description is not None:
+        query["description"] = {"$regex": params.description, "$options": "i"}
+
+    return query
+
+
+def ingredient_search_query(params: IngredientSearch) -> dict[str, Any]:
+    """
+    IngredientSearch 클래스의 모든 필드를 MongoDB 쿼리로 변환합니다.
+
+    Args:
+        params: 검색 파라미터
+
+    Returns:
+        MongoDB 쿼리 딕셔너리
+    """
+    query: dict[str, Any] = {}
+
+    # 이름 검색 (부분 일치)
+    if params.name is not None:
+        query["name"] = {"$regex": params.name, "$options": "i"}  # 대소문자 무시 옵션
+
+    # 브랜드 검색 (목록 중 정확한 일치)
+    if params.brand is not None and len(params.brand) > 0:
+        query["brand"] = {"$all": params.brand}
+
+    # 종류 검색 (정확한 일치)
+    if params.kind is not None:
+        query["kind"] = params.kind
 
     # 설명 검색 (부분 일치)
     if params.description is not None:

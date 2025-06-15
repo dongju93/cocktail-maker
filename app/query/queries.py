@@ -13,6 +13,7 @@ from database import MetadataTable, mongodb_conn, sqlite_conn_orm
 from model import (
     COCKTAIL_DATA_KIND,
     IngredientDict,
+    IngredientSearch,
     LiqueurDict,
     LiqueurSearch,
     Login,
@@ -26,7 +27,12 @@ from model import (
 )
 from utils import Logger
 
-from .query_child import Images, liqueur_search_query, spirits_search_query
+from .query_child import (
+    Images,
+    ingredient_search_query,
+    liqueur_search_query,
+    spirits_search_query,
+)
 from .query_parents import CreateDocument, RetrieveDocument, SearchDocument
 
 logger: BoundLogger = Logger().setup()
@@ -404,3 +410,146 @@ class Users:
             raise e
 
         return result["roles"]
+
+
+@dataclass
+class UpdateLiqueur:
+    document_id: str
+    liqueur_item: LiqueurDict
+    main_image: bytes
+
+    async def update(self) -> None:
+        # 1. 기존 이미지 삭제
+        await Images().remove_image_files_in_local_dir(self.document_id)
+
+        # 2. 문서 업데이트
+        try:
+            async with mongodb_conn("liqueur") as conn:
+                self.liqueur_item["updated_at"] = datetime.now(tz=UTC)
+                result = await conn.update_one(
+                    {"_id": ObjectId(self.document_id)}, {"$set": self.liqueur_item}
+                )
+                if result.matched_count == 0:
+                    raise HTTPException(status_code=404, detail="Liqueur not found")
+        except Exception as e:
+            logger.error("Update Liqueur object has an error", error=str(e))
+            raise e
+
+        # 3. 새 이미지 저장
+        try:
+            await Images().save_image_files_to_local_dir(
+                self.document_id,
+                "liqueur",
+                self.main_image,
+            )
+        except Exception as e:
+            logger.error("Save updated Liqueur images has an error", error=str(e))
+            raise e
+
+
+@dataclass
+class DeleteLiqueur:
+    document_id: str
+
+    async def remove(self) -> None:
+        try:
+            # 1. 이미지 삭제
+            await Images().remove_image_files_in_local_dir(self.document_id)
+
+            # 2. 문서 삭제
+            async with mongodb_conn("liqueur") as conn:
+                result = await conn.delete_one({"_id": ObjectId(self.document_id)})
+                if result.deleted_count == 0:
+                    raise HTTPException(status_code=404, detail="Liqueur not found")
+        except Exception as e:
+            logger.error("Delete Liqueur object has an error", error=str(e))
+            raise e
+
+
+@dataclass
+class RetrieveIngredient(RetrieveDocument):
+    name: str
+    collection_name: str = "ingredient"
+
+    async def only_name(self) -> dict[str, Any]:
+        document: dict[str, Any] = await super().only_name()
+        return document
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_name(self) -> str:
+        return self.name
+
+
+@dataclass
+class SearchIngredient(SearchDocument):
+    params: IngredientSearch
+    collection_name: str = "ingredient"
+
+    async def query(self) -> SearchResponse:
+        documents: SearchResponse = await super().query()
+        return documents
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_query(self) -> dict[str, Any]:
+        return ingredient_search_query(self.params)
+
+    def get_params(self) -> IngredientSearch:
+        return self.params
+
+
+@dataclass
+class UpdateIngredient:
+    document_id: str
+    ingredient_item: IngredientDict
+    main_image: bytes
+
+    async def update(self) -> None:
+        # 1. 기존 이미지 삭제
+        await Images().remove_image_files_in_local_dir(self.document_id)
+
+        # 2. 문서 업데이트
+        try:
+            async with mongodb_conn("ingredient") as conn:
+                self.ingredient_item["updated_at"] = datetime.now(tz=UTC)
+                result = await conn.update_one(
+                    {"_id": ObjectId(self.document_id)}, {"$set": self.ingredient_item}
+                )
+                if result.matched_count == 0:
+                    raise HTTPException(status_code=404, detail="Ingredient not found")
+        except Exception as e:
+            logger.error("Update Ingredient object has an error", error=str(e))
+            raise e
+
+        # 3. 새 이미지 저장
+        try:
+            await Images().save_image_files_to_local_dir(
+                self.document_id,
+                "ingredient",
+                self.main_image,
+            )
+        except Exception as e:
+            logger.error("Save updated Ingredient images has an error", error=str(e))
+            raise e
+
+
+@dataclass
+class DeleteIngredient:
+    document_id: str
+
+    async def remove(self) -> None:
+        try:
+            # 1. 이미지 삭제
+            await Images().remove_image_files_in_local_dir(self.document_id)
+
+            # 2. 문서 삭제
+            async with mongodb_conn("ingredient") as conn:
+                result = await conn.delete_one({"_id": ObjectId(self.document_id)})
+                if result.deleted_count == 0:
+                    raise HTTPException(status_code=404, detail="Ingredient not found")
+        except Exception as e:
+            logger.error("Delete Ingredient object has an error", error=str(e))
+            raise e

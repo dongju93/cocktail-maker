@@ -39,6 +39,7 @@ from model import (
     COCKTAIL_DATA_KIND,
     ApiKeyPublish,
     IngredientDict,
+    IngredientSearch,
     LiqueurDict,
     LiqueurSearch,
     Login,
@@ -1220,6 +1221,149 @@ async def ingredient_register(
             None,
             f"Failed to register ingredient: {e!s}",
         )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get(
+    "/ingredient/{name}", summary="단일 기타 재료 정보 조회", tags=["기타 재료"]
+)
+async def ingredient_detail(
+    name: Annotated[str, Path(..., description="기타 재료의 이름, 정확한 일치")],
+) -> ORJSONResponse:
+    ingredient: dict[str, Any] = await queries.RetrieveIngredient(name).only_name()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", status.HTTP_200_OK, ingredient, "Successfully get ingredient"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get("/ingredient", summary="기타 재료 정보 검색", tags=["기타 재료"])
+async def ingredient_search(
+    params: Annotated[IngredientSearch, Query(...)],
+    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+) -> ORJSONResponse:
+    data: SearchResponse = await queries.SearchIngredient(params).query()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, data, "Successfully search ingredients"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.put(
+    "/ingredient/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
+)
+async def ingredient_update(  # noqa: PLR0913
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    name: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=100,
+            pattern="^[가-힣\\s]+$",
+            description="이름",
+        ),
+    ],
+    kind: Annotated[
+        str,
+        Form(
+            ...,
+            min_length=1,
+            max_length=50,
+            pattern="^[가-힣\\s]+$",
+            description="종류",
+        ),
+    ],
+    description: Annotated[
+        str, Form(..., min_length=1, max_length=1000, description="설명")
+    ],
+    mainImage: Annotated[
+        UploadFile,
+        File(
+            ...,
+            media_type=[  # type: ignore
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/webp",
+                "image/bmp",
+                "image/gif",
+                "image/tiff",
+            ],
+            description="대표 이미지, 최대 2MB",
+        ),
+    ],
+    brand: Annotated[
+        list[str] | None,
+        Form(
+            min_length=1,
+            max_length=10,
+            description="브랜드",
+        ),
+    ] = None,
+) -> Response:
+    """
+    기타 재료 정보 수정
+    """
+    INGREDIENT_UPDATE_FAILURE_MESSAGE = "Failed to update ingredient"
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, _ = await ImageValidation.files(mainImage, [])
+
+        item: IngredientDict = IngredientDict(
+            name=name,
+            brand=brand,
+            kind=kind,
+            description=description,
+            updated_at=datetime.now(tz=UTC),
+        )
+        await queries.UpdateIngredient(
+            document_id,
+            item,
+            read_main_image,
+        ).update()
+
+        logger.info("Ingredient successfully updated", name=name)
+
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except HTTPException as he:
+        logger.error(
+            INGREDIENT_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+        response = Response(formatted_response, formatted_response["code"])
+    except Exception as e:
+        logger.error(INGREDIENT_UPDATE_FAILURE_MESSAGE, error=str(e))
+        formatted_response = await return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{INGREDIENT_UPDATE_FAILURE_MESSAGE}: {e!s}",
+        )
+        response = Response(formatted_response, formatted_response["code"])
+
+    return response
+
+
+@cocktail_maker_v1.delete(
+    "/ingredient/{document_id}", summary="기타 재료 정보 삭제", tags=["기타 재료"]
+)
+async def ingredient_remover(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+) -> ORJSONResponse:
+    await queries.DeleteIngredient(document_id).remove()
+
+    formatted_response: ResponseFormat = await return_formatter(
+        "success", 200, None, "Successfully delete ingredient"
+    )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
 

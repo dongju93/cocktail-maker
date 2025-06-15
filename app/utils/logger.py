@@ -1,3 +1,4 @@
+import fcntl
 from pathlib import Path
 from typing import Any, Mapping, MutableMapping  # noqa: UP035
 
@@ -36,11 +37,14 @@ class Logger:
 
         try:
             with open(self.log_path, "ab") as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+
                 f.write(orjson.dumps(formatted_log))
                 f.write(b"\n")
+
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except Exception as e:
             print(f"Failed to write log: {e}")
-            return event_dict
 
         return event_dict
 

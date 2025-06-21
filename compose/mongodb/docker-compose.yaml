@@ -12,9 +12,9 @@ services:
         source: /Volumes/Transcend/App/mongodb/data
         target: /data/db
     networks:
-      - cocktail_maker_network
+      - cocktail_maker_main_network
 
 networks:
-  cocktail_maker_network:
-    external: true
-    name: cocktail_maker_main_network
+  cocktail_maker_main_network:
+    # external: true
+    # name: cocktail_maker_main_network

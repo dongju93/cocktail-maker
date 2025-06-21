@@ -1,74 +1,74 @@
 import type React from 'react'
 
+const cocktailTips = [
+    {
+        id: 'basic-tools',
+        title: '기본 도구 준비',
+        description: '셰이커, 지거, 바 스푼, 스트레이너를 준비하세요.',
+        icon: '🍸',
+    },
+    {
+        id: 'measure-ingredients',
+        title: '재료 측정',
+        description: '정확한 비율이 맛있는 칵테일의 핵심입니다.',
+        icon: '⚖️',
+    },
+    {
+        id: 'ice-usage',
+        title: '얼음 사용법',
+        description: '신선한 얼음을 사용하고 충분히 넣어주세요.',
+        icon: '🧊',
+    },
+    {
+        id: 'garnish-decoration',
+        title: '가니쉬 장식',
+        description: '시각적 효과와 향을 위한 마지막 터치입니다.',
+        icon: '🍋',
+    },
+]
+
+const popularCocktails = [
+    {
+        id: 'old-fashioned',
+        name: '올드 패션드',
+        ingredients: [
+            { id: 'whiskey', name: '위스키 60ml' },
+            { id: 'sugar', name: '설탕 1티스푼' },
+            { id: 'bitters', name: '앙고스투라 비터 2방울' },
+            { id: 'ice', name: '얼음' },
+            { id: 'orange-peel', name: '오렌지 필' },
+        ],
+        difficulty: '초급',
+        time: '3분',
+    },
+    {
+        id: 'gin-tonic',
+        name: '진 토닉',
+        ingredients: [
+            { id: 'gin', name: '진 50ml' },
+            { id: 'tonic-water', name: '토닉워터 150ml' },
+            { id: 'lime', name: '라임 1조각' },
+            { id: 'ice', name: '얼음' },
+        ],
+        difficulty: '초급',
+        time: '2분',
+    },
+    {
+        id: 'margarita',
+        name: '마가리타',
+        ingredients: [
+            { id: 'tequila', name: '테킬라 50ml' },
+            { id: 'triple-sec', name: '트리플섹 25ml' },
+            { id: 'lime-juice', name: '라임즙 25ml' },
+            { id: 'salt', name: '소금' },
+            { id: 'ice', name: '얼음' },
+        ],
+        difficulty: '중급',
+        time: '5분',
+    },
+]
+
 const CocktailGuide: React.FC = () => {
-    const cocktailTips = [
-        {
-            id: 'basic-tools',
-            title: '기본 도구 준비',
-            description: '셰이커, 지거, 바 스푼, 스트레이너를 준비하세요.',
-            icon: '🍸',
-        },
-        {
-            id: 'measure-ingredients',
-            title: '재료 측정',
-            description: '정확한 비율이 맛있는 칵테일의 핵심입니다.',
-            icon: '⚖️',
-        },
-        {
-            id: 'ice-usage',
-            title: '얼음 사용법',
-            description: '신선한 얼음을 사용하고 충분히 넣어주세요.',
-            icon: '🧊',
-        },
-        {
-            id: 'garnish-decoration',
-            title: '가니쉬 장식',
-            description: '시각적 효과와 향을 위한 마지막 터치입니다.',
-            icon: '🍋',
-        },
-    ]
-
-    const popularCocktails = [
-        {
-            id: 'old-fashioned',
-            name: '올드 패션드',
-            ingredients: [
-                { id: 'whiskey', name: '위스키 60ml' },
-                { id: 'sugar', name: '설탕 1티스푼' },
-                { id: 'bitters', name: '앙고스투라 비터 2방울' },
-                { id: 'ice', name: '얼음' },
-                { id: 'orange-peel', name: '오렌지 필' },
-            ],
-            difficulty: '초급',
-            time: '3분',
-        },
-        {
-            id: 'gin-tonic',
-            name: '진 토닉',
-            ingredients: [
-                { id: 'gin', name: '진 50ml' },
-                { id: 'tonic-water', name: '토닉워터 150ml' },
-                { id: 'lime', name: '라임 1조각' },
-                { id: 'ice', name: '얼음' },
-            ],
-            difficulty: '초급',
-            time: '2분',
-        },
-        {
-            id: 'margarita',
-            name: '마가리타',
-            ingredients: [
-                { id: 'tequila', name: '테킬라 50ml' },
-                { id: 'triple-sec', name: '트리플섹 25ml' },
-                { id: 'lime-juice', name: '라임즙 25ml' },
-                { id: 'salt', name: '소금' },
-                { id: 'ice', name: '얼음' },
-            ],
-            difficulty: '중급',
-            time: '5분',
-        },
-    ]
-
     return (
         <div className="bg-white min-h-screen">
             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 py-16 px-8 text-center text-white">

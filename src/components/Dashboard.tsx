@@ -66,14 +66,18 @@ const Dashboard: React.FC = () => {
     return (
         <div className="p-8 max-w-6xl mx-auto bg-white min-h-screen">
             <div className="flex justify-between items-start mb-12 pb-8 border-b-2 border-gray-100">
-                <h1 className="text-gray-800 text-4xl font-bold m-0">📊 개인 대시보드</h1>
+                <h1 className="text-gray-800 text-4xl font-bold m-0">
+                    <span aria-hidden="true">📊</span> 개인 대시보드
+                </h1>
                 {renderUserSection()}
             </div>
 
             <div className="flex flex-col gap-12">
                 <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
                     <div className="mb-8">
-                        <h2 className="text-gray-800 mb-2 text-3xl font-bold">🥃 API 연동 데모</h2>
+                        <h2 className="text-gray-800 mb-2 text-3xl font-bold">
+                            <span aria-hidden="true">🥃</span> API 연동 데모
+                        </h2>
                         <p className="text-gray-600 m-0">
                             백엔드 API와의 연결 상태를 확인할 수 있습니다.
                         </p>
@@ -95,7 +99,9 @@ const Dashboard: React.FC = () => {
                         {error && (
                             <div className="p-4">
                                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-                                    <span className="text-lg">⚠️</span>
+                                    <span className="text-lg" aria-hidden="true">
+                                        ⚠️
+                                    </span>
                                     <span>오류: {error}</span>
                                 </div>
                             </div>
@@ -104,7 +110,9 @@ const Dashboard: React.FC = () => {
                         {data && (
                             <div className="border border-green-200 rounded-lg overflow-hidden">
                                 <div className="bg-green-50 p-4 flex items-center gap-2 text-green-700 font-semibold">
-                                    <span className="text-lg">✅</span>
+                                    <span className="text-lg" aria-hidden="true">
+                                        ✅
+                                    </span>
                                     <span>API 연결 성공!</span>
                                 </div>
                                 <div className="p-4">
@@ -121,7 +129,9 @@ const Dashboard: React.FC = () => {
                     <h2 className="text-gray-800 mb-6 text-3xl font-bold">빠른 작업</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="text-4xl mb-4">📚</div>
+                            <div className="text-4xl mb-4" aria-hidden="true">
+                                📚
+                            </div>
                             <h3 className="text-gray-800 mb-2 text-xl font-semibold">
                                 가이드 보기
                             </h3>
@@ -136,7 +146,9 @@ const Dashboard: React.FC = () => {
                             </a>
                         </div>
                         <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="text-4xl mb-4">🔍</div>
+                            <div className="text-4xl mb-4" aria-hidden="true">
+                                🔍
+                            </div>
                             <h3 className="text-gray-800 mb-2 text-xl font-semibold">재료 검색</h3>
                             <p className="text-gray-600 mb-6 text-sm">
                                 다양한 칵테일 재료를 검색해보세요
@@ -150,7 +162,9 @@ const Dashboard: React.FC = () => {
                             </button>
                         </div>
                         <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                            <div className="text-4xl mb-4">⭐</div>
+                            <div className="text-4xl mb-4" aria-hidden="true">
+                                ⭐
+                            </div>
                             <h3 className="text-gray-800 mb-2 text-xl font-semibold">즐겨찾기</h3>
                             <p className="text-gray-600 mb-6 text-sm">
                                 좋아하는 칵테일을 저장하세요

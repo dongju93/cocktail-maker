@@ -1,4 +1,20 @@
 services:
+  mongodb:
+    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=dongju
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - type: bind
+        source: /Volumes/Transcend/App/mongodb/data
+        target: /data/db
+        read_only: false
+    networks:
+      - cocktail_maker_main_network
+
   su-auth:
     image: registry.supertokens.io/supertokens/supertokens-postgresql
     container_name: supertokens
@@ -28,7 +44,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data:rw
     networks:
       - cocktail_maker_main_network
 

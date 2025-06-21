@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+    "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -7,13 +7,7 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "includes": [
-            "**",
-            "!**/dist/**",
-            "!**/node_modules/**",
-            "!**/*.config.js",
-            "!**/vite.config.ts"
-        ]
+        "includes": ["src/**/*"]
     },
     "formatter": {
         "enabled": true,
@@ -21,18 +15,25 @@
         "indentWidth": 4,
         "lineWidth": 100
     },
-    "assist": { "actions": { "source": { "organizeImports": "on" } } },
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on",
+                "useSortedAttributes": "on"
+            }
+        }
+    },
     "linter": {
         "enabled": true,
         "domains": {
-            "react": "recommended",
-            "project": "recommended",
+            "react": "all",
             "test": "recommended"
         },
         "rules": {
             "recommended": true,
             "correctness": {
-                "noUnusedVariables": "error"
+                "noUnusedVariables": "error",
+                "noPrivateImports": "error"
             },
             "style": {
                 "noParameterAssign": "error",
@@ -47,13 +48,14 @@
                 "noUselessElse": "error"
             },
             "nursery": {
-                "noFloatingPromises": "error"
+                "noFloatingPromises": "error",
+                "useSortedClasses": "warn"
             }
         }
     },
     "javascript": {
         "formatter": {
-            "quoteStyle": "double",
+            "quoteStyle": "single",
             "semicolons": "asNeeded"
         }
     }

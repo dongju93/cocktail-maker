@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from PIL.ImageFile import Image, ImageFile
 
-from model import ResponseFormat, ProblemDetails
+from model import ProblemDetails, ResponseFormat
 
 
 async def return_formatter(

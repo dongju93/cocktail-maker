@@ -1,0 +1,19 @@
+/* 남겨둘 최소한의 기본 스타일만 유지 */
+
+/* Tailwind CSS에서 처리하지 못하는 특수한 스타일만 유지 */
+
+/* 글꼴 평활화 */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 부드러운 스크롤 */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 텍스트 그림자 (Tailwind CSS에서 기본 제공하지 않는 스타일) */
+.text-shadow-lg {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}

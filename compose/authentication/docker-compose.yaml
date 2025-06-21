@@ -1,0 +1,38 @@
+services:
+  su-auth:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql
+    container_name: supertokens
+    environment:
+      API_KEYS: "73a50f5ae216404588bbbcee4f05b143"
+      POSTGRESQL_USER: "postgres"
+      POSTGRESQL_HOST: "pg-auth"
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_PASSWORD: "1q2w3e4r"
+    ports:
+      - "3567:3567"
+    depends_on:
+      - pg-auth
+    networks:
+      - cocktail_maker_main_network
+    sysctls:
+      - net.ipv4.tcp_keepalive_time=60
+      - net.ipv4.tcp_keepalive_intvl=5
+      - net.ipv4.tcp_keepalive_probes=3
+
+  pg-auth:
+    image: postgres:18beta1
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: "supertokens"
+      POSTGRES_PASSWORD: "1q2w3e4r"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cocktail_maker_main_network
+
+networks:
+  cocktail_maker_main_network:
+volumes:
+  postgres_data:

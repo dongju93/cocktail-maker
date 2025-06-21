@@ -374,9 +374,10 @@ uv.lock
 log/
 data/sample/
 app/db.sqlite3
-compose/nginx/certs/
+compose/cocktail-maker/certs/
 site/
 tests/results/
+CLAUDE.md
 
 # github-codeql
 codeql/
@@ -385,3 +386,6 @@ codeql/
 .pytest_cache/
 .ruff_cache/
 .coverage
+.vite/
+*.sqlite3-shm
+*.sqlite3-wal

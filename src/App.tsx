@@ -29,8 +29,8 @@ const Navigation: React.FC = () => {
                         {sessionContext.userId}
                     </span>
                     <button
-                        onClick={handleLogout}
                         className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5"
+                        onClick={handleLogout}
                         type="button"
                     >
                         로그아웃
@@ -41,8 +41,8 @@ const Navigation: React.FC = () => {
 
         return (
             <Link
-                to="/auth"
                 className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5"
+                to="/auth"
             >
                 로그인
             </Link>
@@ -56,20 +56,20 @@ const Navigation: React.FC = () => {
             </div>
             <div className="flex gap-8 items-center">
                 <Link
-                    to="/"
                     className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+                    to="/"
                 >
                     홈
                 </Link>
                 <Link
-                    to="/guide"
                     className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+                    to="/guide"
                 >
                     가이드
                 </Link>
                 <Link
-                    to="/dashboard"
                     className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+                    to="/dashboard"
                 >
                     대시보드
                 </Link>
@@ -92,23 +92,23 @@ const App: React.FC = () => {
                     ])}
 
                     {/* 일반 라우트 */}
-                    <Route path="/" element={<Home />} />
+                    <Route element={<Home />} path="/" />
                     {/* 보호된 라우트 */}
                     <Route
-                        path="/guide"
                         element={
                             <SessionAuth>
                                 <CocktailGuide />
                             </SessionAuth>
                         }
+                        path="/guide"
                     />
                     <Route
-                        path="/dashboard"
                         element={
                             <SessionAuth>
                                 <Dashboard />
                             </SessionAuth>
                         }
+                        path="/dashboard"
                     />
                 </Routes>
             </div>
@@ -127,14 +127,14 @@ const Home: React.FC = () => {
                     <p className="text-xl mb-8 opacity-90">프로처럼 칵테일을 만들어보세요</p>
                     <div className="flex gap-4 justify-center flex-wrap">
                         <Link
-                            to="/guide"
                             className="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+                            to="/guide"
                         >
                             가이드 보기
                         </Link>
                         <Link
-                            to="/dashboard"
                             className="bg-transparent text-white border-2 border-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:bg-white hover:text-indigo-600"
+                            to="/dashboard"
                         >
                             대시보드
                         </Link>

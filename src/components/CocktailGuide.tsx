@@ -70,7 +70,7 @@ const popularCocktails = [
 
 const CocktailGuide: React.FC = () => {
     return (
-        <div className="bg-white min-h-screen">
+        <div className="min-h-screen bg-white">
             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 py-16 px-8 text-center text-white">
                 <div>
                     <h1 className="text-6xl font-extrabold mb-4 text-shadow-lg">
@@ -88,8 +88,8 @@ const CocktailGuide: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                         {cocktailTips.map((tip) => (
                             <div
-                                key={tip.id}
                                 className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl text-center border border-indigo-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                                key={tip.id}
                             >
                                 <div className="text-4xl mb-4">{tip.icon}</div>
                                 <h3 className="text-gray-800 mb-2 text-lg font-semibold">
@@ -108,8 +108,8 @@ const CocktailGuide: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {popularCocktails.map((cocktail) => (
                             <div
-                                key={cocktail.id}
                                 className="bg-white rounded-xl p-6 shadow-lg border border-gray-50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                key={cocktail.id}
                             >
                                 <div className="flex justify-between items-start mb-4">
                                     <h3 className="text-gray-800 text-xl font-semibold">
@@ -139,8 +139,8 @@ const CocktailGuide: React.FC = () => {
                                     <ul className="list-none">
                                         {cocktail.ingredients.map((ingredient) => (
                                             <li
-                                                key={`${cocktail.id}-${ingredient.id}`}
                                                 className="py-1 text-gray-700 border-b border-gray-100 last:border-b-0 before:content-['🥃'] before:mr-2"
+                                                key={`${cocktail.id}-${ingredient.id}`}
                                             >
                                                 {ingredient.name}
                                             </li>

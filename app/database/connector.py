@@ -12,7 +12,7 @@ from sqlmodel import Session
 
 from .table import engine
 
-load_dotenv(dotenv_path=".env")
+load_dotenv()
 MONGODB_URL: str = environ["MONGODB_URL"]
 SQLITE_PATH: str = environ["SQLITE_PATH"]
 

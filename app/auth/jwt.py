@@ -15,7 +15,7 @@ from utils import datetime_now, unix_to_datetime
 
 from .roles import check_roles
 
-load_dotenv(dotenv_path=".env")
+load_dotenv()
 
 # JWT 설정
 SECRET_KEY: str = environ["SECRET_KEY"]

@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.hashes import SHA512
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=".env")
+load_dotenv()
 
 PUBLIC_API_MASTER_KEY: str = environ["PUBLIC_API_MASTER_KEY"]
 PUBLIC_API_SALT: str = environ["PUBLIC_API_SALT"]

@@ -8,25 +8,25 @@ import './index.css'
 
 // SuperTokens 초기화
 SuperTokens.init({
-    appInfo: {
-        appName: 'cocktail-maker',
-        apiDomain: 'http://localhost:8000',
-        websiteDomain: 'http://localhost:3000',
-        apiBasePath: '/auth',
-        websiteBasePath: '/auth',
-    },
-    recipeList: [EmailPassword.init(), Session.init()],
+  appInfo: {
+    appName: 'cocktail-maker',
+    apiDomain: 'http://localhost:8000',
+    websiteDomain: 'http://localhost:3000',
+    apiBasePath: '/auth',
+    websiteBasePath: '/auth',
+  },
+  recipeList: [EmailPassword.init(), Session.init()],
 })
 
 const rootElement = document.getElementById('root')
 if (!rootElement) {
-    throw new Error('Root element not found')
+  throw new Error('Root element not found')
 }
 
 ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-        <SuperTokensWrapper>
-            <App />
-        </SuperTokensWrapper>
-    </React.StrictMode>,
+  <React.StrictMode>
+    <SuperTokensWrapper>
+      <App />
+    </SuperTokensWrapper>
+  </React.StrictMode>,
 )

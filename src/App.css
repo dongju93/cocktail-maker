@@ -4,16 +4,16 @@
 
 /* 글꼴 평활화 */
 * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* 부드러운 스크롤 */
 html {
-    scroll-behavior: smooth;
+  scroll-behavior: smooth;
 }
 
 /* 텍스트 그림자 (Tailwind CSS에서 기본 제공하지 않는 스타일) */
 .text-shadow-lg {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }

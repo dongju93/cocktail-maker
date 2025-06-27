@@ -42,12 +42,12 @@ const Dashboard: React.FC = () => {
 
   const renderUserSection = () => {
     if (sessionContext.loading) {
-      return <div className="flex items-center gap-2 text-indigo-600 font-medium">로딩 중...</div>
+      return <div className="flex items-center gap-2 font-medium text-indigo-600">로딩 중...</div>
     }
 
     if (!sessionContext.doesSessionExist) {
       return (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+        <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
           <p>로그인이 필요합니다.</p>
         </div>
       )
@@ -57,29 +57,29 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto bg-white min-h-screen">
-      <div className="flex justify-between items-start mb-12 pb-8 border-b-2 border-gray-100">
-        <h1 className="text-gray-800 text-4xl font-bold m-0">
+    <div className="mx-auto min-h-screen max-w-6xl bg-white p-8">
+      <div className="mb-12 flex items-start justify-between border-gray-100 border-b-2 pb-8">
+        <h1 className="m-0 font-bold text-4xl text-gray-800">
           <span aria-hidden="true">📊</span> 개인 대시보드
         </h1>
         {renderUserSection()}
       </div>
 
       <div className="flex flex-col gap-12">
-        <div className="bg-gray-50 p-8 rounded-xl border border-gray-200">
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-8">
           <div className="mb-8">
-            <h2 className="text-gray-800 mb-2 text-3xl font-bold">
+            <h2 className="mb-2 font-bold text-3xl text-gray-800">
               <span aria-hidden="true">🥃</span> API 연동 데모
             </h2>
-            <p className="text-gray-600 m-0">백엔드 API와의 연결 상태를 확인할 수 있습니다.</p>
+            <p className="m-0 text-gray-600">백엔드 API와의 연결 상태를 확인할 수 있습니다.</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
-            <h3 className="text-gray-800 mb-4 text-xl font-semibold">앱솔루트 보드카 정보</h3>
+          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <h3 className="mb-4 font-semibold text-gray-800 text-xl">앱솔루트 보드카 정보</h3>
 
             {loading && (
               <div className="flex justify-center py-8">
-                <div className="flex items-center gap-2 text-indigo-600 font-medium">
+                <div className="flex items-center gap-2 font-medium text-indigo-600">
                   데이터 로딩 중...
                 </div>
               </div>
@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
 
             {error && (
               <div className="p-4">
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
                   <span aria-hidden="true" className="text-lg">
                     ⚠️
                   </span>
@@ -97,15 +97,15 @@ const Dashboard: React.FC = () => {
             )}
 
             {data && (
-              <div className="border border-green-200 rounded-lg overflow-hidden">
-                <div className="bg-green-50 p-4 flex items-center gap-2 text-green-700 font-semibold">
+              <div className="overflow-hidden rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 bg-green-50 p-4 font-semibold text-green-700">
                   <span aria-hidden="true" className="text-lg">
                     ✅
                   </span>
                   <span>API 연결 성공!</span>
                 </div>
                 <div className="p-4">
-                  <pre className="bg-gray-50 border border-gray-200 rounded p-4 m-0 text-sm overflow-x-auto whitespace-pre-wrap break-words">
+                  <pre className="m-0 overflow-x-auto whitespace-pre-wrap break-words rounded border border-gray-200 bg-gray-50 p-4 text-sm">
                     {JSON.stringify(data, null, 2)}
                   </pre>
                 </div>
@@ -115,43 +115,43 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div>
-          <h2 className="text-gray-800 mb-6 text-3xl font-bold">빠른 작업</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div aria-hidden="true" className="text-4xl mb-4">
+          <h2 className="mb-6 font-bold text-3xl text-gray-800">빠른 작업</h2>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="hover:-translate-y-1 rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
+              <div aria-hidden="true" className="mb-4 text-4xl">
                 📚
               </div>
-              <h3 className="text-gray-800 mb-2 text-xl font-semibold">가이드 보기</h3>
-              <p className="text-gray-600 mb-6 text-sm">칵테일 제작 가이드를 확인하세요</p>
+              <h3 className="mb-2 font-semibold text-gray-800 text-xl">가이드 보기</h3>
+              <p className="mb-6 text-gray-600 text-sm">칵테일 제작 가이드를 확인하세요</p>
               <a
-                className="bg-indigo-600 text-white border-none px-6 py-2 rounded-lg font-semibold cursor-pointer transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5 no-underline inline-block"
+                className="hover:-translate-y-0.5 inline-block cursor-pointer rounded-lg border-none bg-indigo-600 px-6 py-2 font-semibold text-white no-underline transition-all duration-300 hover:bg-indigo-700"
                 href="/guide"
               >
                 가이드로 이동
               </a>
             </div>
-            <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div aria-hidden="true" className="text-4xl mb-4">
+            <div className="hover:-translate-y-1 rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
+              <div aria-hidden="true" className="mb-4 text-4xl">
                 🔍
               </div>
-              <h3 className="text-gray-800 mb-2 text-xl font-semibold">재료 검색</h3>
-              <p className="text-gray-600 mb-6 text-sm">다양한 칵테일 재료를 검색해보세요</p>
+              <h3 className="mb-2 font-semibold text-gray-800 text-xl">재료 검색</h3>
+              <p className="mb-6 text-gray-600 text-sm">다양한 칵테일 재료를 검색해보세요</p>
               <button
-                className="bg-gray-400 text-white border-none px-6 py-2 rounded-lg font-semibold cursor-not-allowed opacity-60"
+                className="cursor-not-allowed rounded-lg border-none bg-gray-400 px-6 py-2 font-semibold text-white opacity-60"
                 disabled
                 type="button"
               >
                 개발 예정
               </button>
             </div>
-            <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div aria-hidden="true" className="text-4xl mb-4">
+            <div className="hover:-translate-y-1 rounded-xl border border-gray-200 bg-white p-6 text-center shadow-lg transition-all duration-300 hover:shadow-xl">
+              <div aria-hidden="true" className="mb-4 text-4xl">
                 ⭐
               </div>
-              <h3 className="text-gray-800 mb-2 text-xl font-semibold">즐겨찾기</h3>
-              <p className="text-gray-600 mb-6 text-sm">좋아하는 칵테일을 저장하세요</p>
+              <h3 className="mb-2 font-semibold text-gray-800 text-xl">즐겨찾기</h3>
+              <p className="mb-6 text-gray-600 text-sm">좋아하는 칵테일을 저장하세요</p>
               <button
-                className="bg-gray-400 text-white border-none px-6 py-2 rounded-lg font-semibold cursor-not-allowed opacity-60"
+                className="cursor-not-allowed rounded-lg border-none bg-gray-400 px-6 py-2 font-semibold text-white opacity-60"
                 disabled
                 type="button"
               >

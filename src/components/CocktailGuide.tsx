@@ -71,26 +71,26 @@ const popularCocktails = [
 const CocktailGuide: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 py-16 px-8 text-center text-white">
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-16 text-center text-white">
         <div>
-          <h1 className="text-6xl font-extrabold mb-4 text-shadow-lg">🍹 칵테일 제작 가이드</h1>
+          <h1 className="mb-4 font-extrabold text-6xl text-shadow-lg">🍹 칵테일 제작 가이드</h1>
           <p className="text-xl opacity-90">
             프로처럼 칵테일을 만들어보세요. 기본부터 고급 기법까지!
           </p>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-8 pb-16">
+      <div className="mx-auto max-w-6xl px-8 pb-16">
         <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-8 text-gray-800 text-center">기본 팁</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          <h2 className="mb-8 text-center font-bold text-4xl text-gray-800">기본 팁</h2>
+          <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {cocktailTips.map((tip) => (
               <div
-                className="bg-gradient-to-br from-blue-50 to-indigo-100 p-6 rounded-xl text-center border border-indigo-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="hover:-translate-y-1 rounded-xl border border-indigo-100 bg-gradient-to-br from-blue-50 to-indigo-100 p-6 text-center transition-all duration-300 hover:shadow-lg"
                 key={tip.id}
               >
-                <div className="text-4xl mb-4">{tip.icon}</div>
-                <h3 className="text-gray-800 mb-2 text-lg font-semibold">{tip.title}</h3>
+                <div className="mb-4 text-4xl">{tip.icon}</div>
+                <h3 className="mb-2 font-semibold text-gray-800 text-lg">{tip.title}</h3>
                 <p className="text-gray-600 text-sm">{tip.description}</p>
               </div>
             ))}
@@ -98,18 +98,18 @@ const CocktailGuide: React.FC = () => {
         </section>
 
         <section className="mb-16">
-          <h2 className="text-4xl font-bold mb-8 text-gray-800 text-center">인기 칵테일 레시피</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <h2 className="mb-8 text-center font-bold text-4xl text-gray-800">인기 칵테일 레시피</h2>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {popularCocktails.map((cocktail) => (
               <div
-                className="bg-white rounded-xl p-6 shadow-lg border border-gray-50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="hover:-translate-y-1 rounded-xl border border-gray-50 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
                 key={cocktail.id}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-gray-800 text-xl font-semibold">{cocktail.name}</h3>
-                  <div className="flex flex-col gap-2 items-end">
+                <div className="mb-4 flex items-start justify-between">
+                  <h3 className="font-semibold text-gray-800 text-xl">{cocktail.name}</h3>
+                  <div className="flex flex-col items-end gap-2">
                     <span
-                      className={`px-3 py-1 rounded-xl text-xs font-semibold ${
+                      className={`rounded-xl px-3 py-1 font-semibold text-xs ${
                         cocktail.difficulty === '초급'
                           ? 'bg-green-100 text-green-700'
                           : cocktail.difficulty === '중급'
@@ -119,15 +119,15 @@ const CocktailGuide: React.FC = () => {
                     >
                       {cocktail.difficulty}
                     </span>
-                    <span className="text-xs text-gray-600">⏱️ {cocktail.time}</span>
+                    <span className="text-gray-600 text-xs">⏱️ {cocktail.time}</span>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-gray-800 mb-2 text-base font-medium">재료</h4>
+                  <h4 className="mb-2 font-medium text-base text-gray-800">재료</h4>
                   <ul className="list-none">
                     {cocktail.ingredients.map((ingredient) => (
                       <li
-                        className="py-1 text-gray-700 border-b border-gray-100 last:border-b-0 before:content-['🥃'] before:mr-2"
+                        className="border-gray-100 border-b py-1 text-gray-700 before:mr-2 before:content-['🥃'] last:border-b-0"
                         key={`${cocktail.id}-${ingredient.id}`}
                       >
                         {ingredient.name}
@@ -141,19 +141,19 @@ const CocktailGuide: React.FC = () => {
         </section>
 
         <section className="mt-12">
-          <div className="bg-gradient-to-br from-red-50 to-pink-100 p-8 rounded-xl border-l-4 border-pink-500">
-            <h2 className="text-pink-700 mb-4 text-2xl font-bold">⚠️ 음주 안전 수칙</h2>
+          <div className="rounded-xl border-pink-500 border-l-4 bg-gradient-to-br from-red-50 to-pink-100 p-8">
+            <h2 className="mb-4 font-bold text-2xl text-pink-700">⚠️ 음주 안전 수칙</h2>
             <ul className="list-none">
-              <li className="py-2 text-gray-700 relative pl-6 before:content-['✓'] before:absolute before:left-0 before:text-pink-500 before:font-bold">
+              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
                 적당한 음주를 권장합니다
               </li>
-              <li className="py-2 text-gray-700 relative pl-6 before:content-['✓'] before:absolute before:left-0 before:text-pink-500 before:font-bold">
+              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
                 음주 후 운전은 절대 금지입니다
               </li>
-              <li className="py-2 text-gray-700 relative pl-6 before:content-['✓'] before:absolute before:left-0 before:text-pink-500 before:font-bold">
+              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
                 임산부나 미성년자는 음주를 금합니다
               </li>
-              <li className="py-2 text-gray-700 relative pl-6 before:content-['✓'] before:absolute before:left-0 before:text-pink-500 before:font-bold">
+              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
                 약물 복용 시 음주를 피해주세요
               </li>
             </ul>

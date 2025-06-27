@@ -19,15 +19,15 @@ const Navigation: React.FC = () => {
 
   const renderAuthSection = () => {
     if (sessionContext.loading) {
-      return <span className="text-gray-800 font-medium px-4 py-2">로딩중...</span>
+      return <span className="px-4 py-2 font-medium text-gray-800">로딩중...</span>
     }
 
     if (sessionContext.doesSessionExist) {
       return (
         <div className="flex items-center gap-4">
-          <span className="text-gray-800 font-medium text-sm">{sessionContext.userId}</span>
+          <span className="font-medium text-gray-800 text-sm">{sessionContext.userId}</span>
           <button
-            className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5"
+            className="hover:-translate-y-0.5 rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-indigo-700"
             onClick={handleLogout}
             type="button"
           >
@@ -39,7 +39,7 @@ const Navigation: React.FC = () => {
 
     return (
       <Link
-        className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-indigo-700 hover:-translate-y-0.5"
+        className="hover:-translate-y-0.5 rounded-lg bg-indigo-600 px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-indigo-700"
         to="/auth"
       >
         로그인
@@ -48,25 +48,25 @@ const Navigation: React.FC = () => {
   }
 
   return (
-    <nav className="bg-white/95 backdrop-blur-md border-b border-white/20 px-8 py-4 flex justify-between items-center sticky top-0 z-50">
+    <nav className="sticky top-0 z-50 flex items-center justify-between border-white/20 border-b bg-white/95 px-8 py-4 backdrop-blur-md">
       <div>
-        <h2 className="text-indigo-600 font-bold text-2xl">🍹 Cocktail Maker</h2>
+        <h2 className="font-bold text-2xl text-indigo-600">🍹 Cocktail Maker</h2>
       </div>
-      <div className="flex gap-8 items-center">
+      <div className="flex items-center gap-8">
         <Link
-          className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+          className="rounded-lg px-4 py-2 font-medium text-gray-800 transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
           to="/"
         >
           홈
         </Link>
         <Link
-          className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+          className="rounded-lg px-4 py-2 font-medium text-gray-800 transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
           to="/guide"
         >
           가이드
         </Link>
         <Link
-          className="text-gray-800 font-medium px-4 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
+          className="rounded-lg px-4 py-2 font-medium text-gray-800 transition-all duration-300 hover:bg-indigo-100 hover:text-indigo-600"
           to="/dashboard"
         >
           대시보드
@@ -80,7 +80,7 @@ const Navigation: React.FC = () => {
 const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col max-w-7xl mx-auto w-full bg-gradient-to-br from-indigo-600 to-purple-700">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col bg-gradient-to-br from-indigo-600 to-purple-700">
         <Navigation />
 
         <Routes>
@@ -115,19 +115,19 @@ const App: React.FC = () => {
 const Home: React.FC = () => {
   return (
     <div>
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 py-16 px-8 text-center text-white">
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-16 text-center text-white">
         <div>
-          <h1 className="text-6xl font-extrabold mb-4 text-shadow-lg">🍹 Cocktail Maker</h1>
-          <p className="text-xl mb-8 opacity-90">프로처럼 칵테일을 만들어보세요</p>
-          <div className="flex gap-4 justify-center flex-wrap">
+          <h1 className="mb-4 font-extrabold text-6xl text-shadow-lg">🍹 Cocktail Maker</h1>
+          <p className="mb-8 text-xl opacity-90">프로처럼 칵테일을 만들어보세요</p>
+          <div className="flex flex-wrap justify-center gap-4">
             <Link
-              className="bg-white text-indigo-600 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+              className="hover:-translate-y-1 rounded-full bg-white px-8 py-3 font-semibold text-indigo-600 transition-all duration-300 hover:shadow-2xl"
               to="/guide"
             >
               가이드 보기
             </Link>
             <Link
-              className="bg-transparent text-white border-2 border-white px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:bg-white hover:text-indigo-600"
+              className="rounded-full border-2 border-white bg-transparent px-8 py-3 font-semibold text-white transition-all duration-300 hover:bg-white hover:text-indigo-600"
               to="/dashboard"
             >
               대시보드
@@ -137,26 +137,26 @@ const Home: React.FC = () => {
       </div>
 
       <div className="bg-white py-16">
-        <div className="max-w-6xl mx-auto px-8">
-          <h2 className="text-center text-4xl font-bold mb-12 text-gray-800">주요 기능</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-2xl text-center shadow-xl border border-gray-50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
-              <div className="text-5xl mb-4">📚</div>
-              <h3 className="text-gray-800 mb-4 text-xl font-semibold">칵테일 가이드</h3>
+        <div className="mx-auto max-w-6xl px-8">
+          <h2 className="mb-12 text-center font-bold text-4xl text-gray-800">주요 기능</h2>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            <div className="hover:-translate-y-2 rounded-2xl border border-gray-50 bg-white p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="mb-4 text-5xl">📚</div>
+              <h3 className="mb-4 font-semibold text-gray-800 text-xl">칵테일 가이드</h3>
               <p className="text-gray-600 leading-relaxed">
                 기본부터 고급까지 단계별 칵테일 제작 방법을 배워보세요
               </p>
             </div>
-            <div className="bg-white p-8 rounded-2xl text-center shadow-xl border border-gray-50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
-              <div className="text-5xl mb-4">🥃</div>
-              <h3 className="text-gray-800 mb-4 text-xl font-semibold">재료 관리</h3>
+            <div className="hover:-translate-y-2 rounded-2xl border border-gray-50 bg-white p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="mb-4 text-5xl">🥃</div>
+              <h3 className="mb-4 font-semibold text-gray-800 text-xl">재료 관리</h3>
               <p className="text-gray-600 leading-relaxed">
                 다양한 술과 재료 정보를 확인하고 관리하세요
               </p>
             </div>
-            <div className="bg-white p-8 rounded-2xl text-center shadow-xl border border-gray-50 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
-              <div className="text-5xl mb-4">📊</div>
-              <h3 className="text-gray-800 mb-4 text-xl font-semibold">개인 대시보드</h3>
+            <div className="hover:-translate-y-2 rounded-2xl border border-gray-50 bg-white p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="mb-4 text-5xl">📊</div>
+              <h3 className="mb-4 font-semibold text-gray-800 text-xl">개인 대시보드</h3>
               <p className="text-gray-600 leading-relaxed">
                 나만의 칵테일 레시피와 정보를 저장하고 관리하세요
               </p>

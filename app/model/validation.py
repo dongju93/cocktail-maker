@@ -19,15 +19,13 @@ ALLOWED_CONTENT_TYPES: set[str] = {
 
 
 class ImageValidation:
-    async def is_allowed_content_type(self, file: UploadFile | None) -> bool:
+    def is_allowed_content_type(self, file: UploadFile | None) -> bool:
         if file is not None and file.content_type not in ALLOWED_CONTENT_TYPES:  # noqa
             return False
         return True
 
-    async def is_less_than_max_size(self, read_file: bytes | None) -> bool:
-        if read_file is not None and len(read_file) > MAX_FILE_SIZE:  # noqa
-            return False
-        return True
+    def is_less_than_max_size(self, read_file: bytes | None) -> bool:
+        return bool(read_file is not None and len(read_file) > MAX_FILE_SIZE)
 
     async def read_image(self, file: UploadFile | None) -> bytes | None:
         return await file.read() if file is not None else None
@@ -56,7 +54,7 @@ class ImageValidation:
         # 이미지 파일 타입 검사
         all_images = [main_image] + [img for img in sub_images if img is not None]
         for image in all_images:
-            if not await self_cls.is_allowed_content_type(image):
+            if not self_cls.is_allowed_content_type(image):
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_ENTITY, "Invalid file extension"
                 )
@@ -73,7 +71,7 @@ class ImageValidation:
             img for img in sub_images_bytes if img is not None
         ]
         for image_byte in all_image_bytes:
-            if not await self_cls.is_less_than_max_size(image_byte):
+            if not self_cls.is_less_than_max_size(image_byte):
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_ENTITY,
                     "File size is too large, maximum 2MB",

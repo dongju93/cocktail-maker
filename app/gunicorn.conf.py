@@ -94,7 +94,7 @@ elif ENVIRONMENT == "production":
     # Optimize for production logging
     access_log_format = '%(h)s "%(r)s" %(s)s %(b)s %(D)s'
 
-#  SSL Configuration (uncomment and configure if needed)
+# SSL Configuration (uncomment and configure if needed)
 # keyfile = os.getenv("SSL_KEYFILE", "/path/to/key.pem")
 # certfile = os.getenv("SSL_CERTFILE", "/path/to/cert.pem")
 # ssl_version = ssl.PROTOCOL_TLS

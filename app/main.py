@@ -1,12 +1,15 @@
 from asyncio import set_event_loop_policy as set_global_asyncio_event_loop_policy
 from datetime import UTC, datetime
 from decimal import Decimal
+from os import environ
 from time import time_ns
 from typing import Annotated, Any
 
+from dotenv import load_dotenv
 from fastapi import (
     APIRouter,
     Body,
+    Depends,
     FastAPI,
     File,
     Form,
@@ -21,12 +24,21 @@ from fastapi import (
     status,
 )
 from fastapi.exception_handlers import http_exception_handler
-
-# from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette_compress import CompressMiddleware
 from structlog import BoundLogger
+from supertokens_python import (
+    InputAppInfo,
+    SupertokensConfig,
+    get_all_cors_headers,
+    init,
+)
+from supertokens_python.framework.fastapi import get_middleware
+from supertokens_python.recipe import emailpassword, session
+from supertokens_python.recipe.session import SessionContainer
+from supertokens_python.recipe.session.framework.fastapi import verify_session
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import (
@@ -58,9 +70,32 @@ from model.validation import (
 from query import queries
 from utils import Logger, problem_details_formatter, return_formatter
 
+init(
+    app_info=InputAppInfo(
+        app_name="cocktail-maker",
+        api_domain="http://localhost:8000",
+        website_domain="http://localhost:3000",
+        api_base_path="/auth",
+        website_base_path="/auth",
+    ),
+    supertokens_config=SupertokensConfig(
+        connection_uri="http://localhost:3567",
+        api_key="73a50f5ae216404588bbbcee4f05b143",
+    ),
+    framework="fastapi",
+    recipe_list=[
+        session.init(),
+        emailpassword.init(),
+    ],
+    mode="asgi",  # wsgi
+)
+
 set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
 
+load_dotenv()
 logger: BoundLogger = Logger().setup()
+
+SUPERTOKEN_API_KEY: str = environ["SUPERTOKEN_API_KEY"]
 
 cocktail_maker = FastAPI(
     title="Cocktail maker REST API",
@@ -196,6 +231,19 @@ async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN2
 
 cocktail_maker.add_middleware(
     CompressMiddleware, minimum_size=1, zstd_level=4, brotli_quality=4, gzip_level=6
+)
+
+cocktail_maker.add_middleware(get_middleware())
+
+cocktail_maker.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "PUT", "POST", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", *get_all_cors_headers()],
 )
 
 
@@ -685,6 +733,7 @@ async def spirits_update(  # noqa: PLR0913
 @cocktail_maker_v1.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 

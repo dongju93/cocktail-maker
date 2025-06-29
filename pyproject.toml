@@ -5,7 +5,6 @@ description = "A cocktail recipe API"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "brotli>=1.1.0",
     "cryptography>=45,<46",
     "fastapi[standard]>=0.115",
     "gunicorn[setproctitle]>=23.0.0",
@@ -17,6 +16,7 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "starlette-compress>=1.6.0",
     "structlog>=25,<26",
+    "supertokens-python>=0.29.2",
     "uvicorn-worker>=0.3.0",
 ]
 

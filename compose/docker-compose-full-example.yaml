@@ -1,0 +1,297 @@
+# version: "3.8" # 최신 Compose에서는 version 최상위 키가 더 이상 필요하지 않습니다.
+
+# 최상위 요소: 다른 서비스에서 참조하기 위해 미리 정의합니다.
+configs:
+  nginx_config:
+    file: ./nginx.conf # 파일로부터 설정 로드
+  redis_config_external:
+    external: true # 외부(플랫폼)에 이미 생성된 설정 사용
+
+secrets:
+  db_password_secret:
+    file: ./db_password.txt # 파일로부터 비밀 로드
+  api_key_external:
+    external: true # 외부(플랫폼)에 이미 생성된 비밀 사용
+
+volumes:
+  app_data: # 명명된 볼륨 정의
+    driver: local
+
+networks:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
+    ipam: # 고정 IP 할당을 위한 IP 주소 관리자 설정
+      driver: default
+      config:
+        - subnet: "172.20.0.0/24"
+  admin_net:
+    driver: bridge
+
+services:
+  # 'extends' 속성에서 참조하기 위한 기본 서비스
+  base_service:
+    image: alpine:3.18
+    user: "1000"
+
+  # 'depends_on', 'links', 'volumes_from' 등에서 참조하기 위한 의존성 서비스
+  dependency_service:
+    image: postgres:15
+    volumes:
+      - app_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # 'provider' 속성 시연을 위한 서비스 (실제 Docker로 실행되지 않음)
+  provider_service:
+    provider:
+      type: awesome_cloud_db # 외부 컴포넌트 이름
+      options: # 해당 컴포넌트에 전달할 옵션
+        type: mysql
+        version: "8.0"
+
+  # 모든 속성을 포함하는 메인 서비스
+  all_in_one_service:
+    # --- 기본 및 빌드 설정 ---
+    image: myapp:latest # 컨테이너 생성에 사용할 이미지
+    build: # 이미지를 직접 빌드할 경우의 설정
+      context: .
+      dockerfile: Dockerfile.dev
+      target: builder # Dockerfile 내의 특정 빌드 스테이지를 타겟
+      args: # 빌드 시점에 사용될 인자
+        - APP_VERSION=1.2.3
+      labels: # 빌드된 이미지에 추가할 메타데이터 라벨
+        - "vendor=MyCompany"
+      pull: true # 빌드 전 베이스 이미지를 항상 새로 받아옴
+    extends: # 다른 서비스의 설정을 상속
+      file: docker-compose.yml # 현재 파일 내에서
+      service: base_service # 'base_service'의 설정을 상속
+    container_name: my_app_container # 컨테이너에 고정된 이름 부여
+    platform: linux/amd64 # 컨테이너 실행 플랫폼 지정
+    profiles: ["dev", "testing"] # 'dev' 또는 'testing' 프로필 활성화 시에만 실행
+    pull_policy: every_12h # 12시간마다 이미지를 새로 받아오는지 확인
+
+    # --- 명령어 및 진입점 ---
+    command: ["/bin/sh", "-c", "echo $$MY_VAR && sleep 3600"] # 이미지의 CMD 덮어쓰기
+    entrypoint: /entrypoint.sh # 이미지의 ENTRYPOINT 덮어쓰기
+    working_dir: /app # 컨테이너 내의 작업 디렉터리 지정
+
+    # --- 환경 변수 및 설정 파일 ---
+    environment: # 환경 변수 직접 설정
+      - MY_VAR=my_value
+      - ANOTHER_VAR
+    env_file: # 파일로부터 환경 변수 로드
+      - path: ./.env
+        required: true # 파일이 없으면 에러 발생
+        format: raw # 값을 그대로 읽음 (변수 치환 안함)
+    configs: # 서비스에 설정 파일 주입
+      - source: nginx_config
+        target: /etc/nginx/nginx.conf
+        mode: 0440
+      - redis_config_external
+    secrets: # 서비스에 비밀(민감 데이터) 주입
+      - source: db_password_secret
+        target: db_password
+        uid: "101"
+        gid: "101"
+        mode: 0400
+      - api_key_external
+
+    # --- 재시작 및 종료 정책 ---
+    restart: on-failure:5 # 실패 시 최대 5번 재시작
+    stop_signal: SIGINT # 컨테이너 중지 시 보낼 신호
+    stop_grace_period: 1m30s # 중지 신호 후 강제 종료까지 대기 시간
+    init: true # PID 1로 init 프로세스 실행하여 좀비 프로세스 방지
+    read_only: true # 컨테이너 파일 시스템을 읽기 전용으로 설정
+    stdin_open: true # 표준 입력(stdin)을 열어둠 (-i)
+    tty: true # 가상 TTY 할당 (-t)
+
+    # --- 리소스 제한 ---
+    blkio_config: # 블록 I/O 제한
+      weight: 300
+      weight_device:
+        - path: /dev/sda
+          weight: 400
+      device_read_bps:
+        - path: /dev/sdb
+          rate: "12mb"
+      device_write_iops:
+        - path: /dev/sdb
+          rate: 30
+    cpu_count: 2 # 사용 가능한 CPU 코어 수
+    cpu_percent: 80 # CPU 사용률 80%로 제한
+    cpu_shares: 768 # CPU 상대적 가중치
+    cpu_period: 100000 # CPU CFS 주기
+    cpu_quota: 50000 # CPU CFS 할당량
+    cpu_rt_runtime: "950ms" # 실시간 스케줄러 CPU 시간
+    cpu_rt_period: "1s" # 실시간 스케줄러 CPU 주기
+    cpus: "1.5" # 할당할 CPU 코어 수 (소수점 가능)
+    cpuset: "0-1" # 사용할 CPU 코어 지정
+    mem_limit: 1g # 메모리 사용량 최대 1GB로 제한
+    mem_reservation: 512m # 최소 512MB 메모리 보장
+    mem_swappiness: 60 # 메모리 스왑 경향성 (0-100)
+    memswap_limit: 2g # 메모리+스왑 총 사용량 2GB로 제한
+    oom_kill_disable: true # 메모리 부족 시 강제 종료 방지
+    oom_score_adj: 500 # OOM 발생 시 종료 우선순위 조정
+    pids_limit: 2048 # 최대 프로세스 개수 제한
+    shm_size: "256m" # 공유 메모리(/dev/shm) 크기
+    storage_opt: # 스토리지 드라이버 옵션
+      size: "20G"
+    ulimits: # 리소스 한도(ulimit) 설정
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+
+    # --- 권한 및 보안 ---
+    cap_add: ["NET_ADMIN"] # 리눅스 커널 케이퍼빌리티 추가
+    cap_drop: ["MKNOD"] # 리눅스 커널 케이퍼빌리티 제거
+    privileged: true # 컨테이너에 모든 특권 부여
+    security_opt: ["label:user:USER"] # 보안 옵션 설정
+    user: "myuser:mygroup" # 컨테이너 실행 사용자/그룹
+    userns_mode: "host" # 호스트의 사용자 네임스페이스 사용
+    credential_spec: # Windows gMSA 인증 정보
+      file: my-credential-spec.json
+
+    # --- 네트워킹 ---
+    # network_mode: "host" # 'networks' 속성과 함께 사용할 수 없으므로 주석 처리
+    networks:
+      frontend_net:
+        aliases: ["app", "webapp"] # frontend_net에서 사용할 별칭
+        interface_name: eth_front # 네트워크 인터페이스 이름 지정
+        gw_priority: 10 # 기본 게이트웨이 우선순위
+      backend_net:
+        ipv4_address: 172.20.0.10 # 고정 IPv4 주소 할당
+        link_local_ips: ["169.254.1.1"] # 링크-로컬 IP 주소
+        mac_address: "02:42:ac:14:00:0a" # 네트워크별 MAC 주소
+        priority: 100 # 네트워크 연결 우선순위
+    dns: ["8.8.8.8", "8.8.4.4"] # DNS 서버 지정
+    dns_opt: ["use-vc"] # DNS 옵션
+    dns_search: ["example.com"] # DNS 검색 도메인
+    domainname: myapp.local # 컨테이너의 NIS 도메인
+    expose: ["3000-3010"] # 호스트에 노출하지 않고 다른 서비스에만 포트 노출
+    extra_hosts: # /etc/hosts 파일에 항목 추가
+      "somehost": "192.168.1.100"
+    hostname: my-app-hostname # 컨테이너의 호스트 이름
+    ports: # 호스트와 컨테이너 포트 매핑
+      - "8080:80" # 단축 구문
+      - name: debug-port # 확장 구문
+        target: 9000
+        published: "9000"
+        protocol: tcp
+        mode: ingress
+        app_protocol: http
+
+    # --- 서비스 의존성 및 연결 ---
+    depends_on: # 서비스 시작 순서 및 상태 의존성
+      dependency_service:
+        condition: service_healthy # 'dependency_service'가 healthy 상태가 될 때까지 대기
+        restart: true # 의존 서비스가 업데이트되면 이 서비스도 재시작
+        required: true # 의존 서비스가 필수적임
+    links: # (레거시) 다른 서비스에 연결
+      - "dependency_service:db"
+    external_links: # 컴포즈 외부 컨테이너에 연결
+      - "external_redis"
+
+    # --- 볼륨 및 파일 시스템 ---
+    volumes: # 볼륨 및 바인드 마운트
+      - type: volume # 명명된 볼륨 마운트 (확장 구문)
+        source: app_data
+        target: /data
+        volume:
+          nocopy: true # 컨테이너 데이터를 볼륨으로 복사하지 않음
+          subpath: sub_dir # 볼륨의 하위 경로를 마운트
+      - type: bind # 호스트 경로 마운트 (확장 구문)
+        source: ./app
+        target: /app
+        read_only: true
+        bind:
+          propagation: rslave
+          create_host_path: true # 호스트 경로가 없으면 생성
+    volumes_from: # 다른 컨테이너의 볼륨을 그대로 마운트
+      - "dependency_service:ro" # 읽기 전용으로 마운트
+    tmpfs: # 임시 파일 시스템(tmpfs) 마운트
+      - /run:size=64m,mode=755
+
+    # --- 메타데이터 및 로깅 ---
+    annotations: # 컨테이너에 주석 추가
+      com.example.description: "All-in-one example service"
+    labels: # 컨테이너에 라벨 추가
+      - "com.example.department=Engineering"
+    label_file: ./app.labels # 파일로부터 라벨 로드
+    logging: # 로깅 드라이버 및 옵션 설정
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+    # --- 하드웨어 및 커널 ---
+    devices: # 호스트 디바이스 매핑
+      - "/dev/ttyUSB0:/dev/ttyUSB0"
+      - "vendor.com/device=gpu" # CDI 구문
+    device_cgroup_rules: # cgroup 디바이스 규칙
+      - "c 1:3 mr"
+    gpus: all # 모든 가용한 GPU 할당
+    runtime: runc # 사용할 컨테이너 런타임 지정
+    sysctls: # 커널 파라미터 설정
+      - net.core.somaxconn=1024
+    cgroup: private # 독립적인 cgroup 네임스페이스 사용
+    cgroup_parent: my-cgroup-parent # 부모 cgroup 지정
+    ipc: "shareable" # 공유 가능한 IPC 네임스페이스
+    isolation: default # 컨테이너 격리 기술 (Windows용)
+    pid: "host" # 호스트의 PID 네임스페이스 사용
+    uts: "host" # 호스트의 UTS 네임스페이스 사용
+
+    # --- 라이프사이클 훅 ---
+    attach: false # 시작 시 로그 스트림에 붙지 않음
+    post_start: # 컨테이너 시작 후 실행할 훅
+      - command: ["/bin/sh", "-c", "echo Container started!"]
+        user: root
+    pre_stop: # 컨테이너 중지 전 실행할 훅
+      - command: ["/bin/sh", "-c", "echo Preparing to stop..."]
+
+    # --- 배포 (Swarm 모드) ---
+    deploy:
+      mode: replicated
+      replicas: 3 # 3개의 컨테이너 복제본 생성
+      scale: 3 # 'replicas'와 일관되어야 함
+      labels: # 배포된 서비스에 라벨 추가
+        com.example.deployed: "true"
+      update_config: # 업데이트 정책
+        parallelism: 2
+        delay: 10s
+        order: start-first
+      rollback_config: # 롤백 정책
+        parallelism: 1
+        order: stop-first
+      restart_policy: # 재시작 정책
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      placement: # 컨테이너 배치 제약 조건
+        constraints:
+          - "node.role==worker"
+        preferences:
+          - spread: node.labels.zone
+      resources: # 리소스 제한 (deploy 시)
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+      endpoint_mode: vip
+
+    # --- 개발 모드 ---
+    develop:
+      watch: # 파일 변경 감지 및 액션
+        - path: ./src
+          action: sync # 변경 사항을 컨테이너로 동기화
+          target: /app/src
+        - path: ./pom.xml
+          action: rebuild # 변경 시 이미지 재빌드

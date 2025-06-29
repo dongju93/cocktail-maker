@@ -105,7 +105,6 @@ class MetadataValidation:
         valid_metadata_list: list[dict[str, int | str]] = Metadata.read(
             category, self.kind
         )
-        # // TODO: TypedDict 을 적용하여 mypy 에러 해결해야함
         valid_names: list[str] = [
             str(metadata["name"]) for metadata in valid_metadata_list
         ]
@@ -114,9 +113,7 @@ class MetadataValidation:
 
     def __call__(
         self,
-    ) -> tuple[
-        list[str], list[str], list[str]
-    ]:  # // TODO: empty list 를 명시할 방법 찾기
+    ) -> tuple[list[str], list[str], list[str]]:
         """
         메타데이터 값을 검증합니다.
 

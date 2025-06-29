@@ -87,8 +87,8 @@ class MetadataValidation:
         self,
         kind: COCKTAIL_DATA_KIND,
         taste: list[str],
-        aroma: list[str] | None,
-        finish: list[str] | None,
+        aroma: list[str] | None = None,
+        finish: list[str] | None = None,
     ) -> None:
         self.kind = kind
         self.taste = taste

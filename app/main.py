@@ -1127,7 +1127,7 @@ async def liqueur_update(  # noqa: PLR0913
         # 메타데이터 검증
         listed_taste, _, _ = MetadataValidation("liqueur", taste)()
 
-        item: LiqueurDict = LiqueurDict(
+        liqueur_item: LiqueurDict = LiqueurDict(
             name=name,
             brand=brand,
             taste=listed_taste,
@@ -1140,17 +1140,13 @@ async def liqueur_update(  # noqa: PLR0913
             description=description,
             updated_at=datetime.now(tz=UTC),
         )
-        # await queries.UpdateSpirits(
-        #     document_id,
-        #     item,
-        #     read_main_image,
-        #     read_sub_image1,
-        #     read_sub_image2,
-        #     read_sub_image3,
-        #     read_sub_image4,
-        # ).update()
+        await queries.UpdateLiqueur(
+            document_id,
+            liqueur_item,
+            read_main_image,
+        ).update()
 
-        logger.info(LIQUEUR_UPDATE_FAILURE_MESSAGE, name=name)
+        logger.info("Liqueur successfully updated", name=name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -1173,6 +1169,44 @@ async def liqueur_update(  # noqa: PLR0913
         response = Response(formatted_response, formatted_response["code"])
 
     return response
+
+
+@cocktail_maker_v1.delete(
+    "/liqueur/{document_id}", summary="리큐르 정보 삭제", tags=["리큐르"]
+)
+async def liqueur_remover(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+) -> ORJSONResponse:
+    """
+    리큐르 정보 삭제
+
+    Args:
+        document_id (str): 삭제할 리큐르의 MongoDB ObjectId
+
+    Returns:
+        ORJSONResponse: 삭제 성공/실패 응답
+    """
+    try:
+        await queries.DeleteLiqueur(document_id).remove()
+
+        logger.info("Liqueur successfully deleted", document_id=document_id)
+
+        formatted_response: ResponseFormat = await return_formatter(
+            "success", 200, None, "Successfully delete liqueur"
+        )
+
+    except HTTPException as he:
+        logger.error("Failed to delete liqueur", code=he.status_code, message=he.detail)
+        formatted_response = await return_formatter(
+            "failed", he.status_code, None, he.detail
+        )
+    except Exception as e:
+        logger.error("Failed to delete liqueur", error=str(e))
+        formatted_response = await return_formatter(
+            "failed", 500, None, f"Failed to delete liqueur: {e!s}"
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 @cocktail_maker_v1.post(

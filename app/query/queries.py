@@ -91,7 +91,7 @@ class CreateSpirits(CreateDocument):
             )
         except Exception as e:
             logger.error(
-                f"Save liqueur images to local has an error: {str(object=e)}",
+                f"Save liqueur images to local has an error: {e!s}",
             )
             raise e
 
@@ -124,7 +124,7 @@ class CreateLiqueur(CreateDocument):
             )
         except Exception as e:
             logger.error(
-                f"Save liqueur images to local has an error: {str(object=e)}",
+                f"Save liqueur images to local has an error: {e!s}",
             )
             raise e
 
@@ -151,7 +151,7 @@ class CreateIngredient(CreateDocument):
             )
         except Exception as e:
             logger.error(
-                f"Save ingredient images to local has an error: {str(object=e)}",
+                f"Save ingredient images to local has an error: {e!s}",
             )
             raise e
 

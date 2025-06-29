@@ -1,5 +1,4 @@
 from base64 import urlsafe_b64encode
-from dataclasses import dataclass
 from secrets import token_bytes
 
 from cryptography.hazmat.primitives.hashes import SHA3_256
@@ -8,10 +7,10 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from model import PasswordAndSalt
 
 
-@dataclass
 class Encryption:
-    SALT_LENGTH: int = 32
-    ITERATIONS: int = 600_000
+    def __init__(self) -> None:
+        self.SALT_LENGTH: int = 32
+        self.ITERATIONS: int = 600_000
 
     def _random_salt(self) -> bytes:
         return token_bytes(self.SALT_LENGTH)

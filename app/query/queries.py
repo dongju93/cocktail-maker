@@ -1,5 +1,4 @@
 from base64 import urlsafe_b64decode
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -38,7 +37,6 @@ from .query_parents import CreateDocument, RetrieveDocument, SearchDocument
 logger: BoundLogger = Logger().setup()
 
 
-@dataclass
 class CreateSpirits(CreateDocument):
     """Create a new spirits document.
 
@@ -60,12 +58,21 @@ class CreateSpirits(CreateDocument):
         _type_: The ID of the saved document.
     """
 
-    spirits_item: SpiritsDict
-    mainImage: bytes
-    subImage1: bytes | None
-    subImage2: bytes | None
-    subImage3: bytes | None
-    subImage4: bytes | None
+    def __init__(  # noqa: PLR0913
+        self,
+        spirits_item: SpiritsDict,
+        mainImage: bytes,
+        subImage1: bytes | None = None,
+        subImage2: bytes | None = None,
+        subImage3: bytes | None = None,
+        subImage4: bytes | None = None,
+    ) -> None:
+        self.spirits_item = spirits_item
+        self.mainImage = mainImage
+        self.subImage1 = subImage1
+        self.subImage2 = subImage2
+        self.subImage3 = subImage3
+        self.subImage4 = subImage4
 
     async def save(self) -> str:
         """Save the spirits document to the database and store its images.
@@ -97,11 +104,16 @@ class CreateSpirits(CreateDocument):
         return self.spirits_item
 
 
-@dataclass
 class CreateLiqueur(CreateDocument):
-    liqueur_item: LiqueurDict
-    mainImage: bytes
-    collection_name: str = "liqueur"
+    def __init__(
+        self,
+        liqueur_item: LiqueurDict,
+        mainImage: bytes,
+        collection_name: str = "liqueur",
+    ) -> None:
+        self.liqueur_item = liqueur_item
+        self.mainImage = mainImage
+        self.collection_name = collection_name
 
     async def save(self) -> str:
         document_id: str = await super().save()
@@ -125,10 +137,10 @@ class CreateLiqueur(CreateDocument):
         return self.liqueur_item
 
 
-@dataclass
 class CreateIngredient(CreateDocument):
-    ingredient_item: IngredientDict
-    mainImage: bytes
+    def __init__(self, ingredient_item: IngredientDict, mainImage: bytes) -> None:
+        self.ingredient_item = ingredient_item
+        self.mainImage = mainImage
 
     async def save(self) -> str:
         document_id: str = await super().save()
@@ -152,10 +164,10 @@ class CreateIngredient(CreateDocument):
         return self.ingredient_item
 
 
-@dataclass
 class RetrieveSpirits(RetrieveDocument):
-    name: str
-    collection_name: str = "spirits"
+    def __init__(self, name: str, collection_name: str = "spirits") -> None:
+        self.name = name
+        self.collection_name = collection_name
 
     async def only_name(self) -> dict[str, Any]:
         document: dict[str, Any] = await super().only_name()
@@ -169,10 +181,10 @@ class RetrieveSpirits(RetrieveDocument):
         return self.name
 
 
-@dataclass
 class SearchSpirits(SearchDocument):
-    params: SpiritsSearch
-    collection_name: str = "spirits"
+    def __init__(self, params: SpiritsSearch, collection_name: str = "spirits") -> None:
+        self.params = params
+        self.collection_name = collection_name
 
     async def query(self) -> SearchResponse:
         documents: SearchResponse = await super().query()
@@ -189,10 +201,10 @@ class SearchSpirits(SearchDocument):
         return self.params
 
 
-@dataclass
 class RetrieveLiqueur(RetrieveDocument):
-    name: str
-    collection_name: str = "liqueur"
+    def __init__(self, name: str, collection_name: str = "liqueur") -> None:
+        self.name = name
+        self.collection_name = collection_name
 
     async def only_name(self) -> dict[str, Any]:
         document: dict[str, Any] = await super().only_name()
@@ -206,10 +218,10 @@ class RetrieveLiqueur(RetrieveDocument):
         return self.name
 
 
-@dataclass
 class SearchLiqueur(SearchDocument):
-    params: LiqueurSearch
-    collection_name: str = "liqueur"
+    def __init__(self, params: LiqueurSearch, collection_name: str = "liqueur") -> None:
+        self.params = params
+        self.collection_name = collection_name
 
     async def query(self) -> SearchResponse:
         documents: SearchResponse = await super().query()
@@ -226,15 +238,24 @@ class SearchLiqueur(SearchDocument):
         return self.params
 
 
-@dataclass
 class UpdateSpirits:
-    document_id: str
-    spirits_item: SpiritsDict
-    main_image: bytes
-    sub_image1: bytes | None
-    sub_image2: bytes | None
-    sub_image3: bytes | None
-    sub_image4: bytes | None
+    def __init__(  # noqa: PLR0913
+        self,
+        document_id: str,
+        spirits_item: SpiritsDict,
+        main_image: bytes,
+        sub_image1: bytes | None = None,
+        sub_image2: bytes | None = None,
+        sub_image3: bytes | None = None,
+        sub_image4: bytes | None = None,
+    ) -> None:
+        self.document_id = document_id
+        self.spirits_item = spirits_item
+        self.main_image = main_image
+        self.sub_image1 = sub_image1
+        self.sub_image2 = sub_image2
+        self.sub_image3 = sub_image3
+        self.sub_image4 = sub_image4
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
@@ -269,9 +290,9 @@ class UpdateSpirits:
             raise e
 
 
-@dataclass
 class DeleteSpirits:
-    id: str
+    def __init__(self, id: str) -> None:
+        self.id = id
 
     async def remove(self) -> None:
         try:
@@ -412,11 +433,13 @@ class Users:
         return result["roles"]
 
 
-@dataclass
 class UpdateLiqueur:
-    document_id: str
-    liqueur_item: LiqueurDict
-    main_image: bytes
+    def __init__(
+        self, document_id: str, liqueur_item: LiqueurDict, main_image: bytes
+    ) -> None:
+        self.document_id = document_id
+        self.liqueur_item = liqueur_item
+        self.main_image = main_image
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
@@ -447,9 +470,9 @@ class UpdateLiqueur:
             raise e
 
 
-@dataclass
 class DeleteLiqueur:
-    document_id: str
+    def __init__(self, document_id: str) -> None:
+        self.document_id = document_id
 
     async def remove(self) -> None:
         try:
@@ -466,10 +489,10 @@ class DeleteLiqueur:
             raise e
 
 
-@dataclass
 class RetrieveIngredient(RetrieveDocument):
-    name: str
-    collection_name: str = "ingredient"
+    def __init__(self, name: str, collection_name: str = "ingredient") -> None:
+        self.name = name
+        self.collection_name = collection_name
 
     async def only_name(self) -> dict[str, Any]:
         document: dict[str, Any] = await super().only_name()
@@ -482,10 +505,12 @@ class RetrieveIngredient(RetrieveDocument):
         return self.name
 
 
-@dataclass
 class SearchIngredient(SearchDocument):
-    params: IngredientSearch
-    collection_name: str = "ingredient"
+    def __init__(
+        self, params: IngredientSearch, collection_name: str = "ingredient"
+    ) -> None:
+        self.params = params
+        self.collection_name = collection_name
 
     async def query(self) -> SearchResponse:
         documents: SearchResponse = await super().query()
@@ -501,11 +526,13 @@ class SearchIngredient(SearchDocument):
         return self.params
 
 
-@dataclass
 class UpdateIngredient:
-    document_id: str
-    ingredient_item: IngredientDict
-    main_image: bytes
+    def __init__(
+        self, document_id: str, ingredient_item: IngredientDict, main_image: bytes
+    ) -> None:
+        self.document_id = document_id
+        self.ingredient_item = ingredient_item
+        self.main_image = main_image
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
@@ -536,9 +563,9 @@ class UpdateIngredient:
             raise e
 
 
-@dataclass
 class DeleteIngredient:
-    document_id: str
+    def __init__(self, document_id: str) -> None:
+        self.document_id = document_id
 
     async def remove(self) -> None:
         try:

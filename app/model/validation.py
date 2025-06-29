@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from fastapi import HTTPException, UploadFile, status
 
 from query.queries import Metadata
@@ -84,12 +82,20 @@ class ImageValidation:
         return main_image_bytes, sub_images_bytes
 
 
-@dataclass
 class MetadataValidation:
     kind: COCKTAIL_DATA_KIND
-    taste: list[str]
-    aroma: list[str] | None = None
-    finish: list[str] | None = None
+
+    def __init__(
+        self,
+        kind: COCKTAIL_DATA_KIND,
+        taste: list[str],
+        aroma: list[str] | None,
+        finish: list[str] | None,
+    ) -> None:
+        self.kind = kind
+        self.taste = taste
+        self.aroma = aroma
+        self.finish = finish
 
     def _is_validated_category(
         self,

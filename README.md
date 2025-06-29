@@ -38,12 +38,12 @@
 ## Dev
 ### Features tracking
 #### Auth
-  - [x] 회원가입 (ID, Password, Role, ETC)
-  - [ ] 회원가입 시 ID, Email 중복확인
-  - [ ] 회원가입 시 Email 인증 후 가입 승인
-  - [x] 로그인 시 Access JWT 발급
-  - [x] Refresh Token 으로 JWT 재발급
-  - [x] API 엔드포인트별 사용자 Role 검증
+  - [x] 회원가입 (ID, Password, Role, ETC) -> Replace supertokens
+  - [ ] 회원가입 시 ID, Email 중복확인 -> Replace supertokens
+  - [ ] 회원가입 시 Email 인증 후 가입 승인 -> Replace supertokens
+  - [x] 로그인 시 Access JWT 발급 -> Replace supertokens
+  - [x] Refresh Token 으로 JWT 재발급 -> Replace supertokens
+  - [x] API 엔드포인트별 사용자 Role 검증 -> Replace supertokens
 #### Key
   - [x] 메타데이터 다수 등록
   - [x] 메타데이터 전체 조회 - Category
@@ -77,4 +77,6 @@
   - [x] 상태 체크
 
 ## Test
-`TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html`
+```bash
+TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html
+```

@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "aiofiles>=24.1.0",
     "coverage>=7.8.0",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.14",

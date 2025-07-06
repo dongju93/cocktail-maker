@@ -1,7 +1,10 @@
 {
-    "cSpell.words": [
-        "bson",
-        "dotenv",
-        "fernet"
-    ]
+  "cSpell.words": [
+    "bson",
+    "dotenv",
+    "emailpassword",
+    "fernet",
+    "prebuiltui",
+    "supertokens"
+  ]
 }

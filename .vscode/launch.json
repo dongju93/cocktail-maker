@@ -1,18 +1,15 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debugger: FastAPI",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "main:cocktail_maker",
-                "--reload"
-            ],
-            "cwd": "${workspaceFolder}/app",
-            "jinja": false,
-            "justMyCode": true
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debugger: FastAPI",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:cocktail_maker", "--reload"],
+      "cwd": "${workspaceFolder}/app",
+      "jinja": false,
+      "justMyCode": true
+    }
+  ]
 }

@@ -198,10 +198,10 @@ async def profile_request(
     profiling: bool = request.query_params.get("profile") == "true"
 
     if profiling:
-        profiler = Profiler()
-        profiler.start()
-        response: Response = await call_next(request)
-        profiler.stop()
+        with Profiler() as profiler:
+            response: Response = await call_next(request)
+
+        # Console output
         profiler.print(
             color=True,
             unicode=True,
@@ -211,6 +211,23 @@ async def profile_request(
             short_mode=True,
             time="percent_of_total",
         )
+
+        # File write
+        # # 파일명에 번호 추가 로직
+        # base_filename = "profile.speedscope"
+        # extension = ".json"
+        # filename = f"{base_filename}-0{extension}"
+        # counter = 0
+
+        # # 파일이 존재하면 번호를 증가시켜 새로운 파일명 생성
+        # while PathLib(filename).exists():
+        #     counter += 1
+        #     filename = f"{base_filename}-{counter}{extension}"
+
+        # async with aiofiles.open(filename, "w") as out:
+        #     await out.write(profiler.output(renderer=SpeedscopeRenderer()))
+
+        # HTML view
         # return HTMLResponse(profiler.output_html())
         return response
     else:

@@ -1,4 +1,5 @@
 from asyncio import set_event_loop_policy as set_global_asyncio_event_loop_policy
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from decimal import Decimal
 from os import environ
@@ -26,6 +27,7 @@ from fastapi import (
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse
+from pyinstrument import Profiler
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette_compress import CompressMiddleware
 from structlog import BoundLogger
@@ -108,6 +110,113 @@ cocktail_maker = FastAPI(
     default_response_class=ORJSONResponse,
     docs_url="/api/docs",
 )
+
+
+@cocktail_maker.middleware("http")
+async def profile_request(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
+    """
+    성능 프로파일링 미들웨어
+
+    쿼리 파라미터 ?profile=true로 요청 시 해당 요청의 성능 프로파일을 HTML로 반환
+
+    Profiler 설정 옵션:
+    - interval (float, 기본값: 0.001): 샘플링 간격 (초)
+      * 작은 값 (0.0001): 높은 정확도, 높은 오버헤드
+      * 큰 값 (0.01): 낮은 오버헤드, 낮은 정확도
+
+    - async_mode (AsyncMode, 기본값: "enabled"): async/await 추적 모드
+      * "enabled": await 지점에서 대기 시간 추적, 실제 코드 실행 시간만 측정 (권장)
+      * "disabled": async/await 지원 없이 모든 실행 추적 (이벤트 루프, 다른 코루틴 포함)
+      * "strict": 현재 async context만 엄격하게 프로파일링, 다른 context는 <out-of-context>로 표시
+
+    - use_timing_thread (bool | None, 기본값: None): 별도 타이밍 스레드 사용 여부
+      * True: 시간 측정 오버헤드가 큰 시스템에서 성능 향상을 위해 별도 스레드 사용
+      * False: 메인 스레드에서 시간 측정
+      * None: pyinstrument가 자동으로 최적 방법 선택
+
+    프로파일링 출력 형식:
+    - output_html(): 대화형 HTML 출력 (웹 브라우저에서 확인, 트리 구조 탐색 가능)
+    - output_text(): 콘솔용 텍스트 출력 (터미널에서 확인, 간단한 텍스트 형태)
+    - write_html(path): HTML 파일로 저장 (파일 시스템에 저장 후 나중에 확인)
+    - open_in_browser(): 웹 브라우저에서 자동 열기 (즉시 시각화된 결과 확인)
+    - print(): 콘솔에 직접 출력 (실시간 결과 확인)
+
+    텍스트 출력 옵션:
+    - unicode: 유니코드 문자 사용 여부 (트리 구조 표시용)
+    - color: 컬러 출력 여부 (터미널 색상 지원 시)
+    - show_all: 모든 함수 표시 여부 (기본적으로 빠른 함수는 숨김)
+    - timeline: 타임라인 뷰 표시 여부 (시간 흐름에 따른 실행 순서)
+    - time: 시간 표시 형식 ("seconds" 또는 "percent_of_total")
+    - flat: 플랫 뷰 표시 여부 (호출 스택 대신 함수별 총 시간)
+    - short_mode: 간단 모드 (요약된 출력)
+
+    Args:
+        request: FastAPI 요청 객체
+        call_next: 다음 미들웨어 또는 엔드포인트 호출 함수
+
+    Returns:
+        HTMLResponse: 프로파일링 결과 HTML (profile=true인 경우)
+        Response: 일반 응답 (profile=false 또는 없는 경우)
+
+    Examples:
+        # 기본 프로파일링 활성화
+        GET /api/v1/health?profile=true
+
+        # 고정밀 프로파일링 (짧은 함수 분석용)
+        profiler = Profiler(interval=0.0001, async_mode="enabled")
+
+        # 저오버헤드 프로파일링 (긴 실행 시간용)
+        profiler = Profiler(interval=0.01, async_mode="disabled")
+
+        # 엄격한 async context 프로파일링
+        profiler = Profiler(interval=0.001, async_mode="strict")
+
+        # 다양한 출력 방식 지원
+        1. HTML로 브라우저에서 확인
+        profiler.open_in_browser()
+
+        2. 파일로 저장
+        profiler.write_html("profile_result.html")
+
+        3. 콘솔에 텍스트로 출력
+        profiler.print(color=True, unicode=True)
+        - 콘솔 출력 옵션
+          * unicode: 유니코드 문자 사용 (트리 구조 표시용)
+          * color: 컬러 출력 (터미널 색상 지원 시)
+          * show_all: 모든 함수 표시 (기본적으로 빠른 함수는 숨김)
+          * timeline: 타임라인 뷰 표시 (시간 흐름에 따른 실행 순서)
+          * time: 시간 표시 형식 ("seconds" 또는 "percent_of_total")
+          * flat: 트리 구조로 호출 스택 표시
+          * short_mode: 간단 모드 (요약된 출력)
+
+        4. 문자열로 가져와서 로그에 기록
+        text_output = profiler.output_text(color=False)
+        logger.info(f"Profile result:\n{text_output}")
+    """
+    profiling: bool = request.query_params.get("profile") == "true"
+
+    if profiling:
+        profiler = Profiler()
+        profiler.start()
+        response: Response = await call_next(request)
+        profiler.stop()
+        profiler.print(
+            color=True,
+            unicode=True,
+            show_all=False,
+            timeline=True,
+            flat=False,
+            short_mode=True,
+            time="percent_of_total",
+        )
+        # return HTMLResponse(profiler.output_html())
+        return response
+    else:
+        return await call_next(request)
+
+
 # cocktail_maker.add_middleware(
 #     CORSMiddleware,
 #     allow_credentials=True,

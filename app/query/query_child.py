@@ -47,25 +47,25 @@ def spirits_search_query(params: SpiritsSearch) -> dict[str, Any]:
         query["kind"] = params.kind
 
     # 세부 종류 검색 (정확한 일치)
-    if params.subKind is not None:
-        query["sub_kind"] = params.subKind
+    if params.sub_kind is not None:
+        query["sub_kind"] = params.sub_kind
 
     # 알코올 도수 범위 검색
     alcohol_query: dict[str, float] = {}
-    if params.minAlcohol is not None:
-        alcohol_query["$gte"] = params.minAlcohol
-    if params.maxAlcohol is not None:
-        alcohol_query["$lte"] = params.maxAlcohol
+    if params.min_alcohol is not None:
+        alcohol_query["$gte"] = params.min_alcohol
+    if params.max_alcohol is not None:
+        alcohol_query["$lte"] = params.max_alcohol
     if alcohol_query:
         query["alcohol"] = alcohol_query
 
     # 원산지 국가 검색 (정확한 일치)
-    if params.originNation is not None:
-        query["origin_nation"] = params.originNation
+    if params.origin_nation is not None:
+        query["origin_nation"] = params.origin_nation
 
     # 원산지 지역 검색 (부분 일치)
-    if params.originLocation is not None:
-        query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
+    if params.origin_location is not None:
+        query["origin_location"] = {"$regex": params.origin_location, "$options": "i"}
 
     return query
 
@@ -99,38 +99,38 @@ def liqueur_search_query(params: LiqueurSearch) -> dict[str, Any]:
         query["kind"] = params.kind
 
     # 세부 종류 검색 (정확한 일치)
-    if params.subKind is not None:
-        query["sub_kind"] = params.subKind
+    if params.sub_kind is not None:
+        query["sub_kind"] = params.sub_kind
 
     # 주재료 검색 (목록 중 정확한 일치)
-    if params.mainIngredients is not None and len(params.mainIngredients) > 0:
-        query["main_ingredients"] = {"$all": params.mainIngredients}
+    if params.main_ingredients is not None and len(params.main_ingredients) > 0:
+        query["main_ingredients"] = {"$all": params.main_ingredients}
 
     # 용량 범위 검색
     volume_query: dict[str, float] = {}
-    if params.minVolume is not None:
-        volume_query["$gte"] = params.minVolume
-    if params.maxVolume is not None:
-        volume_query["$lte"] = params.maxVolume
+    if params.min_volume is not None:
+        volume_query["$gte"] = params.min_volume
+    if params.max_volume is not None:
+        volume_query["$lte"] = params.max_volume
     if volume_query:
         query["volume"] = volume_query
 
     # 알코올 도수 범위 검색
     abv_query: dict[str, float] = {}
-    if params.minAbv is not None:
-        abv_query["$gte"] = params.minAbv
-    if params.maxAbv is not None:
-        abv_query["$lte"] = params.maxAbv
+    if params.min_abv is not None:
+        abv_query["$gte"] = params.min_abv
+    if params.max_abv is not None:
+        abv_query["$lte"] = params.max_abv
     if abv_query:
         query["abv"] = abv_query
 
     # 원산지 국가 검색 (정확한 일치)
-    if params.originNation is not None:
-        query["origin_nation"] = params.originNation
+    if params.origin_nation is not None:
+        query["origin_nation"] = params.origin_nation
 
     # 원산지 지역 검색 (부분 일치)
-    if params.originLocation is not None:
-        query["origin_location"] = {"$regex": params.originLocation, "$options": "i"}
+    if params.origin_location is not None:
+        query["origin_location"] = {"$regex": params.origin_location, "$options": "i"}
 
     # 설명 검색 (부분 일치)
     if params.description is not None:

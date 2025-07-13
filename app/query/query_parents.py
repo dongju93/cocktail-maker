@@ -100,7 +100,7 @@ class SearchDocument(ABC):
         find_query: dict[str, Any] = self.get_query()
         params: SpiritsSearch | LiqueurSearch = self.get_params()
 
-        skip_count: int = (params.pageNumber - 1) * params.pageSize
+        skip_count: int = (params.page_number - 1) * params.page_size
 
         try:
             async with mongodb_conn(collection_name) as conn:
@@ -111,7 +111,7 @@ class SearchDocument(ABC):
                     await conn.find(find_query)
                     .sort("name", 1)
                     .skip(skip_count)
-                    .limit(params.pageSize)
+                    .limit(params.page_size)
                     .to_list(10)
                 )
         except Exception as e:
@@ -124,8 +124,8 @@ class SearchDocument(ABC):
                 item["_id"] = str(item["_id"])
 
         return SearchResponse(
-            totalPage=ceil(total / params.pageSize),
-            currentPage=params.pageNumber,
+            totalPage=ceil(total / params.page_size),
+            currentPage=params.page_number,
             totalSize=total,
             currentPageSize=len(result),
             items=result,

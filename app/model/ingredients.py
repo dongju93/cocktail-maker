@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Annotated, NotRequired, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
 class IngredientDict(TypedDict):
@@ -14,7 +15,7 @@ class IngredientDict(TypedDict):
 
 
 class IngredientSearch(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
 
     name: Annotated[
         str | None, Field(min_length=1, description="재료의 이름, 부분 일치")
@@ -29,5 +30,5 @@ class IngredientSearch(BaseModel):
     description: Annotated[
         str | None, Field(min_length=1, description="재료의 설명, 부분 일치")
     ] = None
-    pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
-    pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
+    page_number: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
+    page_size: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10

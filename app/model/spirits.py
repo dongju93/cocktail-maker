@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Annotated, NotRequired, TypedDict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 
 class SpiritsDict(TypedDict):
@@ -22,7 +23,7 @@ class SpiritsDict(TypedDict):
 
 
 class SpiritsSearch(BaseModel):
-    model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
 
     name: Annotated[
         str | None, Field(min_length=1, description="주류의 이름, 부분 일치")
@@ -42,20 +43,20 @@ class SpiritsSearch(BaseModel):
     kind: Annotated[
         str | None, Field(min_length=1, description="주류의 종류, 정확한 일치")
     ] = None
-    subKind: Annotated[
+    sub_kind: Annotated[
         str | None, Field(min_length=1, description="주류의 세부 종류, 정확한 일치")
     ] = None
-    minAlcohol: Annotated[
+    min_alcohol: Annotated[
         float | None, Field(ge=0, description="주류의 최소 알코올 도수")
     ] = None
-    maxAlcohol: Annotated[
+    max_alcohol: Annotated[
         float | None, Field(ge=0, description="주류의 최대 알코올 도수")
     ] = None
-    originNation: Annotated[
+    origin_nation: Annotated[
         str | None, Field(min_length=1, description="원산지 국가, 정확한 일치")
     ] = None
-    originLocation: Annotated[
+    origin_location: Annotated[
         str | None, Field(min_length=1, description="원산지 지역, 부분 일치")
     ] = None
-    pageNumber: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
-    pageSize: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10
+    page_number: Annotated[int, Field(..., ge=1, description="페이지 번호")] = 1
+    page_size: Annotated[int, Field(..., ge=1, le=100, description="페이지 크기")] = 10

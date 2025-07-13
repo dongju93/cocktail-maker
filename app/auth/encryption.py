@@ -8,30 +8,33 @@ from model import PasswordAndSalt
 
 
 class Encryption:
-    def __init__(self) -> None:
-        self.SALT_LENGTH: int = 32
-        self.ITERATIONS: int = 600_000
+    SALT_LENGTH: int = 32
+    ITERATIONS: int = 600_000
 
-    def _random_salt(self) -> bytes:
-        return token_bytes(self.SALT_LENGTH)
+    @classmethod
+    def _random_salt(cls) -> bytes:
+        return token_bytes(cls.SALT_LENGTH)
 
-    def _hmac_sha3_256(self, salt: bytes) -> PBKDF2HMAC:
+    @classmethod
+    def _hmac_sha3_256(cls, salt: bytes) -> PBKDF2HMAC:
         return PBKDF2HMAC(
             algorithm=SHA3_256(),
-            length=self.SALT_LENGTH,
+            length=cls.SALT_LENGTH,
             salt=salt,
-            iterations=self.ITERATIONS,
+            iterations=cls.ITERATIONS,
         )
 
-    def _derive_key(self, kdf: PBKDF2HMAC, password: str) -> bytes:
+    @staticmethod
+    def _derive_key(kdf: PBKDF2HMAC, password: str) -> bytes:
         return kdf.derive(password.encode())
 
-    def passwords(self, password: str, salt: bytes | None = None) -> PasswordAndSalt:
+    @classmethod
+    def passwords(cls, password: str, salt: bytes | None = None) -> PasswordAndSalt:
         if salt is None:
-            salt = self._random_salt()
+            salt = cls._random_salt()
 
-        kdf: PBKDF2HMAC = self._hmac_sha3_256(salt)
-        encrypted_password: bytes = self._derive_key(kdf, password)
+        kdf: PBKDF2HMAC = cls._hmac_sha3_256(salt)
+        encrypted_password: bytes = cls._derive_key(kdf, password)
 
         return PasswordAndSalt(
             encrypted_password=urlsafe_b64encode(encrypted_password).decode(),

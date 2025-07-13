@@ -86,7 +86,7 @@ class CreateSpirits(CreateDocument):
         document_id: str = await super().save()
 
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 document_id, "liqueur", self.mainImage
             )
         except Exception as e:
@@ -119,7 +119,7 @@ class CreateLiqueur(CreateDocument):
         document_id: str = await super().save()
 
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 document_id, "liqueur", self.mainImage
             )
         except Exception as e:
@@ -146,7 +146,7 @@ class CreateIngredient(CreateDocument):
         document_id: str = await super().save()
 
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 document_id, "ingredient", self.mainImage
             )
         except Exception as e:
@@ -259,7 +259,7 @@ class UpdateSpirits:
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
-        await Images().remove_image_files_in_local_dir(self.document_id)
+        await Images.remove_image_files_in_local_dir(self.document_id)
 
         # 2. 문서 업데이트
         try:
@@ -276,7 +276,7 @@ class UpdateSpirits:
 
         # 3. 새 이미지 저장
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 self.document_id,
                 "spirits",
                 self.main_image,
@@ -296,7 +296,7 @@ class DeleteSpirits:
 
     async def remove(self) -> None:
         try:
-            await Images().remove_image_files_in_local_dir(self.id)
+            await Images.remove_image_files_in_local_dir(self.id)
 
             async with mongodb_conn("spirits") as conn:
                 result = await conn.delete_one({"_id": ObjectId(self.id)})
@@ -370,7 +370,7 @@ class Metadata:
 class Users:
     @staticmethod
     async def sign_up(user: User) -> bool:
-        encrypted_password_set: PasswordAndSalt = Encryption().passwords(user.password)
+        encrypted_password_set: PasswordAndSalt = Encryption.passwords(user.password)
 
         try:
             data: dict[str, Any] = user.model_dump()
@@ -401,7 +401,7 @@ class Users:
                 if result is None:
                     raise HTTPException(status_code=404, detail="User not found")
 
-                encrypted_password_set: PasswordAndSalt = Encryption().passwords(
+                encrypted_password_set: PasswordAndSalt = Encryption.passwords(
                     login.password, urlsafe_b64decode(result["salt"].encode())
                 )
 
@@ -443,7 +443,7 @@ class UpdateLiqueur:
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
-        await Images().remove_image_files_in_local_dir(self.document_id)
+        await Images.remove_image_files_in_local_dir(self.document_id)
 
         # 2. 문서 업데이트
         try:
@@ -460,7 +460,7 @@ class UpdateLiqueur:
 
         # 3. 새 이미지 저장
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 self.document_id,
                 "liqueur",
                 self.main_image,
@@ -477,7 +477,7 @@ class DeleteLiqueur:
     async def remove(self) -> None:
         try:
             # 1. 이미지 삭제
-            await Images().remove_image_files_in_local_dir(self.document_id)
+            await Images.remove_image_files_in_local_dir(self.document_id)
 
             # 2. 문서 삭제
             async with mongodb_conn("liqueur") as conn:
@@ -536,7 +536,7 @@ class UpdateIngredient:
 
     async def update(self) -> None:
         # 1. 기존 이미지 삭제
-        await Images().remove_image_files_in_local_dir(self.document_id)
+        await Images.remove_image_files_in_local_dir(self.document_id)
 
         # 2. 문서 업데이트
         try:
@@ -553,7 +553,7 @@ class UpdateIngredient:
 
         # 3. 새 이미지 저장
         try:
-            await Images().save_image_files_to_local_dir(
+            await Images.save_image_files_to_local_dir(
                 self.document_id,
                 "ingredient",
                 self.main_image,
@@ -570,7 +570,7 @@ class DeleteIngredient:
     async def remove(self) -> None:
         try:
             # 1. 이미지 삭제
-            await Images().remove_image_files_in_local_dir(self.document_id)
+            await Images.remove_image_files_in_local_dir(self.document_id)
 
             # 2. 문서 삭제
             async with mongodb_conn("ingredient") as conn:

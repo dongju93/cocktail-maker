@@ -171,7 +171,8 @@ def ingredient_search_query(params: IngredientSearch) -> dict[str, Any]:
 
 
 class Images:
-    async def remove_image_files_in_local_dir(self, id: str) -> None:
+    @classmethod
+    async def remove_image_files_in_local_dir(cls, id: str) -> None:
         """이미지 파일 삭제"""
         try:
             async with mongodb_conn("spirits") as conn:
@@ -186,15 +187,17 @@ class Images:
         else:
             rmtree(Path(result["main_image"]).parent, ignore_errors=True)
 
+    @classmethod
     async def _image_field_updater(
-        self, collection_name: COCKTAIL_DATA_KIND, id: str, image_data: dict[str, Any]
+        cls, collection_name: COCKTAIL_DATA_KIND, id: str, image_data: dict[str, Any]
     ) -> None:
         image_data["updated_at"] = datetime.now(tz=UTC)
         async with mongodb_conn(collection_name) as conn:
             await conn.update_one({"_id": ObjectId(id)}, {"$set": image_data})
 
+    @classmethod
     async def save_image_files_to_local_dir(  # noqa: PLR0913
-        self,
+        cls,
         document_id: str,
         collection_name: COCKTAIL_DATA_KIND,
         main_image: bytes | None = None,
@@ -227,4 +230,4 @@ class Images:
             # main_image, sub_image_1, sub_image_2, sub_image_3, sub_image_4 필드 처리
             update_image[image_path_info["key"]] = image_path_info["path"]
 
-        await self._image_field_updater(collection_name, document_id, update_image)
+        await cls._image_field_updater(collection_name, document_id, update_image)

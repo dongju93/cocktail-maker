@@ -380,7 +380,7 @@ async def general_exception_handler_rfc(
     """General exception handler for server errors using RFC 9457 format"""
     logger.error("Unhandled server error", error=str(exc), path=request.url.path)
 
-    problem_details = await problem_details_formatter(
+    problem_details = problem_details_formatter(
         status=500,
         title="Internal Server Error",
         detail="An unexpected error occurred while processing the request",
@@ -416,7 +416,7 @@ async def http_exception_handler_rfc(
             )
             title = f"Client Error {exc.status_code}"
 
-        problem_details = await problem_details_formatter(
+        problem_details = problem_details_formatter(
             status=exc.status_code,
             title=title,
             detail=exc.detail,
@@ -473,7 +473,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
 
     except HTTPException as he:
         return Response(
-            await return_formatter("failed", he.status_code, None, he.detail),
+            return_formatter("failed", he.status_code, None, he.detail),
             he.status_code,
         )
 
@@ -526,7 +526,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
 
     except HTTPException as he:
         return Response(
-            await return_formatter("failed", he.status_code, None, he.detail),
+            return_formatter("failed", he.status_code, None, he.detail),
             he.status_code,
         )
 
@@ -582,7 +582,7 @@ async def refresh_token(request: Request) -> Response:
 
     except HTTPException as he:
         return Response(
-            await return_formatter("failed", he.status_code, None, he.detail),
+            return_formatter("failed", he.status_code, None, he.detail),
             he.status_code,
         )
 
@@ -615,7 +615,7 @@ async def my_role(
     Returns:
         ORJSONResponse: 사용자 권한 정보
     """
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, {"roles": ["admin", "user"]}, "Successfully get user roles"
     )
 
@@ -631,7 +631,7 @@ async def publish_api_key(
     api_key: str = generator.generate_api_key(api_key_publish.domain, time_ns())
 
     return ORJSONResponse(
-        await return_formatter(
+        return_formatter(
             "success", 200, {"api_key": api_key}, "API key generated successfully"
         )
     )
@@ -642,7 +642,7 @@ async def health_check() -> ORJSONResponse:
     """
     서비스 상태 확인
     """
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, {"status": "ok"}, "Service is running"
     )
 
@@ -739,7 +739,7 @@ async def spirits_register(  # noqa
 
         logger.info("Spirits successfully registered", name=name)
 
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
         )
 
@@ -747,12 +747,10 @@ async def spirits_register(  # noqa
         logger.error(
             SPIRITS_REGISTER_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
     except Exception as e:
         logger.error(SPIRITS_REGISTER_FAILURE_MESSAGE, error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -839,13 +837,11 @@ async def spirits_update(  # noqa: PLR0913
         logger.error(
             SPIRITS_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
         response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
         logger.error(SPIRITS_UPDATE_FAILURE_MESSAGE, error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -863,7 +859,7 @@ async def spirits_detail(
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", status.HTTP_200_OK, spirits, "Successfully get spirits"
     )
 
@@ -877,7 +873,7 @@ async def spirits_search(
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchSpirits(params).query()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, data, "Successfully search spirits"
     )
 
@@ -890,7 +886,7 @@ async def spirits_remover(
 ) -> ORJSONResponse:
     await queries.DeleteSpirits(id).remove()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, None, "Successfully delete spirits"
     )
 
@@ -910,7 +906,7 @@ async def metadata_register(
     try:
         queries.Metadata.create(category, items, kind)
 
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success",
             status.HTTP_201_CREATED,
             None,
@@ -918,7 +914,7 @@ async def metadata_register(
         )
 
     except Exception as e:
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -946,7 +942,7 @@ async def metadata_details(
     # print("forwarded: ", forwarded)
     metadata: list[dict[str, int | str]] = queries.Metadata.read(category, kind)
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", status.HTTP_200_OK, metadata, "Successfully get metadata"
     )
 
@@ -961,16 +957,14 @@ async def metadata_remover(
 ) -> ORJSONResponse:
     try:
         queries.Metadata.delete(id)
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_200_OK, None, "Successfully delete metadata"
         )
 
     except HTTPException as he:
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
     except Exception as e:
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -1103,7 +1097,7 @@ async def liqueur_register(  # noqa: PLR0913
 
         logger.info("Spirits successfully registered", name=name)
 
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
         )
 
@@ -1111,12 +1105,10 @@ async def liqueur_register(  # noqa: PLR0913
         logger.error(
             LIQUEUR_REGISTER_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
     except Exception as e:
         logger.error(LIQUEUR_REGISTER_FAILURE_MESSAGE, error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -1134,7 +1126,7 @@ async def liqueur_detail(
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveLiqueur(name).only_name()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", status.HTTP_200_OK, spirits, "Successfully get liqueur"
     )
 
@@ -1148,7 +1140,7 @@ async def liqueur_search(
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchLiqueur(params).query()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, data, "Successfully search spirits"
     )
 
@@ -1280,13 +1272,11 @@ async def liqueur_update(  # noqa: PLR0913
         logger.error(
             LIQUEUR_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
         response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
         logger.error(LIQUEUR_UPDATE_FAILURE_MESSAGE, error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -1317,18 +1307,16 @@ async def liqueur_remover(
 
         logger.info("Liqueur successfully deleted", document_id=document_id)
 
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success", 200, None, "Successfully delete liqueur"
         )
 
     except HTTPException as he:
         logger.error("Failed to delete liqueur", code=he.status_code, message=he.detail)
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
     except Exception as e:
         logger.error("Failed to delete liqueur", error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed", 500, None, f"Failed to delete liqueur: {e!s}"
         )
 
@@ -1411,7 +1399,7 @@ async def ingredient_register(
 
         logger.info("Ingredient successfully registered", name=name)
 
-        formatted_response: ResponseFormat = await return_formatter(
+        formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register ingredient"
         )
 
@@ -1419,12 +1407,10 @@ async def ingredient_register(
         logger.error(
             "Failed to register ingredient", code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
     except Exception as e:
         logger.error("Failed to register ingredient", error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -1442,7 +1428,7 @@ async def ingredient_detail(
 ) -> ORJSONResponse:
     ingredient: dict[str, Any] = await queries.RetrieveIngredient(name).only_name()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", status.HTTP_200_OK, ingredient, "Successfully get ingredient"
     )
 
@@ -1456,7 +1442,7 @@ async def ingredient_search(
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchIngredient(params).query()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, data, "Successfully search ingredients"
     )
 
@@ -1545,13 +1531,11 @@ async def ingredient_update(  # noqa: PLR0913
         logger.error(
             INGREDIENT_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
-        formatted_response = await return_formatter(
-            "failed", he.status_code, None, he.detail
-        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
         response = Response(formatted_response, formatted_response["code"])
     except Exception as e:
         logger.error(INGREDIENT_UPDATE_FAILURE_MESSAGE, error=str(e))
-        formatted_response = await return_formatter(
+        formatted_response = return_formatter(
             "failed",
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
@@ -1570,7 +1554,7 @@ async def ingredient_remover(
 ) -> ORJSONResponse:
     await queries.DeleteIngredient(document_id).remove()
 
-    formatted_response: ResponseFormat = await return_formatter(
+    formatted_response: ResponseFormat = return_formatter(
         "success", 200, None, "Successfully delete ingredient"
     )
 

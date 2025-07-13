@@ -9,7 +9,7 @@ from PIL.ImageFile import Image, ImageFile
 from model import ProblemDetails, ResponseFormat
 
 
-async def return_formatter(
+def return_formatter(
     status: Literal["success", "failed"], code: int, data: Any, message: str
 ) -> ResponseFormat:
     return ResponseFormat(
@@ -20,7 +20,7 @@ async def return_formatter(
     )
 
 
-async def problem_details_formatter(
+def problem_details_formatter(
     status: int,
     title: str,
     detail: str,

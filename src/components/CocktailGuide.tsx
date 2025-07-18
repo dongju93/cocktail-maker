@@ -70,93 +70,200 @@ const popularCocktails = [
 
 const CocktailGuide: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 px-8 py-16 text-center text-white">
-        <div>
-          <h1 className="mb-4 font-extrabold text-6xl text-shadow-lg">🍹 칵테일 제작 가이드</h1>
-          <p className="text-xl opacity-90">
-            프로처럼 칵테일을 만들어보세요. 기본부터 고급 기법까지!
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-purple-700 px-8 py-20 text-center text-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-800">
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+
+        <div className="relative">
+          <h1 className="mb-6 animate-float font-black text-6xl text-shadow-lg md:text-7xl">
+            🍹 칵테일 제작 가이드
+          </h1>
+          <p className="mx-auto mb-8 max-w-3xl font-light text-xl leading-relaxed opacity-90">
+            프로 바텐더의 비밀을 배워보세요.
+            <br />
+            기본부터 고급 기법까지, 완벽한 칵테일을 만드는 모든 것을 알려드립니다.
           </p>
+          <div className="flex justify-center">
+            <div className="rounded-full bg-white/20 px-6 py-3 backdrop-blur-sm">
+              <span className="font-semibold text-lg">
+                ✨ 50+ 레시피 | 🏆 프로 팁 | 🎯 단계별 가이드
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-8 pb-16">
-        <section className="mb-16">
-          <h2 className="mb-8 text-center font-bold text-4xl text-gray-800">기본 팁</h2>
-          <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-8 py-16">
+        {/* Quick Tips Section */}
+        <section className="mb-20">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 font-bold text-4xl text-gray-800 dark:text-white">🚀 핵심 팁</h2>
+            <p className="text-gray-600 text-xl dark:text-gray-300">
+              성공적인 칵테일을 위한 필수 지식
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
             {cocktailTips.map((tip) => (
               <div
-                className="hover:-translate-y-1 rounded-xl border border-indigo-100 bg-gradient-to-br from-blue-50 to-indigo-100 p-6 text-center transition-all duration-300 hover:shadow-lg"
+                className="group hover:-translate-y-3 rounded-2xl border border-indigo-100 bg-gradient-to-br from-blue-50 to-indigo-100 p-8 text-center transition-all duration-500 hover:shadow-2xl dark:border-gray-700 dark:from-gray-800 dark:to-gray-700"
                 key={tip.id}
               >
-                <div className="mb-4 text-4xl">{tip.icon}</div>
-                <h3 className="mb-2 font-semibold text-gray-800 text-lg">{tip.title}</h3>
-                <p className="text-gray-600 text-sm">{tip.description}</p>
+                <div className="mb-6 text-5xl transition-transform duration-300 group-hover:scale-110">
+                  {tip.icon}
+                </div>
+                <h3 className="mb-4 font-bold text-gray-800 text-xl dark:text-white">
+                  {tip.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">{tip.description}</p>
+                <div className="mt-6 h-1 w-0 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 group-hover:w-full" />
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mb-16">
-          <h2 className="mb-8 text-center font-bold text-4xl text-gray-800">인기 칵테일 레시피</h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {/* Popular Cocktails Section */}
+        <section className="mb-20">
+          <div className="mb-12 text-center">
+            <h2 className="mb-4 font-bold text-4xl text-gray-800 dark:text-white">
+              🏆 인기 칵테일 레시피
+            </h2>
+            <p className="text-gray-600 text-xl dark:text-gray-300">
+              가장 사랑받는 클래식 레시피들
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
             {popularCocktails.map((cocktail) => (
               <div
-                className="hover:-translate-y-1 rounded-xl border border-gray-50 bg-white p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
+                className="group hover:-translate-y-2 relative overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl transition-all duration-500 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800"
                 key={cocktail.id}
               >
-                <div className="mb-4 flex items-start justify-between">
-                  <h3 className="font-semibold text-gray-800 text-xl">{cocktail.name}</h3>
-                  <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={`rounded-xl px-3 py-1 font-semibold text-xs ${
-                        cocktail.difficulty === '초급'
-                          ? 'bg-green-100 text-green-700'
-                          : cocktail.difficulty === '중급'
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-red-100 text-red-700'
-                      }`}
-                    >
-                      {cocktail.difficulty}
-                    </span>
-                    <span className="text-gray-600 text-xs">⏱️ {cocktail.time}</span>
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
+                  <div className="flex items-start justify-between">
+                    <h3 className="font-bold text-2xl">{cocktail.name}</h3>
+                    <div className="flex flex-col items-end gap-2">
+                      <span
+                        className={`rounded-full px-4 py-1 font-bold text-sm ${
+                          cocktail.difficulty === '초급'
+                            ? 'bg-green-400 text-green-900 dark:bg-green-500 dark:text-green-50'
+                            : cocktail.difficulty === '중급'
+                              ? 'bg-yellow-400 text-yellow-900 dark:bg-yellow-500 dark:text-yellow-50'
+                              : 'bg-red-400 text-red-900 dark:bg-red-500 dark:text-red-50'
+                        }`}
+                      >
+                        {cocktail.difficulty}
+                      </span>
+                      <span className="text-sm opacity-90">⏱️ {cocktail.time}</span>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <h4 className="mb-2 font-medium text-base text-gray-800">재료</h4>
-                  <ul className="list-none">
+
+                {/* Card Body */}
+                <div className="p-6">
+                  <h4 className="mb-4 font-bold text-gray-800 text-lg dark:text-white">📋 재료</h4>
+                  <ul className="space-y-3">
                     {cocktail.ingredients.map((ingredient) => (
                       <li
-                        className="border-gray-100 border-b py-1 text-gray-700 before:mr-2 before:content-['🥃'] last:border-b-0"
+                        className="flex items-center rounded-lg bg-gray-50 p-3 transition-colors duration-300 hover:bg-indigo-50 dark:bg-gray-700 dark:hover:bg-gray-600"
                         key={`${cocktail.id}-${ingredient.id}`}
                       >
-                        {ingredient.name}
+                        <span className="mr-3 text-lg">🥃</span>
+                        <span className="text-gray-700 dark:text-gray-200">{ingredient.name}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
+
+                {/* Card Footer */}
+                <div className="bg-gray-50 p-4 dark:bg-gray-700">
+                  <button
+                    className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 py-3 font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                    type="button"
+                  >
+                    📖 상세 레시피 보기
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mt-12">
-          <div className="rounded-xl border-pink-500 border-l-4 bg-gradient-to-br from-red-50 to-pink-100 p-8">
-            <h2 className="mb-4 font-bold text-2xl text-pink-700">⚠️ 음주 안전 수칙</h2>
-            <ul className="list-none">
-              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
-                적당한 음주를 권장합니다
-              </li>
-              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
-                음주 후 운전은 절대 금지입니다
-              </li>
-              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
-                임산부나 미성년자는 음주를 금합니다
-              </li>
-              <li className="relative py-2 pl-6 text-gray-700 before:absolute before:left-0 before:font-bold before:text-pink-500 before:content-['✓']">
-                약물 복용 시 음주를 피해주세요
-              </li>
-            </ul>
+        {/* Advanced Tips Section */}
+        <section className="mb-20">
+          <div className="rounded-3xl bg-gradient-to-br from-amber-50 to-orange-100 p-8 dark:from-gray-800 dark:to-gray-700">
+            <h2 className="mb-8 text-center font-bold text-3xl text-gray-800 dark:text-white">
+              🎯 프로 바텐더 팁
+            </h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800">
+                <h3 className="mb-3 font-bold text-orange-600 text-xl dark:text-orange-400">
+                  🧊 얼음 마스터하기
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  좋은 얼음은 칵테일의 50%를 좌우합니다. 깨끗하고 단단한 얼음을 사용하고, 칵테일에
+                  따라 적절한 크기를 선택하세요.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800">
+                <h3 className="mb-3 font-bold text-blue-600 text-xl dark:text-blue-400">
+                  ⚖️ 정확한 측정
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  지거(Jigger)를 사용해 정확히 측정하세요. 1ml의 차이도 맛에 큰 영향을 줄 수
+                  있습니다.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800">
+                <h3 className="mb-3 font-bold text-green-600 text-xl dark:text-green-400">
+                  🍸 셰이킹 기술
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  강하고 빠르게 10-15초간 셰이킹하세요. 리듬감 있게 흔들면 더 부드러운 맛을 얻을 수
+                  있습니다.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-gray-800">
+                <h3 className="mb-3 font-bold text-purple-600 text-xl dark:text-purple-400">
+                  🍋 가니쉬의 예술
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  가니쉬는 단순한 장식이 아닙니다. 향과 맛을 더하는 중요한 요소입니다.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Safety Section */}
+        <section className="mt-16">
+          <div className="rounded-3xl border-red-500 border-l-8 bg-gradient-to-br from-red-50 to-pink-100 p-8 dark:from-gray-800 dark:to-gray-700">
+            <h2 className="mb-6 flex items-center font-bold text-3xl text-red-700 dark:text-red-400">
+              ⚠️ 음주 안전 수칙
+            </h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[
+                '적당한 음주를 권장합니다',
+                '음주 후 운전은 절대 금지입니다',
+                '임산부나 미성년자는 음주를 금합니다',
+                '약물 복용 시 음주를 피해주세요',
+                '빈속에 음주하지 마세요',
+                '충분한 수분을 섭취하세요',
+              ].map((rule) => (
+                <div
+                  className="flex items-center rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800"
+                  key={rule}
+                >
+                  <span className="mr-4 text-2xl">✅</span>
+                  <span className="font-medium text-gray-700 dark:text-gray-200">{rule}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </div>

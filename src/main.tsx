@@ -10,7 +10,7 @@ import './index.css'
 SuperTokens.init({
   appInfo: {
     appName: 'cocktail-maker',
-    apiDomain: 'http://localhost:8000',
+    apiDomain: 'http://127.0.0.1:8000',
     websiteDomain: 'http://localhost:3000',
     apiBasePath: '/auth',
     websiteBasePath: '/auth',

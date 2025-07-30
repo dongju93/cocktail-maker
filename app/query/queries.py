@@ -87,11 +87,11 @@ class CreateSpirits(CreateDocument):
 
         try:
             await Images.save_image_files_to_local_dir(
-                document_id, "liqueur", self.mainImage
+                document_id, "spirits", self.mainImage
             )
         except Exception as e:
             logger.error(
-                f"Save liqueur images to local has an error: {e!s}",
+                f"Save spirits images to local has an error: {e!s}",
             )
             raise e
 

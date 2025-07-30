@@ -25,7 +25,7 @@ class ImageValidation:
         return True
 
     def is_less_than_max_size(self, read_file: bytes | None) -> bool:
-        return bool(read_file is not None and len(read_file) > MAX_FILE_SIZE)
+        return bool(read_file is not None and len(read_file) <= MAX_FILE_SIZE)
 
     async def read_image(self, file: UploadFile | None) -> bytes | None:
         return await file.read() if file is not None else None
@@ -131,11 +131,11 @@ class MetadataValidation:
         listed_finish: list[str] = []
 
         # 메타데이터 변환
-        listed_taste = single_word_list_to_many_word_list(self.taste)
+        listed_taste = self.taste
         if self.aroma is not None:
-            listed_aroma = single_word_list_to_many_word_list(self.aroma)
+            listed_aroma = self.aroma
         if self.finish is not None:
-            listed_finish = single_word_list_to_many_word_list(self.finish)
+            listed_finish = self.finish
 
         # 메타데이터 값 검사
         for category, values in [

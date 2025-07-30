@@ -62,6 +62,7 @@ from model import (
     ResponseFormat,
     SearchResponse,
     SpiritsDict,
+    SpiritsRegister,
     SpiritsSearch,
     User,
 )
@@ -670,26 +671,8 @@ async def health_check() -> ORJSONResponse:
     - subImage1~4: 보조 이미지
     """,
 )
-async def spirits_register(  # noqa
-    name: Annotated[str, Form(..., min_length=1)],
-    aroma: Annotated[list[str], Form(..., min_length=1)],
-    taste: Annotated[list[str], Form(..., min_length=1)],
-    finish: Annotated[list[str], Form(..., min_length=1)],
-    kind: Annotated[str, Form(...)],
-    subKind: Annotated[str, Form(...)],
-    amount: Annotated[float, Form(...)],
-    alcohol: Annotated[float, Form(...)],
-    originNation: Annotated[str, Form(...)],
-    originLocation: Annotated[str, Form(...)],
-    description: Annotated[str, Form(...)],
-    mainImage: Annotated[
-        UploadFile,
-        File(..., description="주류의 대표 이미지, 최대 2MB"),
-    ],
-    subImage1: Annotated[UploadFile | None, File()] = None,
-    subImage2: Annotated[UploadFile | None, File()] = None,
-    subImage3: Annotated[UploadFile | None, File()] = None,
-    subImage4: Annotated[UploadFile | None, File()] = None,
+async def spirits_register(
+    form: Annotated[SpiritsRegister, Form(...)],
 ) -> ORJSONResponse:
     """
     단일 주류 정보 등록
@@ -700,7 +683,8 @@ async def spirits_register(  # noqa
     try:
         # 이미지 검증 및 변환
         read_main_image, sub_images_bytes = await ImageValidation.files(
-            mainImage, [subImage1, subImage2, subImage3, subImage4]
+            form.main_image,
+            [form.sub_image1, form.sub_image2, form.sub_image3, form.sub_image4],
         )
         read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
             sub_images_bytes
@@ -709,23 +693,23 @@ async def spirits_register(  # noqa
         # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
         listed_taste, listed_aroma, listed_finish = MetadataValidation(
             "spirits",
-            taste,
-            aroma,
-            finish,
+            form.taste,
+            form.aroma,
+            form.finish,
         )()
 
         item: SpiritsDict = SpiritsDict(
-            name=name,
+            name=form.name,
             aroma=listed_aroma,
             taste=listed_taste,
             finish=listed_finish,
-            kind=kind,
-            sub_kind=subKind,
-            amount=amount,
-            alcohol=alcohol,
-            origin_nation=originNation,
-            origin_location=originLocation,
-            description=description,
+            kind=form.kind,
+            sub_kind=form.sub_kind,
+            amount=form.amount,
+            alcohol=form.alcohol,
+            origin_nation=form.origin_nation,
+            origin_location=form.origin_location,
+            description=form.description,
             created_at=datetime.now(tz=UTC),
         )
         data: str = await queries.CreateSpirits(
@@ -737,7 +721,7 @@ async def spirits_register(  # noqa
             read_sub_image4,
         ).save()
 
-        logger.info("Spirits successfully registered", name=name)
+        logger.info("Spirits successfully registered", name=form.name)
 
         formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
@@ -903,6 +887,7 @@ async def metadata_register(
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     items: Annotated[MetadataRegister, Body(...)],
 ) -> ORJSONResponse:
+    # // TODO: 중복된 항목만 등록 건너뛰기
     try:
         queries.Metadata.create(category, items, kind)
 

@@ -2,7 +2,7 @@ from .etc import COCKTAIL_DATA_KIND, ImageField, MetadataCategory, MetadataRegis
 from .ingredients import IngredientDict, IngredientSearch
 from .liqueur import LiqueurDict, LiqueurSearch
 from .response import ProblemDetails, ResponseFormat, SearchResponse
-from .spirits import SpiritsDict, SpiritsSearch
+from .spirits import SpiritsDict, SpiritsRegister, SpiritsSearch
 from .user import ApiKeyPublish, Login, PasswordAndSalt, User
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     "ResponseFormat",
     "SearchResponse",
     "SpiritsDict",
+    "SpiritsRegister",
     "SpiritsSearch",
     "User",
 ]

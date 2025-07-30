@@ -1,8 +1,33 @@
 from datetime import datetime
 from typing import Annotated, NotRequired, TypedDict
 
+from fastapi import File, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+
+class SpiritsRegister(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    name: Annotated[str, Field(..., min_length=1)]
+    aroma: Annotated[list[str], Field(..., min_length=1)]
+    taste: Annotated[list[str], Field(..., min_length=1)]
+    finish: Annotated[list[str], Field(..., min_length=1)]
+    kind: Annotated[str, Field(...)]
+    sub_kind: Annotated[str, Field(...)]
+    amount: Annotated[float, Field(...)]
+    alcohol: Annotated[float, Field(...)]
+    origin_nation: Annotated[str, Field(...)]
+    origin_location: Annotated[str, Field(...)]
+    description: Annotated[str, Field(...)]
+    main_image: Annotated[
+        UploadFile,
+        File(..., description="주류의 대표 이미지, 최대 2MB"),
+    ]
+    sub_image1: Annotated[UploadFile | None, File()] = None
+    sub_image2: Annotated[UploadFile | None, File()] = None
+    sub_image3: Annotated[UploadFile | None, File()] = None
+    sub_image4: Annotated[UploadFile | None, File()] = None
 
 
 class SpiritsDict(TypedDict):

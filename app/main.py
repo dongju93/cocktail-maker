@@ -1,7 +1,6 @@
 from asyncio import set_event_loop_policy as set_global_asyncio_event_loop_policy
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
-from decimal import Decimal
 from os import environ
 from time import time_ns
 from typing import Annotated, Any
@@ -14,7 +13,6 @@ from fastapi import (
     FastAPI,
     File,
     Form,
-    # Header,
     HTTPException,
     Path,
     Query,
@@ -39,8 +37,6 @@ from supertokens_python import (
 )
 from supertokens_python.framework.fastapi import get_middleware
 from supertokens_python.recipe import emailpassword, session
-from supertokens_python.recipe.session import SessionContainer
-from supertokens_python.recipe.session.framework.fastapi import verify_session
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import (
@@ -55,15 +51,18 @@ from model import (
     IngredientDict,
     IngredientSearch,
     LiqueurDict,
-    LiqueurSearch,
+    LiqueurRegisterForm,
+    LiqueurSearchQuery,
+    LiqueurUpdateForm,
     Login,
     MetadataCategory,
     MetadataRegister,
     ResponseFormat,
     SearchResponse,
     SpiritsDict,
-    SpiritsRegister,
+    SpiritsRegisterForm,
     SpiritsSearch,
+    SpiritsUpdateForm,
     User,
 )
 from model.validation import (
@@ -672,7 +671,7 @@ async def health_check() -> ORJSONResponse:
     """,
 )
 async def spirits_register(
-    form: Annotated[SpiritsRegister, Form(...)],
+    form: Annotated[SpiritsRegisterForm, Form()],
 ) -> ORJSONResponse:
     """
     단일 주류 정보 등록
@@ -747,27 +746,9 @@ async def spirits_register(
 @cocktail_maker_v1.put(
     "/spirits/{document_id}", summary="주류 정보 수정", tags=["주류"]
 )
-async def spirits_update(  # noqa: PLR0913
-    document_id: Annotated[str, Path(..., min_length=1, max_length=255)],
-    name: Annotated[str, Form(..., min_length=1)],
-    aroma: Annotated[list[str], Form(..., min_length=1)],
-    taste: Annotated[list[str], Form(..., min_length=1)],
-    finish: Annotated[list[str], Form(..., min_length=1)],
-    kind: Annotated[str, Form(...)],
-    subKind: Annotated[str, Form(...)],
-    amount: Annotated[float, Form(...)],
-    alcohol: Annotated[float, Form(...)],
-    originNation: Annotated[str, Form(...)],
-    originLocation: Annotated[str, Form(...)],
-    description: Annotated[str, Form(...)],
-    mainImage: Annotated[
-        UploadFile,
-        File(..., description="주류의 대표 이미지, 최대 2MB"),
-    ],
-    subImage1: Annotated[UploadFile | None, File()] = None,
-    subImage2: Annotated[UploadFile | None, File()] = None,
-    subImage3: Annotated[UploadFile | None, File()] = None,
-    subImage4: Annotated[UploadFile | None, File()] = None,
+async def spirits_update(
+    document_id: Annotated[str, Path(description="주류의 문서 ID")],
+    form: Annotated[SpiritsUpdateForm, Form()],
 ) -> Response:
     """
     주류 정보 수정
@@ -778,29 +759,31 @@ async def spirits_update(  # noqa: PLR0913
     try:
         # 이미지 검증 및 변환
         read_main_image, sub_images_bytes = await ImageValidation.files(
-            mainImage, [subImage1, subImage2, subImage3, subImage4]
+            form.main_image,
+            [form.sub_image1, form.sub_image2, form.sub_image3, form.sub_image4],
         )
         read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
             sub_images_bytes
         )
 
         # 메타데이터 검증
-        listed_taste, listed_aroma, listed_finish = MetadataValidation(
-            "spirits", taste, aroma, finish
-        )()
+        validate_metadata = MetadataValidation(
+            "spirits", form.taste, form.aroma, form.finish
+        )
+        listed_taste, listed_aroma, listed_finish = validate_metadata()
 
         item: SpiritsDict = SpiritsDict(
-            name=name,
+            name=form.name,
             aroma=listed_aroma,
             taste=listed_taste,
             finish=listed_finish,
-            kind=kind,
-            sub_kind=subKind,
-            amount=amount,
-            alcohol=alcohol,
-            origin_nation=originNation,
-            origin_location=originLocation,
-            description=description,
+            kind=form.kind,
+            sub_kind=form.sub_kind,
+            amount=form.amount,
+            alcohol=form.alcohol,
+            origin_nation=form.origin_nation,
+            origin_location=form.origin_location,
+            description=form.description,
             updated_at=datetime.now(tz=UTC),
         )
         await queries.UpdateSpirits(
@@ -813,7 +796,7 @@ async def spirits_update(  # noqa: PLR0913
             read_sub_image4,
         ).update()
 
-        logger.info("Spirits successfully updated", name=name)
+        logger.info("Spirits successfully updated", name=form.name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -839,7 +822,7 @@ async def spirits_update(  # noqa: PLR0913
 @cocktail_maker_v1.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
-    _: Annotated[SessionContainer, Depends(verify_session())],
+    # _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 
@@ -852,8 +835,8 @@ async def spirits_detail(
 
 @cocktail_maker_v1.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
-    params: Annotated[SpiritsSearch, Query(...)],
-    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+    params: Annotated[SpiritsSearch, Depends()],
+    # _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchSpirits(params).query()
 
@@ -966,88 +949,8 @@ async def metadata_remover(
     summary="리큐르 정보 등록",
     tags=["리큐르"],
 )
-async def liqueur_register(  # noqa: PLR0913
-    name: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="이름",
-        ),
-    ],
-    brand: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="브랜드",
-        ),
-    ],
-    taste: Annotated[
-        list[str], Form(..., min_length=1, max_length=10, description="맛")
-    ],
-    kind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="종류",
-        ),
-    ],
-    subKind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="세부 종류",
-        ),
-    ],
-    mainIngredients: Annotated[
-        list[str], Form(..., min_length=1, description="주재료")
-    ],
-    volume: Annotated[
-        Decimal, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
-    ],
-    abv: Annotated[
-        Decimal, Form(..., ge=0, le=100, decimal_places=2, description="도수")
-    ],
-    originNation: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="원산지 국가",
-        ),
-    ],
-    description: Annotated[
-        str, Form(..., min_length=1, max_length=1000, description="설명")
-    ],
-    mainImage: Annotated[
-        UploadFile,
-        File(
-            ...,
-            media_type=[  # type: ignore
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-                "image/bmp",
-                "image/gif",
-                "image/tiff",
-            ],
-            description="대표 이미지, 최대 2MB",
-        ),
-    ],
+async def liqueur_register(
+    form: Annotated[LiqueurRegisterForm, Form()],
 ) -> ORJSONResponse:
     """
     단일 리큐르 정보 등록
@@ -1056,22 +959,22 @@ async def liqueur_register(  # noqa: PLR0913
 
     try:
         # 이미지 검증 및 변환
-        read_main_image, _ = await ImageValidation.files(mainImage, [])
+        read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = MetadataValidation("liqueur", taste)()
+        listed_taste, _, _ = MetadataValidation("liqueur", form.taste)()
 
         item: LiqueurDict = LiqueurDict(
-            name=name,
-            brand=brand,
+            name=form.name,
+            brand=form.brand,
             taste=listed_taste,
-            kind=kind,
-            sub_kind=subKind,
-            main_ingredients=mainIngredients,
-            volume=float(volume),
-            abv=float(abv),
-            origin_nation=originNation,
-            description=description,
+            kind=form.kind,
+            sub_kind=form.sub_kind,
+            main_ingredients=form.main_ingredients,
+            volume=float(form.volume),
+            abv=float(form.abv),
+            origin_nation=form.origin_nation,
+            description=form.description,
             created_at=datetime.now(tz=UTC),
         )
 
@@ -1080,7 +983,7 @@ async def liqueur_register(  # noqa: PLR0913
             read_main_image,
         ).save()
 
-        logger.info("Spirits successfully registered", name=name)
+        logger.info("Spirits successfully registered", name=form.name)
 
         formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register spirits"
@@ -1120,7 +1023,7 @@ async def liqueur_detail(
 
 @cocktail_maker_v1.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
 async def liqueur_search(
-    params: Annotated[LiqueurSearch, Query(...)],
+    params: Annotated[LiqueurSearchQuery, Depends()],
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchLiqueur(params).query()
@@ -1135,89 +1038,9 @@ async def liqueur_search(
 @cocktail_maker_v1.put(
     "/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
 )
-async def liqueur_update(  # noqa: PLR0913
+async def liqueur_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
-    name: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="이름",
-        ),
-    ],
-    brand: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="브랜드",
-        ),
-    ],
-    taste: Annotated[
-        list[str], Form(..., min_length=1, max_length=10, description="맛")
-    ],
-    kind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="종류",
-        ),
-    ],
-    subKind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="세부 종류",
-        ),
-    ],
-    mainIngredients: Annotated[
-        list[str], Form(..., min_length=1, description="주재료")
-    ],
-    volume: Annotated[
-        Decimal, Form(..., ge=0, le=10000, decimal_places=2, description="용량(mL)")
-    ],
-    abv: Annotated[
-        Decimal, Form(..., ge=0, le=100, decimal_places=2, description="도수")
-    ],
-    originNation: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="원산지 국가",
-        ),
-    ],
-    description: Annotated[
-        str, Form(..., min_length=1, max_length=1000, description="설명")
-    ],
-    mainImage: Annotated[
-        UploadFile,
-        File(
-            ...,
-            media_type=[  # type: ignore
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-                "image/bmp",
-                "image/gif",
-                "image/tiff",
-            ],
-            description="대표 이미지, 최대 2MB",
-        ),
-    ],
+    form: Annotated[LiqueurUpdateForm, Form()],
 ) -> Response:
     """
     주류 정보 수정
@@ -1225,22 +1048,22 @@ async def liqueur_update(  # noqa: PLR0913
     LIQUEUR_UPDATE_FAILURE_MESSAGE = "Failed to update liqueur"
     try:
         # 이미지 검증 및 변환
-        read_main_image, _ = await ImageValidation.files(mainImage, [])
+        read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = MetadataValidation("liqueur", taste)()
+        listed_taste, _, _ = MetadataValidation("liqueur", form.taste)()
 
         liqueur_item: LiqueurDict = LiqueurDict(
-            name=name,
-            brand=brand,
+            name=form.name,
+            brand=form.brand,
             taste=listed_taste,
-            kind=kind,
-            sub_kind=subKind,
-            main_ingredients=mainIngredients,
-            volume=float(volume),
-            abv=float(abv),
-            origin_nation=originNation,
-            description=description,
+            kind=form.kind,
+            sub_kind=form.sub_kind,
+            main_ingredients=form.main_ingredients,
+            volume=float(form.volume),
+            abv=float(form.abv),
+            origin_nation=form.origin_nation,
+            description=form.description,
             updated_at=datetime.now(tz=UTC),
         )
         await queries.UpdateLiqueur(
@@ -1249,7 +1072,7 @@ async def liqueur_update(  # noqa: PLR0913
             read_main_image,
         ).update()
 
-        logger.info("Liqueur successfully updated", name=name)
+        logger.info("Liqueur successfully updated", name=form.name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 

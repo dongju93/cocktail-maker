@@ -10,7 +10,7 @@ from database import mongodb_conn
 from model import (
     IngredientDict,
     LiqueurDict,
-    LiqueurSearch,
+    LiqueurSearchQuery,
     SearchResponse,
     SpiritsDict,
     SpiritsSearch,
@@ -98,7 +98,7 @@ class SearchDocument(ABC):
 
         collection_name = self.get_collection_name()
         find_query: dict[str, Any] = self.get_query()
-        params: SpiritsSearch | LiqueurSearch = self.get_params()
+        params: SpiritsSearch | LiqueurSearchQuery = self.get_params()
 
         skip_count: int = (params.page_number - 1) * params.page_size
 

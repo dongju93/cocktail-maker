@@ -1,7 +1,6 @@
 from fastapi import HTTPException, UploadFile, status
 
 from query.queries import Metadata
-from utils import single_word_list_to_many_word_list
 
 from .etc import COCKTAIL_DATA_KIND, MetadataCategory
 

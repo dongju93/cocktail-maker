@@ -14,7 +14,7 @@ from model import (
     IngredientDict,
     IngredientSearch,
     LiqueurDict,
-    LiqueurSearch,
+    LiqueurSearchQuery,
     Login,
     MetadataCategory,
     MetadataRegister,
@@ -219,7 +219,9 @@ class RetrieveLiqueur(RetrieveDocument):
 
 
 class SearchLiqueur(SearchDocument):
-    def __init__(self, params: LiqueurSearch, collection_name: str = "liqueur") -> None:
+    def __init__(
+        self, params: LiqueurSearchQuery, collection_name: str = "liqueur"
+    ) -> None:
         self.params = params
         self.collection_name = collection_name
 
@@ -234,7 +236,7 @@ class SearchLiqueur(SearchDocument):
     def get_query(self) -> dict[str, Any]:
         return liqueur_search_query(self.params)
 
-    def get_params(self) -> LiqueurSearch:
+    def get_params(self) -> LiqueurSearchQuery:
         return self.params
 
 

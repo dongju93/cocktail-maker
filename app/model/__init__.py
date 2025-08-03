@@ -1,8 +1,13 @@
 from .etc import COCKTAIL_DATA_KIND, ImageField, MetadataCategory, MetadataRegister
 from .ingredients import IngredientDict, IngredientSearch
-from .liqueur import LiqueurDict, LiqueurSearch
+from .liqueur import (
+    LiqueurDict,
+    LiqueurRegisterForm,
+    LiqueurSearchQuery,
+    LiqueurUpdateForm,
+)
 from .response import ProblemDetails, ResponseFormat, SearchResponse
-from .spirits import SpiritsDict, SpiritsRegister, SpiritsSearch
+from .spirits import SpiritsDict, SpiritsRegisterForm, SpiritsSearch, SpiritsUpdateForm
 from .user import ApiKeyPublish, Login, PasswordAndSalt, User
 
 __all__ = [
@@ -12,7 +17,9 @@ __all__ = [
     "IngredientDict",
     "IngredientSearch",
     "LiqueurDict",
-    "LiqueurSearch",
+    "LiqueurRegisterForm",
+    "LiqueurSearchQuery",
+    "LiqueurUpdateForm",
     "Login",
     "MetadataCategory",
     "MetadataRegister",
@@ -21,7 +28,8 @@ __all__ = [
     "ResponseFormat",
     "SearchResponse",
     "SpiritsDict",
-    "SpiritsRegister",
+    "SpiritsRegisterForm",
     "SpiritsSearch",
+    "SpiritsUpdateForm",
     "User",
 ]

@@ -8,7 +8,12 @@ from fastapi import HTTPException
 from structlog import BoundLogger
 
 from database import mongodb_conn
-from model import COCKTAIL_DATA_KIND, IngredientSearch, LiqueurSearch, SpiritsSearch
+from model import (
+    COCKTAIL_DATA_KIND,
+    IngredientSearch,
+    LiqueurSearchQuery,
+    SpiritsSearch,
+)
 from utils import Logger, save_image_to_local
 
 logger: BoundLogger = Logger().setup()
@@ -70,9 +75,9 @@ def spirits_search_query(params: SpiritsSearch) -> dict[str, Any]:
     return query
 
 
-def liqueur_search_query(params: LiqueurSearch) -> dict[str, Any]:
+def liqueur_search_query(params: LiqueurSearchQuery) -> dict[str, Any]:
     """
-    LiqueurSearch 클래스의 모든 필드를 MongoDB 쿼리로 변환합니다.
+    LiqueurSearchQuery 클래스의 모든 필드를 MongoDB 쿼리로 변환합니다.
 
     Args:
         params: 검색 파라미터

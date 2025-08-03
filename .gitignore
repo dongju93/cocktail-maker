@@ -383,9 +383,7 @@ CLAUDE.md
 codeql/
 
 # cache
-.pytest_cache/
-.ruff_cache/
-.coverage
 .vite/
+.serena/
 *.sqlite3-shm
 *.sqlite3-wal

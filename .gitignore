@@ -385,5 +385,6 @@ codeql/
 # cache
 .vite/
 .serena/
+.github/
 *.sqlite3-shm
 *.sqlite3-wal

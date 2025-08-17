@@ -4,20 +4,16 @@ from typing import Any
 
 from bson import ObjectId
 from fastapi import HTTPException
-from sqlmodel import and_, select
 from structlog import BoundLogger
 
-from auth import Encryption
-from database import MetadataTable, mongodb_conn, sqlite_conn_orm
+from auth.encryption import Encryption
+from database import mongodb_conn
 from model import (
-    COCKTAIL_DATA_KIND,
     IngredientDict,
     IngredientSearch,
     LiqueurDict,
     LiqueurSearchQuery,
     Login,
-    MetadataCategory,
-    MetadataRegister,
     PasswordAndSalt,
     SearchResponse,
     SpiritsDict,
@@ -308,64 +304,6 @@ class DeleteSpirits:
             logger.error(
                 "Delete Spirits object from mongodb has an error", error=str(e)
             )
-            raise e
-
-
-class Metadata:
-    @staticmethod
-    def create(
-        category: MetadataCategory,
-        items: MetadataRegister,
-        kind: COCKTAIL_DATA_KIND,
-    ) -> None:
-        try:
-            with sqlite_conn_orm() as session:
-                for name in items.names:
-                    metadata = MetadataTable(
-                        category=category.value, name=name, kind=kind
-                    )  # type: ignore
-                    session.add(metadata)
-                session.commit()
-        except Exception as e:
-            logger.error("Insert Spirits metadata to sqlite has an error", error=str(e))
-            raise e
-
-    @staticmethod
-    def read(
-        category: MetadataCategory,
-        kind: COCKTAIL_DATA_KIND,
-    ) -> list[dict[str, int | str]]:
-        try:
-            with sqlite_conn_orm() as session:
-                statement = (
-                    select(MetadataTable.id, MetadataTable.name)
-                    .where(
-                        and_(
-                            MetadataTable.category == category.value,
-                            MetadataTable.kind == kind,
-                        )
-                    )
-                    .order_by(MetadataTable.name)
-                )
-
-        except Exception as e:
-            logger.error("Get Spirits metadata from sqlite has an error", error=str(e))
-            raise e
-
-        return [{"index": id, "name": name} for id, name in session.exec(statement)]
-
-    @staticmethod
-    def delete(metadata_id: int) -> None:
-        try:
-            with sqlite_conn_orm() as session:
-                metadata: MetadataTable | None = session.get(MetadataTable, metadata_id)
-                if metadata is None:
-                    raise HTTPException(404, "Metadata not found")
-
-                session.delete(metadata)
-                session.commit()
-        except Exception as e:
-            logger.error("Delete Spirits metadata has an error", error=str(e))
             raise e
 
 

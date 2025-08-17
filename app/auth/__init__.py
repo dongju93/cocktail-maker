@@ -1,4 +1,3 @@
-from .encryption import Encryption
 from .jwt import PublishToken, VerifyToken
 from .public_api import ProductionAPIKeyGenerator
 
@@ -7,7 +6,6 @@ refresh_access_token = PublishToken.refresh_access_token
 VerifyToken = VerifyToken()
 
 __all__ = [
-    "Encryption",
     "ProductionAPIKeyGenerator",
     "VerifyToken",
     "refresh_access_token",

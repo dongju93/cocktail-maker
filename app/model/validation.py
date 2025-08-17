@@ -1,8 +1,11 @@
+import re
+import unicodedata
+
 from fastapi import HTTPException, UploadFile, status
+from pydantic import field_validator
 
-from query.queries import Metadata
-
-from .etc import COCKTAIL_DATA_KIND, MetadataCategory
+# 모듈 레벨에서 미리 컴파일된 정규식 사용 (재사용 및 성능)
+KOREAN_NAME_RE: re.Pattern[str] = re.compile(r"^[가-힣\s]+$")
 
 MAX_FILE_SIZE: int = 2 * 1024 * 1024
 # // TODO: Form 필드에서 media_type 로 컨텐츠 타입 제한이 가능하다면 내부 검증 로직에서 제외
@@ -79,72 +82,14 @@ class ImageValidation:
         return main_image_bytes, sub_images_bytes
 
 
-class MetadataValidation:
-    kind: COCKTAIL_DATA_KIND
-
-    def __init__(
-        self,
-        kind: COCKTAIL_DATA_KIND,
-        taste: list[str],
-        aroma: list[str] | None = None,
-        finish: list[str] | None = None,
-    ) -> None:
-        self.kind = kind
-        self.taste = taste
-        self.aroma = aroma
-        self.finish = finish
-
-    def _is_validated_category(
-        self,
-        category: MetadataCategory,
-        user_input_metadata: list[str],
-    ) -> bool:
-        valid_metadata_list: list[dict[str, int | str]] = Metadata.read(
-            category, self.kind
-        )
-        valid_names: list[str] = [
-            str(metadata["name"]) for metadata in valid_metadata_list
-        ]
-
-        return all(user_input in valid_names for user_input in user_input_metadata)
-
-    def __call__(
-        self,
-    ) -> tuple[list[str], list[str], list[str]]:
-        """
-        메타데이터 값을 검증합니다.
-
-        Args:
-            aroma: 향 메타데이터 값 목록
-            taste: 맛 메타데이터 값 목록
-            finish: 끝맛 메타데이터 값 목록
-
-        Returns:
-            Tuple[List[str], List[str], List[str]]: 변환된 메타데이터 값 목록
-
-        Raises:
-            HTTPException: 메타데이터 검증 실패 시 발생
-        """
-        listed_taste: list[str] = []
-        listed_aroma: list[str] = []
-        listed_finish: list[str] = []
-
-        # 메타데이터 변환
-        listed_taste = self.taste
-        if self.aroma is not None:
-            listed_aroma = self.aroma
-        if self.finish is not None:
-            listed_finish = self.finish
-
-        # 메타데이터 값 검사
-        for category, values in [
-            (MetadataCategory.AROMA, listed_aroma),
-            (MetadataCategory.TASTE, listed_taste),
-            (MetadataCategory.FINISH, listed_finish),
-        ]:
-            if not self._is_validated_category(category, values):
-                raise HTTPException(
-                    status.HTTP_400_BAD_REQUEST, "Invalid metadata values provided"
-                )
-
-        return listed_taste, listed_aroma, listed_finish
+class HangulValidationMixIn:
+    @field_validator("name", "kind", check_fields=False)
+    @classmethod
+    def validate_hangul_only(cls, v: str) -> str:
+        # 전처리: 양쪽 공백 제거, 유니코드 정규화
+        v = v.strip()
+        v = unicodedata.normalize("NFKC", v)
+        # 한글 및 공백만 허용하는 정규식 검사
+        if not KOREAN_NAME_RE.match(v):
+            raise ValueError("name must contain only Korean characters and spaces")
+        return v

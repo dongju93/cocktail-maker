@@ -1,5 +1,10 @@
 from .etc import COCKTAIL_DATA_KIND, ImageField, MetadataCategory, MetadataRegister
-from .ingredients import IngredientDict, IngredientSearch
+from .ingredient import (
+    IngredientDict,
+    IngredientRegisterForm,
+    IngredientSearch,
+    IngredientUpdateForm,
+)
 from .liqueur import (
     LiqueurDict,
     LiqueurRegisterForm,
@@ -15,7 +20,9 @@ __all__ = [
     "ApiKeyPublish",
     "ImageField",
     "IngredientDict",
+    "IngredientRegisterForm",
     "IngredientSearch",
+    "IngredientUpdateForm",
     "LiqueurDict",
     "LiqueurRegisterForm",
     "LiqueurSearchQuery",

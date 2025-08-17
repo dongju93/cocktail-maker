@@ -11,7 +11,6 @@ from fastapi import (
     Body,
     Depends,
     FastAPI,
-    File,
     Form,
     HTTPException,
     Path,
@@ -19,7 +18,6 @@ from fastapi import (
     Request,
     Response,
     Security,
-    UploadFile,
     status,
 )
 from fastapi.exception_handlers import http_exception_handler
@@ -49,7 +47,9 @@ from model import (
     COCKTAIL_DATA_KIND,
     ApiKeyPublish,
     IngredientDict,
+    IngredientRegisterForm,
     IngredientSearch,
+    IngredientUpdateForm,
     LiqueurDict,
     LiqueurRegisterForm,
     LiqueurSearchQuery,
@@ -65,11 +65,8 @@ from model import (
     SpiritsUpdateForm,
     User,
 )
-from model.validation import (
-    ImageValidation,
-    MetadataValidation,
-)
-from query import queries
+from model.validation import ImageValidation
+from query import metadata, queries
 from utils import Logger, problem_details_formatter, return_formatter
 
 init(
@@ -690,7 +687,7 @@ async def spirits_register(
         )
 
         # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
-        listed_taste, listed_aroma, listed_finish = MetadataValidation(
+        listed_taste, listed_aroma, listed_finish = metadata.MetadataValidation(
             "spirits",
             form.taste,
             form.aroma,
@@ -767,7 +764,7 @@ async def spirits_update(
         )
 
         # 메타데이터 검증
-        validate_metadata = MetadataValidation(
+        validate_metadata = metadata.MetadataValidation(
             "spirits", form.taste, form.aroma, form.finish
         )
         listed_taste, listed_aroma, listed_finish = validate_metadata()
@@ -872,7 +869,7 @@ async def metadata_register(
 ) -> ORJSONResponse:
     # // TODO: 중복된 항목만 등록 건너뛰기
     try:
-        queries.Metadata.create(category, items, kind)
+        metadata.Metadata.create(category, items, kind)
 
         formatted_response: ResponseFormat = return_formatter(
             "success",
@@ -908,10 +905,10 @@ async def metadata_details(
     # print("date: ", date)
     # print("if_modified_since: ", if_modified_since)
     # print("forwarded: ", forwarded)
-    metadata: list[dict[str, int | str]] = queries.Metadata.read(category, kind)
+    metadata_list: list[dict[str, int | str]] = metadata.Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = return_formatter(
-        "success", status.HTTP_200_OK, metadata, "Successfully get metadata"
+        "success", status.HTTP_200_OK, metadata_list, "Successfully get metadata"
     )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
@@ -924,7 +921,7 @@ async def metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
 ) -> ORJSONResponse:
     try:
-        queries.Metadata.delete(id)
+        metadata.Metadata.delete(id)
         formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_200_OK, None, "Successfully delete metadata"
         )
@@ -962,7 +959,7 @@ async def liqueur_register(
         read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = MetadataValidation("liqueur", form.taste)()
+        listed_taste, _, _ = metadata.MetadataValidation("liqueur", form.taste)()
 
         item: LiqueurDict = LiqueurDict(
             name=form.name,
@@ -1051,7 +1048,7 @@ async def liqueur_update(
         read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = MetadataValidation("liqueur", form.taste)()
+        listed_taste, _, _ = metadata.MetadataValidation("liqueur", form.taste)()
 
         liqueur_item: LiqueurDict = LiqueurDict(
             name=form.name,
@@ -1137,66 +1134,20 @@ async def liqueur_remover(
     tags=["기타 재료"],
 )
 async def ingredient_register(
-    name: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="이름",
-        ),
-    ],
-    kind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="종류",
-        ),
-    ],
-    description: Annotated[
-        str, Form(..., min_length=1, max_length=1000, description="설명")
-    ],
-    mainImage: Annotated[
-        UploadFile,
-        File(
-            ...,
-            media_type=[  # type: ignore
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-                "image/bmp",
-                "image/gif",
-                "image/tiff",
-            ],
-            description="대표 이미지, 최대 2MB",
-        ),
-    ],
-    brand: Annotated[
-        list[str] | None,
-        Form(
-            min_length=1,
-            max_length=10,
-            description="브랜드",
-        ),
-    ] = None,
+    form: Annotated[IngredientRegisterForm, Form()],
 ) -> ORJSONResponse:
     """
     단일 기타 재료 정보 등록
     """
     try:
         # 이미지 검증 및 변환
-        read_main_image, _ = await ImageValidation.files(mainImage, [])
+        read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         item: IngredientDict = IngredientDict(
-            name=name,
-            brand=brand,
-            kind=kind,
-            description=description,
+            name=form.name,
+            brand=form.brand,
+            kind=form.kind,
+            description=form.description,
             created_at=datetime.now(tz=UTC),
         )
 
@@ -1205,7 +1156,7 @@ async def ingredient_register(
             read_main_image,
         ).save()
 
-        logger.info("Ingredient successfully registered", name=name)
+        logger.info("Ingredient successfully registered", name=form.name)
 
         formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register ingredient"
@@ -1245,7 +1196,7 @@ async def ingredient_detail(
 
 @cocktail_maker_v1.get("/ingredient", summary="기타 재료 정보 검색", tags=["기타 재료"])
 async def ingredient_search(
-    params: Annotated[IngredientSearch, Query(...)],
+    params: Annotated[IngredientSearch, Query()],
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchIngredient(params).query()
@@ -1260,55 +1211,9 @@ async def ingredient_search(
 @cocktail_maker_v1.put(
     "/ingredient/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
 )
-async def ingredient_update(  # noqa: PLR0913
+async def ingredient_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
-    name: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=100,
-            pattern="^[가-힣\\s]+$",
-            description="이름",
-        ),
-    ],
-    kind: Annotated[
-        str,
-        Form(
-            ...,
-            min_length=1,
-            max_length=50,
-            pattern="^[가-힣\\s]+$",
-            description="종류",
-        ),
-    ],
-    description: Annotated[
-        str, Form(..., min_length=1, max_length=1000, description="설명")
-    ],
-    mainImage: Annotated[
-        UploadFile,
-        File(
-            ...,
-            media_type=[  # type: ignore
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-                "image/bmp",
-                "image/gif",
-                "image/tiff",
-            ],
-            description="대표 이미지, 최대 2MB",
-        ),
-    ],
-    brand: Annotated[
-        list[str] | None,
-        Form(
-            min_length=1,
-            max_length=10,
-            description="브랜드",
-        ),
-    ] = None,
+    form: Annotated[IngredientUpdateForm, Form()],
 ) -> Response:
     """
     기타 재료 정보 수정
@@ -1316,13 +1221,13 @@ async def ingredient_update(  # noqa: PLR0913
     INGREDIENT_UPDATE_FAILURE_MESSAGE = "Failed to update ingredient"
     try:
         # 이미지 검증 및 변환
-        read_main_image, _ = await ImageValidation.files(mainImage, [])
+        read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         item: IngredientDict = IngredientDict(
-            name=name,
-            brand=brand,
-            kind=kind,
-            description=description,
+            name=form.name,
+            brand=form.brand,
+            kind=form.kind,
+            description=form.description,
             updated_at=datetime.now(tz=UTC),
         )
         await queries.UpdateIngredient(
@@ -1331,7 +1236,7 @@ async def ingredient_update(  # noqa: PLR0913
             read_main_image,
         ).update()
 
-        logger.info("Ingredient successfully updated", name=name)
+        logger.info("Ingredient successfully updated", name=form.name)
 
         response = Response(status_code=status.HTTP_204_NO_CONTENT)
 

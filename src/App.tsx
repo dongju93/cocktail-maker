@@ -2,6 +2,7 @@ import type React from 'react'
 import { lazy, Suspense } from 'react'
 import * as reactRouterDom from 'react-router-dom'
 import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { EmailPasswordPreBuiltUI } from 'supertokens-auth-react/recipe/emailpassword/prebuiltui'
 import { SessionAuth, signOut, useSessionContext } from 'supertokens-auth-react/recipe/session'
 import { getSuperTokensRoutesForReactRouterDom } from 'supertokens-auth-react/ui'
@@ -11,6 +12,23 @@ const Dashboard = lazy(() => import('./components/Dashboard'))
 
 import ThemeToggle from './components/ThemeToggle'
 import { ThemeProvider } from './contexts/ThemeContext'
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: (failureCount, error) => {
+        // Don't retry on 4xx errors
+        if (error instanceof Error && error.message.includes('4')) {
+          return false
+        }
+        return failureCount < 3
+      },
+    },
+  },
+})
 
 const Navigation: React.FC = () => {
   const sessionContext = useSessionContext()
@@ -88,11 +106,13 @@ const Navigation: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }
 

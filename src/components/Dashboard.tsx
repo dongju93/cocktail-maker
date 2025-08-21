@@ -1,42 +1,15 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
 import { useSessionContext } from 'supertokens-auth-react/recipe/session'
+import { useSpirit, useHealthCheck } from '../hooks/useApi'
 
 const Dashboard: React.FC = () => {
-  const [data, setData] = useState<Record<string, unknown> | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        // Use proxy configuration to handle SSL issues
-        const response = await fetch('/api/v1/spirits/앱솔루트 보드카', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Include cookies in request
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void fetchData()
-  }, [])
+  // Use React Query hooks
+  const {
+    data: spiritData,
+    isLoading: spiritLoading,
+    error: spiritError,
+  } = useSpirit('앱솔루트 보드카')
+  const { isLoading: healthLoading, error: healthError } = useHealthCheck()
 
   const sessionContext = useSessionContext()
 
@@ -148,7 +121,7 @@ const Dashboard: React.FC = () => {
                 🥃 앱솔루트 보드카 정보
               </h3>
 
-              {loading && (
+              {(spiritLoading || healthLoading) && (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600 dark:border-indigo-700 dark:border-t-indigo-400" />
                   <p className="font-medium text-indigo-600 text-lg dark:text-indigo-400">
@@ -157,13 +130,15 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
-              {error && (
+              {(spiritError || healthError) && (
                 <div className="rounded-xl border-red-500 border-l-4 bg-red-50 p-6 dark:bg-red-900/20">
                   <div className="flex items-start gap-3">
                     <span className="text-2xl">🚨</span>
                     <div>
                       <h4 className="font-bold text-red-700 dark:text-red-300">연결 오류</h4>
-                      <p className="text-red-600 dark:text-red-400">{error}</p>
+                      <p className="text-red-600 dark:text-red-400">
+                        API 연결 오류가 발생했습니다. 잠시 후 다시 시도해주세요.
+                      </p>
                       <button
                         className="mt-3 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                         onClick={() => window.location.reload()}
@@ -176,7 +151,7 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
 
-              {data && (
+              {!!spiritData && (
                 <div className="overflow-hidden rounded-xl border border-green-200 bg-white dark:border-green-700 dark:bg-gray-800">
                   <div className="flex items-center gap-3 bg-green-50 p-4 dark:bg-green-900/20">
                     <span className="text-2xl">✅</span>
@@ -189,9 +164,9 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div className="p-6">
                     <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
-                      <pre className="overflow-x-auto text-gray-700 text-sm dark:text-gray-300">
-                        {JSON.stringify(data, null, 2)}
-                      </pre>
+                      <div className="text-gray-700 text-sm dark:text-gray-300">
+                        데이터가 성공적으로 로드되었습니다.
+                      </div>
                     </div>
                   </div>
                 </div>

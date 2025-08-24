@@ -10,17 +10,62 @@
 
 이 서비스는 현대적인 웹 기술과 효율적인 데이터 관리를 위해 다음과 같은 기술 스택을 활용하여 구축되었습니다.
 
-- **주요 언어 및 프레임워크**: **Python** & **FastAPI**
-  - 높은 성능과 빠른 개발 속도를 자랑하는 FastAPI를 기반으로 RESTful API를 구현합니다. 비동기 처리를 통해 효율적인 I/O 작업을 지원합니다.
-- **데이터베이스**:
-  - **MongoDB**: 주류의 복잡하고 유동적인 특성(향, 맛, 여운 등)과 대량의 이미지 메타데이터를 저장하기 위해 유연한 NoSQL 데이터베이스인 MongoDB를 사용합니다. 스키마리스(schemaless) 특성 덕분에 다양한 주류 정보를 효과적으로 담을 수 있습니다.
-  - **SQLite**: 맛, 향, 원산지 등 정형화된 메타데이터 관리를 위해 경량 관계형 데이터베이스인 SQLite를 활용합니다.
-- **인증 및 보안**:
-  - **SuperTokens**: 사용자 인증 및 세션 관리를 위해 오픈소스 솔루션인 SuperTokens를 도입했습니다. 이메일/비밀번호 기반 인증, 소셜 로그인, 세션 관리 등 복잡한 인증 로직을 안전하게 처리합니다.
-  - **JWT (JSON Web Token)**: SuperTokens와 연계하여 상태 비저장(stateless) 인증이 필요한 경우 JWT를 활용합니다. 이를 통해 API 엔드포인트에 대한 접근을 세밀하게 제어합니다.
-- **문서화**:
-  - **MkDocs**: Python 프로젝트의 독스트링과 Markdown 문서를 기반으로 쉽고 빠르게 정적 웹사이트 문서를 생성합니다.
-  - **mkdocstrings**: Python 코드의 독스트링을 자동으로 파싱하여 API 레퍼런스를 구축하는 데 활용됩니다.
+### 백엔드 (Backend)
+- **주요 언어 및 프레임워크**: **Python 3.13** & **FastAPI**
+  - 높은 성능과 빠른 개발 속도를 자랑하는 FastAPI를 기반으로 RESTful API를 구현합니다
+  - uvloop 이벤트 루프 정책으로 비동기 처리 성능을 최적화합니다
+  - ORJSON을 사용한 고성능 JSON 직렬화
+  - Pydantic을 통한 타입 안전 데이터 검증
+  
+- **종속성 관리**: **UV**
+  - Rust 기반의 고성능 Python 패키지 관리자
+  - 기존 pip/poetry 대비 10-100배 빠른 설치 속도
+
+### 데이터베이스 (Database)
+- **MongoDB**: 주류의 복잡하고 유동적인 특성(향, 맛, 여운 등)과 이미지 메타데이터를 저장하기 위해 유연한 NoSQL 데이터베이스를 사용합니다
+- **SQLite**: 맛, 향, 원산지 등 정형화된 메타데이터 관리를 위해 경량 관계형 데이터베이스를 활용합니다
+
+### 인증 및 보안 (Authentication & Security)
+- **SuperTokens**: 사용자 인증 및 세션 관리를 위한 오픈소스 솔루션
+  - 이메일/패스워드 기반 인증
+  - 세션 관리 및 토큰 갱신
+- **JWT (JSON Web Token)**: 역할 기반 접근 제어 (RBAC)
+- **보안 미들웨어**: 
+  - CORS 설정
+  - 압축 미들웨어 (Brotli/Gzip)
+  - TrustedHost 미들웨어
+
+### 프론트엔드 (Frontend)
+- **React 19**: 최신 React 버전으로 모던 UI 구현
+- **TypeScript**: 타입 안전성을 위한 정적 타입 검사
+- **Vite**: 고성능 빌드 도구 및 개발 서버
+- **TailwindCSS v4**: 유틸리티 우선 CSS 프레임워크
+- **PNPM**: 고성능 패키지 매니저
+
+### 코드 품질 (Code Quality)
+- **Python 도구**:
+  - **Ruff**: 고성능 린터 및 포매터 (Rust 기반)
+  - **Pyright**: TypeScript 기반 정적 타입 검사기
+  - **pytest**: 테스트 프레임워크
+- **JavaScript/TypeScript 도구**:
+  - **Biome**: 통합 린터 및 포매터 (Rust 기반)
+  - **Vitest**: 테스트 프레임워크
+
+### 문서화 (Documentation)
+- **MkDocs**: Material 테마를 사용한 정적 문서 사이트 생성
+- **mkdocstrings**: Python 독스트링 자동 파싱 및 API 문서 생성
+
+### 개발 도구 (Development Tools)
+- **Docker**: 컨테이너화된 개발 및 배포 환경
+- **Pre-commit**: Git 커밋 전 자동 코드 품질 검사
+- **Structlog**: 구조화된 로깅
+- **Pyinstrument**: 성능 프로파일링
+
+### 성능 최적화 (Performance)
+- **uvloop**: 고성능 이벤트 루프
+- **ORJSON**: 고성능 JSON 직렬화
+- **Compression**: Brotli/Gzip 응답 압축
+- **Async/Await**: 비동기 처리로 높은 동시성 지원
 
 ## 🤝 기여 및 피드백
 

@@ -25,4 +25,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           force_orphan: true
-          exclude_assets: '.nojekyll'
+          enable_jekyll: false

@@ -22,6 +22,7 @@ from fastapi import (
 )
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import ORJSONResponse
 from pyinstrument import Profiler
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -101,11 +102,34 @@ cocktail_maker = FastAPI(
     # semantic-versioning: major.minor.patch[-build]
     version="0.1.0-dev",
     summary="칵테일 제조법과 주류 및 재료 정보 제공",
+    description="""
+    A comprehensive API for managing cocktail recipes, spirits, liqueurs, and ingredients.
+
+    ## Features
+    - **Spirits Management**: CRUD operations for alcoholic beverages
+    - **Liqueur Management**: Complete liqueur database with metadata
+    - **Ingredient Tracking**: Non-alcoholic cocktail ingredients
+    - **Metadata System**: Taste profiles, aromas, and finish characteristics
+    - **User Authentication**: JWT-based auth with role-based access control
+
+    ## Authentication
+    All endpoints except `/health` require authentication. Use `/auth` endpoints for login.
+    """,
+    contact={
+        "name": "Cocktail Maker Team",
+        "email": "team@cocktail-maker.com",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
     servers=[
         {"url": "http://127.0.0.1:8000", "description": "Local development server"},
+        {"url": "https://api.cocktail-maker.com", "description": "Production server"},
     ],
     default_response_class=ORJSONResponse,
     docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
 
@@ -349,6 +373,28 @@ async def add_custom_headers(request: Request, call_next):  # noqa: ANN001, ANN2
     # Application global custom headers
     response.headers["X-Server-Version"] = cocktail_maker.version
 
+    # Security headers
+    # response.headers["X-Content-Type-Options"] = "nosniff"
+    # response.headers["X-Frame-Options"] = "DENY"
+    # response.headers["X-XSS-Protection"] = "1; mode=block"
+    # response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+
+    # Content Security Policy for API
+    # response.headers["Content-Security-Policy"] = (
+    #     "default-src 'self'; "
+    #     "script-src 'self'; "
+    #     "style-src 'self' 'unsafe-inline'; "
+    #     "img-src 'self' data: https:; "
+    #     "font-src 'self'; "
+    #     "connect-src 'self'; "
+    #     "media-src 'none'; "
+    #     "object-src 'none'; "
+    #     "base-uri 'self'; "
+    #     "form-action 'self'; "
+    #     "frame-ancestors 'none'"
+    # )
+
     return response
 
 
@@ -357,6 +403,12 @@ cocktail_maker.add_middleware(
 )
 
 cocktail_maker.add_middleware(get_middleware())
+
+# Add security middleware
+cocktail_maker.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1", "*.cocktail-maker.com"],
+)
 
 cocktail_maker.add_middleware(
     CORSMiddleware,

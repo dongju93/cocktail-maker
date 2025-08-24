@@ -1,0 +1,47 @@
+{
+  "_id": "688a73b511e6d5591d6da1c9",
+  "name": "Manhattan",
+  "ingredients": [
+    {
+      "id": "679ba0441bed7d8b4bb6dab6",
+      "type": "spirit",
+      "amount": 50,
+      "unit": "ml"
+    },
+    {
+      "id": "68144c999f2333da38b4cff1",
+      "type": "liqueur",
+      "amount": 30,
+      "unit": "ml"
+    },
+    {
+      "id": "68171b7d536cfc23c1d652bf",
+      "type": "ingredient",
+      "amount": 2,
+      "unit": "dash"
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "description": "믹싱 글라스에 모든 재료를 넣고 얼음과 함께 젓는다."
+    },
+    {
+      "step": 2,
+      "description": "차갑게 식힌 칵테일 글라스에 얼음을 걸러 내용물만 따른다."
+    },
+    {
+      "step": 3,
+      "description": "체리 가니쉬로 장식하여 마무리한다."
+    }
+  ],
+  "glass": "칵테일 글라스",
+  "tags": ["클래식", "위스키 베이스", "강한 도수"],
+  "history": "1870년대 뉴욕의 맨해튼 클럽에서 처음 만들어졌다고 전해집니다.",
+  "origin_nation": "스코틀랜드",
+  "origin_location": "스페이사이드",
+  "description": "위스키 베이스의 클래식 칵테일로, 달콤하면서도 쌉쌀한 맛이 특징입니다.",
+  "main_image": "../data/images/spirits/688a73b511e6d5591d6da1c9/main_image.png",
+  "created_at": "2025-07-30T19:34:13.778000",
+  "updated_at": "2025-07-30T19:34:13.860000"
+}

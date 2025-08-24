@@ -47,7 +47,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-# dist/
+dist/
 downloads/
 eggs/
 .eggs/
@@ -173,7 +173,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+# /site
 
 # mypy
 .mypy_cache/
@@ -303,7 +303,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-# dist
+dist
 
 # Gatsby files
 .cache/
@@ -375,7 +375,6 @@ log/
 data/sample/
 app/db.sqlite3
 compose/cocktail-maker/certs/
-site/
 tests/results/
 CLAUDE.md
 
@@ -385,6 +384,6 @@ codeql/
 # cache
 .vite/
 .serena/
-.github/
+# .github/
 *.sqlite3-shm
 *.sqlite3-wal

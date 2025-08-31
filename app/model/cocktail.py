@@ -12,6 +12,8 @@ class IngredientType(str, Enum):
 
 
 class Recipe(BaseModel):
+    """칵테일 제조 레시피, 이미 등록된 정보를 참조"""
+
     id: Annotated[str, Field()]
     type: Annotated[str, Field()]
     amount: Annotated[int, Field()]
@@ -19,6 +21,8 @@ class Recipe(BaseModel):
 
 
 class RecipeStep(BaseModel):
+    """칵테일 제조 순서 및 설명"""
+
     step: Annotated[int, Field(ge=1)]
     description: Annotated[str, Field()]
 
@@ -34,6 +38,7 @@ class CocktailRegister(BaseModel):
     main_image: Annotated[
         UploadFile,
         File(
+            description="칵테일의 대표 이미지, 최대 2MB",
             media_type=[  # type: ignore
                 "image/jpeg",
                 "image/png",
@@ -45,3 +50,7 @@ class CocktailRegister(BaseModel):
             ],
         ),
     ]
+    sub_image1: Annotated[UploadFile | None, File()] = None
+    sub_image2: Annotated[UploadFile | None, File()] = None
+    sub_image3: Annotated[UploadFile | None, File()] = None
+    sub_image4: Annotated[UploadFile | None, File()] = None

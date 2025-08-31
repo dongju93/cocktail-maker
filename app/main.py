@@ -738,13 +738,14 @@ async def spirits_register(
             sub_images_bytes
         )
 
-        # 메타데이터 검증, 모든 params 가 주어질 경우 모두 응답이 옴
-        listed_taste, listed_aroma, listed_finish = metadata.MetadataValidation(
+        # 메타데이터 검증
+        validate_metadata = metadata.MetadataValidation(
             "spirits",
             form.taste,
             form.aroma,
             form.finish,
-        )()
+        )
+        listed_taste, listed_aroma, listed_finish = validate_metadata()
 
         item: SpiritsDict = SpiritsDict(
             name=form.name,
@@ -1011,7 +1012,8 @@ async def liqueur_register(
         read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = metadata.MetadataValidation("liqueur", form.taste)()
+        validate_metadata = metadata.MetadataValidation("liqueur", form.taste)
+        listed_taste, _, _ = validate_metadata()
 
         item: LiqueurDict = LiqueurDict(
             name=form.name,
@@ -1100,7 +1102,8 @@ async def liqueur_update(
         read_main_image, _ = await ImageValidation.files(form.main_image, [])
 
         # 메타데이터 검증
-        listed_taste, _, _ = metadata.MetadataValidation("liqueur", form.taste)()
+        validate_metadata = metadata.MetadataValidation("liqueur", form.taste)
+        listed_taste, _, _ = validate_metadata()
 
         liqueur_item: LiqueurDict = LiqueurDict(
             name=form.name,

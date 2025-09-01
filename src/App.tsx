@@ -1,14 +1,23 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type React from 'react'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import * as reactRouterDom from 'react-router-dom'
 import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { EmailPasswordPreBuiltUI } from 'supertokens-auth-react/recipe/emailpassword/prebuiltui'
 import { SessionAuth, signOut, useSessionContext } from 'supertokens-auth-react/recipe/session'
 import { getSuperTokensRoutesForReactRouterDom } from 'supertokens-auth-react/ui'
 
 const CocktailGuide = lazy(() => import('./components/CocktailGuide'))
 const Dashboard = lazy(() => import('./components/Dashboard'))
+const SpiritsRegister = lazy(() =>
+  import('./components/SpiritsRegister').then((m) => ({ default: m.SpiritsRegister })),
+)
+const LiqueurRegister = lazy(() =>
+  import('./components/LiqueurRegister').then((m) => ({ default: m.LiqueurRegister })),
+)
+const IngredientRegister = lazy(() =>
+  import('./components/IngredientRegister').then((m) => ({ default: m.IngredientRegister })),
+)
 
 import ThemeToggle from './components/ThemeToggle'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -33,6 +42,7 @@ const queryClient = new QueryClient({
 const Navigation: React.FC = () => {
   const sessionContext = useSessionContext()
   const navigate = useNavigate()
+  const [isRegisterDropdownOpen, setIsRegisterDropdownOpen] = useState(false)
 
   const handleLogout = async () => {
     await signOut()
@@ -91,6 +101,60 @@ const Navigation: React.FC = () => {
         >
           가이드
         </Link>
+
+        {/* Registration Dropdown */}
+        <div className="relative">
+          <button
+            className="flex items-center gap-1 rounded-lg px-4 py-2 font-medium text-text-secondary transition-all duration-300 hover:bg-primary/10 hover:text-primary"
+            onBlur={() => setTimeout(() => setIsRegisterDropdownOpen(false), 200)}
+            onClick={() => setIsRegisterDropdownOpen(!isRegisterDropdownOpen)}
+            type="button"
+          >
+            등록
+            <svg
+              aria-label="Toggle dropdown"
+              className={`h-4 w-4 transition-transform duration-200 ${isRegisterDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <title>Toggle dropdown</title>
+              <path
+                d="M19 9l-7 7-7-7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+              />
+            </svg>
+          </button>
+
+          {isRegisterDropdownOpen && (
+            <div className="absolute top-full left-0 z-50 mt-2 w-48 rounded-lg border border-border bg-background shadow-lg">
+              <Link
+                className="block rounded-t-lg px-4 py-3 text-sm text-text-secondary transition-all duration-300 hover:bg-primary/10 hover:text-primary"
+                onClick={() => setIsRegisterDropdownOpen(false)}
+                to="/register/spirits"
+              >
+                🥃 주류 등록
+              </Link>
+              <Link
+                className="block px-4 py-3 text-sm text-text-secondary transition-all duration-300 hover:bg-primary/10 hover:text-primary"
+                onClick={() => setIsRegisterDropdownOpen(false)}
+                to="/register/liqueur"
+              >
+                🍹 리큐르 등록
+              </Link>
+              <Link
+                className="block rounded-b-lg px-4 py-3 text-sm text-text-secondary transition-all duration-300 hover:bg-primary/10 hover:text-primary"
+                onClick={() => setIsRegisterDropdownOpen(false)}
+                to="/register/ingredient"
+              >
+                🧂 재료 등록
+              </Link>
+            </div>
+          )}
+        </div>
+
         <Link
           className="rounded-lg px-4 py-2 font-medium text-text-secondary transition-all duration-300 hover:bg-primary/10 hover:text-primary"
           to="/dashboard"
@@ -148,6 +212,38 @@ const AppContent: React.FC = () => {
           }
           path="/dashboard"
         />
+
+        {/* Registration Routes - Protected */}
+        <Route
+          element={
+            <SessionAuth>
+              <Suspense fallback={<div>로딩 중...</div>}>
+                <SpiritsRegister />
+              </Suspense>
+            </SessionAuth>
+          }
+          path="/register/spirits"
+        />
+        <Route
+          element={
+            <SessionAuth>
+              <Suspense fallback={<div>로딩 중...</div>}>
+                <LiqueurRegister />
+              </Suspense>
+            </SessionAuth>
+          }
+          path="/register/liqueur"
+        />
+        <Route
+          element={
+            <SessionAuth>
+              <Suspense fallback={<div>로딩 중...</div>}>
+                <IngredientRegister />
+              </Suspense>
+            </SessionAuth>
+          }
+          path="/register/ingredient"
+        />
       </Routes>
     </div>
   )
@@ -197,7 +293,7 @@ const Home: React.FC = () => {
       <div className="bg-background py-20">
         <div className="mx-auto max-w-6xl px-8">
           <h2 className="mb-12 text-center font-bold text-4xl text-text-primary">주요 기능</h2>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="hover:-translate-y-2 rounded-2xl border border-border bg-background p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">
               <div className="mb-4 animate-scale-in text-5xl">📚</div>
               <h3 className="mb-4 font-semibold text-text-primary text-xl">칵테일 가이드</h3>
@@ -210,6 +306,13 @@ const Home: React.FC = () => {
               <h3 className="mb-4 font-semibold text-text-primary text-xl">재료 관리</h3>
               <p className="text-text-secondary leading-relaxed">
                 다양한 술과 재료 정보를 확인하고 관리하세요
+              </p>
+            </div>
+            <div className="hover:-translate-y-2 rounded-2xl border border-border bg-background p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">
+              <div className="mb-4 animate-scale-in text-5xl">📝</div>
+              <h3 className="mb-4 font-semibold text-text-primary text-xl">재료 등록</h3>
+              <p className="text-text-secondary leading-relaxed">
+                새로운 주류, 리큐르, 재료를 시스템에 등록하세요
               </p>
             </div>
             <div className="hover:-translate-y-2 rounded-2xl border border-border bg-background p-8 text-center shadow-xl transition-all duration-300 hover:shadow-2xl">

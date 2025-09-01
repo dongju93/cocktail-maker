@@ -47,6 +47,7 @@ from auth import (
 from model import (
     COCKTAIL_DATA_KIND,
     ApiKeyPublish,
+    CocktailRegisterForm,
     IngredientDict,
     IngredientRegisterForm,
     IngredientSearch,
@@ -1327,6 +1328,12 @@ async def ingredient_remover(
     )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.post("cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
+async def cocktail_register(
+    form: Annotated[CocktailRegisterForm, Form()],
+): ...
 
 
 cocktail_maker.include_router(cocktail_maker_v1)

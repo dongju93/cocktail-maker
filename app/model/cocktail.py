@@ -27,7 +27,7 @@ class RecipeStep(BaseModel):
     description: Annotated[str, Field()]
 
 
-class CocktailRegister(BaseModel):
+class CocktailForm(BaseModel):
     name: Annotated[str, Field()]
     ingredients: Annotated[list[Recipe], Field()]
     steps: Annotated[list[RecipeStep], Field()]
@@ -54,3 +54,11 @@ class CocktailRegister(BaseModel):
     sub_image2: Annotated[UploadFile | None, File()] = None
     sub_image3: Annotated[UploadFile | None, File()] = None
     sub_image4: Annotated[UploadFile | None, File()] = None
+
+
+class CocktailRegisterForm(CocktailForm):
+    pass
+
+
+class CocktailUpdateForm(CocktailForm):
+    pass

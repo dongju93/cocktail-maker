@@ -1,5 +1,6 @@
+from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, NotRequired, TypedDict
 
 from fastapi import File, UploadFile
 from pydantic import BaseModel, Field
@@ -29,10 +30,12 @@ class RecipeStep(BaseModel):
 
 class CocktailForm(BaseModel):
     name: Annotated[str, Field()]
+    aroma: Annotated[list[str], Field(min_length=1)]
+    taste: Annotated[list[str], Field(min_length=1)]
+    finish: Annotated[list[str], Field(min_length=1)]
     ingredients: Annotated[list[Recipe], Field()]
     steps: Annotated[list[RecipeStep], Field()]
     glass: Annotated[str, Field()]
-    tags: Annotated[list[str], Field()]
     description: Annotated[str, Field()]
     origin_nation: Annotated[str, Field()]
     main_image: Annotated[
@@ -62,3 +65,29 @@ class CocktailRegisterForm(CocktailForm):
 
 class CocktailUpdateForm(CocktailForm):
     pass
+
+
+class RecipeDict(TypedDict):
+    id: str
+    type: str
+    amount: int
+    unit: str
+
+
+class RecipeStepDict(TypedDict):
+    step: int
+    description: str
+
+
+class CocktailDict(TypedDict):
+    name: str
+    aroma: list[str]
+    taste: list[str]
+    finish: list[str]
+    ingredients: list[RecipeDict]
+    steps: list[RecipeStepDict]
+    glass: str
+    description: str
+    origin_nation: str
+    created_at: NotRequired[datetime]
+    updated_at: NotRequired[datetime]

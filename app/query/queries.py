@@ -9,6 +9,7 @@ from structlog import BoundLogger
 from auth.encryption import Encryption
 from database import mongodb_conn
 from model import (
+    CocktailDict,
     IngredientDict,
     IngredientSearch,
     LiqueurDict,
@@ -520,3 +521,42 @@ class DeleteIngredient:
         except Exception as e:
             logger.error("Delete Ingredient object has an error", error=str(e))
             raise e
+
+
+class CreateCocktail(CreateDocument):
+    def __init__(  # noqa: PLR0913
+        self,
+        cocktail_item: CocktailDict,
+        mainImage: bytes,
+        subImage1: bytes | None = None,
+        subImage2: bytes | None = None,
+        subImage3: bytes | None = None,
+        subImage4: bytes | None = None,
+    ) -> None:
+        self.cocktail_item = cocktail_item
+        self.mainImage = mainImage
+        self.subImage1 = subImage1
+        self.subImage2 = subImage2
+        self.subImage3 = subImage3
+        self.subImage4 = subImage4
+
+    async def save(self) -> str:
+        document_id: str = await super().save()
+
+        try:
+            await Images.save_image_files_to_local_dir(
+                document_id, "cocktail", self.mainImage
+            )
+        except Exception as e:
+            logger.error(
+                f"Save cocktail images to local has an error: {e!s}",
+            )
+            raise e
+
+        return document_id
+
+    def get_collection_name(self) -> str:
+        return "cocktail"
+
+    def get_document(self) -> CocktailDict:
+        return self.cocktail_item

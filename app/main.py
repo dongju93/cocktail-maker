@@ -47,6 +47,7 @@ from auth import (
 from model import (
     COCKTAIL_DATA_KIND,
     ApiKeyPublish,
+    CocktailDict,
     CocktailRegisterForm,
     IngredientDict,
     IngredientRegisterForm,
@@ -59,6 +60,8 @@ from model import (
     Login,
     MetadataCategory,
     MetadataRegister,
+    RecipeDict,
+    RecipeStepDict,
     ResponseFormat,
     SearchResponse,
     SpiritsDict,
@@ -1330,10 +1333,83 @@ async def ingredient_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.post("cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
+@cocktail_maker_v1.post("/cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
     form: Annotated[CocktailRegisterForm, Form()],
-): ...
+):
+    COCKTAIL_REGISTER_FAILURE_MESSAGE = "Failed to register cocktail"
+    try:
+        # 이미지 검증 및 변환
+        read_main_image, sub_images_bytes = await ImageValidation.files(
+            form.main_image,
+            [form.sub_image1, form.sub_image2, form.sub_image3, form.sub_image4],
+        )
+        read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
+            sub_images_bytes
+        )
+
+        # 메타데이터 검증
+        validate_metadata = metadata.MetadataValidation(
+            "spirits",
+            form.taste,
+            form.aroma,
+            form.finish,
+        )
+        listed_taste, listed_aroma, listed_finish = validate_metadata()
+
+        item: CocktailDict = CocktailDict(
+            name=form.name,
+            aroma=listed_aroma,
+            taste=listed_taste,
+            finish=listed_finish,
+            ingredients=[
+                RecipeDict(
+                    id=ingredient.id,
+                    type=ingredient.type,
+                    amount=ingredient.amount,
+                    unit=ingredient.unit,
+                )
+                for ingredient in form.ingredients
+            ],
+            steps=[
+                RecipeStepDict(step=step.step, description=step.description)
+                for step in form.steps
+            ],
+            glass=form.glass,
+            description=form.description,
+            origin_nation=form.origin_nation,
+            created_at=datetime.now(tz=UTC),
+        )
+        data: str = await queries.CreateCocktail(
+            item,
+            read_main_image,
+            read_sub_image1,
+            read_sub_image2,
+            read_sub_image3,
+            read_sub_image4,
+        ).save()
+
+        logger.info("Cocktail successfully registered", name=form.name)
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_201_CREATED, data, "Successfully register cocktail"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_REGISTER_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_REGISTER_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_REGISTER_FAILURE_MESSAGE}: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
 cocktail_maker.include_router(cocktail_maker_v1)

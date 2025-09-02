@@ -16,6 +16,7 @@ from model import (
     LiqueurSearchQuery,
     Login,
     PasswordAndSalt,
+    RecipeDict,
     SearchResponse,
     SpiritsDict,
     SpiritsSearch,
@@ -524,34 +525,24 @@ class DeleteIngredient:
 
 
 class CreateCocktail(CreateDocument):
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         cocktail_item: CocktailDict,
-        mainImage: bytes,
-        subImage1: bytes | None = None,
-        subImage2: bytes | None = None,
-        subImage3: bytes | None = None,
-        subImage4: bytes | None = None,
     ) -> None:
         self.cocktail_item = cocktail_item
-        self.mainImage = mainImage
-        self.subImage1 = subImage1
-        self.subImage2 = subImage2
-        self.subImage3 = subImage3
-        self.subImage4 = subImage4
 
     async def save(self) -> str:
         document_id: str = await super().save()
 
-        try:
-            await Images.save_image_files_to_local_dir(
-                document_id, "cocktail", self.mainImage
-            )
-        except Exception as e:
-            logger.error(
-                f"Save cocktail images to local has an error: {e!s}",
-            )
-            raise e
+        # try:
+        #     await Images.save_image_files_to_local_dir(
+        #         document_id, "cocktail", self.mainImage
+        #     )
+        # except Exception as e:
+        #     logger.error(
+        #         f"Save cocktail images to local has an error: {e!s}",
+        #     )
+        #     raise e
 
         return document_id
 
@@ -560,3 +551,24 @@ class CreateCocktail(CreateDocument):
 
     def get_document(self) -> CocktailDict:
         return self.cocktail_item
+
+
+class UpdateRecipeIngredient:
+    def __init__(self, ingredients: list[RecipeDict]) -> None:
+        self.ingredients = ingredients
+
+    async def update(self, cocktail_document_id: str) -> None:
+        for ingredient in self.ingredients:
+            try:
+                async with mongodb_conn(ingredient["type"]) as conn:
+                    result = await conn.update_one(
+                        {"_id": ObjectId(ingredient["id"])},
+                        {"$addToSet": {"recipe": cocktail_document_id}},
+                    )
+                    if result.matched_count == 0:
+                        raise HTTPException(
+                            status_code=404, detail="Ingredient not found"
+                        )
+            except Exception as e:
+                logger.error("Update Ingredient object has an error", error=str(e))
+                raise e

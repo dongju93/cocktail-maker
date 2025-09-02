@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Annotated, NotRequired, TypedDict
 
-from fastapi import File, UploadFile
 from pydantic import BaseModel, Field
 
 
@@ -28,7 +27,7 @@ class RecipeStep(BaseModel):
     description: Annotated[str, Field()]
 
 
-class CocktailForm(BaseModel):
+class CocktailData(BaseModel):
     name: Annotated[str, Field()]
     aroma: Annotated[list[str], Field(min_length=1)]
     taste: Annotated[list[str], Field(min_length=1)]
@@ -38,32 +37,13 @@ class CocktailForm(BaseModel):
     glass: Annotated[str, Field()]
     description: Annotated[str, Field()]
     origin_nation: Annotated[str, Field()]
-    main_image: Annotated[
-        UploadFile,
-        File(
-            description="칵테일의 대표 이미지, 최대 2MB",
-            media_type=[  # type: ignore
-                "image/jpeg",
-                "image/png",
-                "image/jpg",
-                "image/webp",
-                "image/bmp",
-                "image/gif",
-                "image/tiff",
-            ],
-        ),
-    ]
-    sub_image1: Annotated[UploadFile | None, File()] = None
-    sub_image2: Annotated[UploadFile | None, File()] = None
-    sub_image3: Annotated[UploadFile | None, File()] = None
-    sub_image4: Annotated[UploadFile | None, File()] = None
 
 
-class CocktailRegisterForm(CocktailForm):
+class CocktailRegisterData(CocktailData):
     pass
 
 
-class CocktailUpdateForm(CocktailForm):
+class CocktailUpdateData(CocktailData):
     pass
 
 

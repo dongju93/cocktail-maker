@@ -48,7 +48,7 @@ from model import (
     COCKTAIL_DATA_KIND,
     ApiKeyPublish,
     CocktailDict,
-    CocktailRegisterForm,
+    CocktailRegisterData,
     IngredientDict,
     IngredientRegisterForm,
     IngredientSearch,
@@ -1335,30 +1335,30 @@ async def ingredient_remover(
 
 @cocktail_maker_v1.post("/cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
-    form: Annotated[CocktailRegisterForm, Form()],
+    body: Annotated[CocktailRegisterData, Body()],
 ):
     COCKTAIL_REGISTER_FAILURE_MESSAGE = "Failed to register cocktail"
     try:
         # 이미지 검증 및 변환
-        read_main_image, sub_images_bytes = await ImageValidation.files(
-            form.main_image,
-            [form.sub_image1, form.sub_image2, form.sub_image3, form.sub_image4],
-        )
-        read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
-            sub_images_bytes
-        )
+        # read_main_image, sub_images_bytes = await ImageValidation.files(
+        #     form.main_image,
+        #     [form.sub_image1, form.sub_image2, form.sub_image3, form.sub_image4],
+        # )
+        # read_sub_image1, read_sub_image2, read_sub_image3, read_sub_image4 = (
+        #     sub_images_bytes
+        # )
 
         # 메타데이터 검증
         validate_metadata = metadata.MetadataValidation(
             "spirits",
-            form.taste,
-            form.aroma,
-            form.finish,
+            body.taste,
+            body.aroma,
+            body.finish,
         )
         listed_taste, listed_aroma, listed_finish = validate_metadata()
 
         item: CocktailDict = CocktailDict(
-            name=form.name,
+            name=body.name,
             aroma=listed_aroma,
             taste=listed_taste,
             finish=listed_finish,
@@ -1369,27 +1369,31 @@ async def cocktail_register(
                     amount=ingredient.amount,
                     unit=ingredient.unit,
                 )
-                for ingredient in form.ingredients
+                for ingredient in body.ingredients
             ],
             steps=[
                 RecipeStepDict(step=step.step, description=step.description)
-                for step in form.steps
+                for step in body.steps
             ],
-            glass=form.glass,
-            description=form.description,
-            origin_nation=form.origin_nation,
+            glass=body.glass,
+            description=body.description,
+            origin_nation=body.origin_nation,
             created_at=datetime.now(tz=UTC),
         )
         data: str = await queries.CreateCocktail(
             item,
-            read_main_image,
-            read_sub_image1,
-            read_sub_image2,
-            read_sub_image3,
-            read_sub_image4,
+            # read_main_image,
+            # read_sub_image1,
+            # read_sub_image2,
+            # read_sub_image3,
+            # read_sub_image4,
         ).save()
 
-        logger.info("Cocktail successfully registered", name=form.name)
+        # Update recipe ingredients
+        update_recipe = queries.UpdateRecipeIngredient(item["ingredients"])
+        await update_recipe.update(data)
+
+        logger.info("Cocktail successfully registered", name=body.name)
 
         formatted_response: ResponseFormat = return_formatter(
             "success", status.HTTP_201_CREATED, data, "Successfully register cocktail"

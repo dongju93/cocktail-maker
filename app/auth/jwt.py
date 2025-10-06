@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from os import environ
 from typing import Annotated, Any
 from uuid import uuid4
+from warnings import deprecated
 
 import jwt
 from dotenv import load_dotenv
@@ -33,6 +34,7 @@ class CreateToken:
     iat: datetime
     user_id: str
 
+    @deprecated("Use SuperToken authentication instead")
     def access(self, roles: list[str], expire_min: int = 500) -> str:
         """
         기본 15분 유효 기간의 액세스 토큰 생성 (테스트 500분)
@@ -50,6 +52,7 @@ class CreateToken:
         }
         return jwt.encode(token, SECRET_KEY, ALGORITHM)
 
+    @deprecated("Use SuperToken authentication instead")
     def refresh(self, expire_days: int = 7) -> str:
         """
         기본 7일 유효 기간의 리프레시 토큰 생성
@@ -69,6 +72,7 @@ class CreateToken:
 
 
 class PublishToken:
+    @deprecated("Use SuperToken authentication instead")
     @staticmethod
     def sign_in_token(user_id: str, roles: list[str]) -> dict[str, str]:
         """
@@ -83,6 +87,7 @@ class PublishToken:
             "refreshToken": refresh_payload,
         }
 
+    @deprecated("Use SuperToken authentication instead")
     @staticmethod
     async def refresh_access_token(refresh_token: str) -> dict[str, str]:
         """
@@ -117,6 +122,7 @@ class PublishToken:
 
 
 class VerifyToken:
+    @deprecated("Use SuperToken authentication instead")
     def __call__(self, required_roles: list[str]):
         def verify(
             credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],

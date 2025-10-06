@@ -491,7 +491,13 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 cocktail_maker_v1 = APIRouter(prefix="/api/v1")
 
 
-@cocktail_maker_v1.post("/signup", summary="회원가입", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/users",
+    summary="회원가입",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens `/auth/signup` instead",
+)
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
 
@@ -554,7 +560,13 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post("/signin", summary="로그인", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/sessions",
+    summary="로그인",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens `/auth/signin` instead",
+)
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """로그인
 
@@ -599,7 +611,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
         value=jwt["refreshToken"],
         httponly=True,
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/refresh-token",
+        path="/auth/tokens",
         secure=True,
         samesite="lax",
     )
@@ -607,7 +619,13 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/tokens",
+    summary="액세스 토큰 갱신",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens session refresh mechanism instead",
+)
 async def refresh_token(request: Request) -> Response:
     """액세스 토큰 갱신
 
@@ -656,7 +674,13 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
-@cocktail_maker_v1.get("/my-role", summary="내 JWT 권한 확인", tags=["인증"])
+@cocktail_maker_v1.get(
+    "/auth/session",
+    summary="내 JWT 권한 확인",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens session verification instead",
+)
 async def my_role(
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
@@ -675,7 +699,13 @@ async def my_role(
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
-@cocktail_maker_v1.post("/publish-api-key", summary="API 키 발급", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/api-keys",
+    summary="API 키 발급",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Migrate to SuperTokens-based API key generation",
+)
 async def publish_api_key(
     api_key_publish: Annotated[ApiKeyPublish, Body(...)],
     _: Annotated[None, Security(VerifyToken(["admin"]))],

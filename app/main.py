@@ -1029,7 +1029,7 @@ async def metadata_remover(
 
 
 @cocktail_maker_v1.post(
-    "/liqueur",
+    "/liqueurs",
     summary="리큐르 정보 등록",
     tags=["리큐르"],
 )
@@ -1092,7 +1092,7 @@ async def liqueur_register(
 
 
 @cocktail_maker_v1.get(
-    "/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"]
+    "/liqueurs/{name}", summary="단일 리큐르 정보 조회", tags=["주류"]
 )
 async def liqueur_detail(
     name: Annotated[str, Path(..., description="리큐르의 이름, 정확한 일치")],
@@ -1106,10 +1106,9 @@ async def liqueur_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
+@cocktail_maker_v1.get("/liqueurs", summary="리큐르 정보 검색", tags=["주류"])
 async def liqueur_search(
     params: Annotated[LiqueurSearchQuery, Depends()],
-    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchLiqueur(params).query()
 
@@ -1121,7 +1120,7 @@ async def liqueur_search(
 
 
 @cocktail_maker_v1.put(
-    "/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
+    "/liqueurs/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
 )
 async def liqueur_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1182,7 +1181,7 @@ async def liqueur_update(
 
 
 @cocktail_maker_v1.delete(
-    "/liqueur/{document_id}", summary="리큐르 정보 삭제", tags=["리큐르"]
+    "/liqueurs/{document_id}", summary="리큐르 정보 삭제", tags=["리큐르"]
 )
 async def liqueur_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1218,7 +1217,7 @@ async def liqueur_remover(
 
 
 @cocktail_maker_v1.post(
-    "/ingredient",
+    "/ingredients",
     summary="기타 재료 정보 등록",
     tags=["기타 재료"],
 )
@@ -1269,7 +1268,7 @@ async def ingredient_register(
 
 
 @cocktail_maker_v1.get(
-    "/ingredient/{name}", summary="단일 기타 재료 정보 조회", tags=["기타 재료"]
+    "/ingredients/{name}", summary="단일 기타 재료 정보 조회", tags=["기타 재료"]
 )
 async def ingredient_detail(
     name: Annotated[str, Path(..., description="기타 재료의 이름, 정확한 일치")],
@@ -1283,10 +1282,11 @@ async def ingredient_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.get("/ingredient", summary="기타 재료 정보 검색", tags=["기타 재료"])
+@cocktail_maker_v1.get(
+    "/ingredients", summary="기타 재료 정보 검색", tags=["기타 재료"]
+)
 async def ingredient_search(
     params: Annotated[IngredientSearch, Query()],
-    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchIngredient(params).query()
 
@@ -1298,7 +1298,7 @@ async def ingredient_search(
 
 
 @cocktail_maker_v1.put(
-    "/ingredient/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
+    "/ingredients/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
 )
 async def ingredient_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1349,7 +1349,7 @@ async def ingredient_update(
 
 
 @cocktail_maker_v1.delete(
-    "/ingredient/{document_id}", summary="기타 재료 정보 삭제", tags=["기타 재료"]
+    "/ingredients/{document_id}", summary="기타 재료 정보 삭제", tags=["기타 재료"]
 )
 async def ingredient_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1363,7 +1363,7 @@ async def ingredient_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.post("/cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
+@cocktail_maker_v1.post("/cocktails", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
     body: Annotated[CocktailRegisterData, Body()],
 ):

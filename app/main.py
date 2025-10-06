@@ -36,6 +36,8 @@ from supertokens_python import (
 )
 from supertokens_python.framework.fastapi import get_middleware
 from supertokens_python.recipe import emailpassword, session
+from supertokens_python.recipe.session import SessionContainer
+from supertokens_python.recipe.session.framework.fastapi import verify_session
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import (
@@ -755,6 +757,7 @@ async def health_check() -> ORJSONResponse:
 )
 async def spirits_register(
     form: Annotated[SpiritsRegisterForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     """
     단일 주류 정보 등록
@@ -833,6 +836,7 @@ async def spirits_register(
 async def spirits_update(
     document_id: Annotated[str, Path(description="주류의 문서 ID")],
     form: Annotated[SpiritsUpdateForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> Response:
     """
     주류 정보 수정
@@ -906,7 +910,7 @@ async def spirits_update(
 @cocktail_maker_v1.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
-    # _: Annotated[SessionContainer, Depends(verify_session())],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 
@@ -920,7 +924,7 @@ async def spirits_detail(
 @cocktail_maker_v1.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
     params: Annotated[SpiritsSearch, Depends()],
-    # _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchSpirits(params).query()
 
@@ -934,6 +938,7 @@ async def spirits_search(
 @cocktail_maker_v1.delete("/spirits/{id}", summary="주류 정보 삭제", tags=["주류"])
 async def spirits_remover(
     id: Annotated[str, Path(...)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     await queries.DeleteSpirits(id).remove()
 

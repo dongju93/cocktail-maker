@@ -87,22 +87,22 @@ line-ending = "auto"
 combine-as-imports = true
 known-local-folder = ["app"]
 
-[tool.ty.src] # ty is alpha state, just trying it out
-root = "./app"
+# [tool.ty.src] # ty is alpha state, just trying it out
+# root = "./app"
 
-[tool.ty.rules]
-unused-ignore-comment = "warn"
-redundant-cast = "ignore"
-possibly-unbound-attribute = "error"
-possibly-unbound-import = "error"
-index-out-of-bounds = "ignore"
+# [tool.ty.rules]
+# unused-ignore-comment = "warn"
+# redundant-cast = "ignore"
+# possibly-unbound-attribute = "error"
+# possibly-unbound-import = "error"
+# index-out-of-bounds = "ignore"
 
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.13"
-typeCheckingMode = "standard"
-pythonPlatform = "Linux"
+# [tool.pyright]
+# venvPath = "."
+# venv = ".venv"
+# pythonVersion = "3.13"
+# typeCheckingMode = "standard"
+# pythonPlatform = "Linux"
 
 [tool.pytest.ini_options]
 pythonpath = ["app"]
@@ -111,3 +111,17 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = ["--strict-markers"]
 markers = ["asyncio: marks tests as async"]
+
+[tool.pyrefly]
+python-platform = "linux"
+python-version = "3.13.9"
+infer-with-first-use = false
+project-includes = ["app/**/*.py"]
+search-path = ["app"]
+project-excludes = [
+    "**/.*",           # 숨김 파일
+    "**/__pycache__",  # 캐시
+    "**/node_modules", # JS 의존성
+    "site",            # mkdocs 빌드
+    "dist",            # 빌드 결과물
+]

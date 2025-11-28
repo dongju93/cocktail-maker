@@ -39,7 +39,7 @@ FastAPI와 React로 구축된 현대적인 한국어 칵테일 재료 데이터�
 - **[UV](https://github.com/astral-sh/uv)** - 빠른 Python 패키지 관리자
 - **[PNPM](https://pnpm.io/)** - 효율적인 Node.js 패키지 관리자
 - **[Ruff](https://github.com/astral-sh/ruff)** - 빠른 Python 린터 및 포맷터
-- **[Pyright](https://github.com/microsoft/pyright)** - Python 정적 타입 검사기
+- **[Pyrefly](https://github.com/mauro-balades/pyrefly)** - Python 정적 타입 검사기 및 LSP
 - **[Biome](https://biomejs.dev/)** - 빠른 TypeScript/React 린터 및 포맷터
 - **[MkDocs](https://www.mkdocs.org/)** - 문서 생성기
 
@@ -184,10 +184,13 @@ uv run mkdocs serve
 # 커버리지 + HTML 리포트를 포함한 Python 테스트
 TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=tests/results/test-${TIMESTAMP}.html --self-contained-html
 
-# 코드 품질 검사 실행
+# Python 품질 도구
 uvx ruff check --fix app/
-uvx pyright app/
+uvx pyrefly check app/
+
+# 프론트엔드 정적 분석 & 단위 테스트
 pnpm lint
+pnpm exec vitest run --coverage
 ```
 
 ### 프로덕션 배포
@@ -508,7 +511,7 @@ pnpm exec vitest run --coverage
 # 커밋하기 전에
 uvx ruff check --fix app/
 uvx ruff format app/
-uvx pyright app/
+uvx pyrefly check app/
 pnpm lint
 pnpm format
 uv run pytest tests/ --cov=app

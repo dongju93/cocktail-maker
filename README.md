@@ -105,6 +105,39 @@ cocktail-maker/
 - **커스텀 훅 (`src/hooks/`)**: `useApi`, `useMetadata` 등 API 호출 및 비즈니스 로직을 추상화한 커스텀 훅을 통해 코드 중복 최소화 및 재사용성 극대화.
 - **컴포넌트 기반 아키텍처**: 기능별로 분리된 재사용 가능한 컴포넌트(`SpiritsRegister`, `ImageUpload` 등)를 통해 유지보수성 및 확장성 확보.
 - **테마 관리**: `ThemeContext`를 사용하여 라이트/다크 모드 등 전역 테마를 손쉽게 관리.
+- **API 프록시**: `vite.config.ts`가 `/api` 요청을 FastAPI(`http://127.0.0.1:8000`)로 프록시하여 별도 CORS 설정 없이 개발할 수 있습니다.
+- **SuperTokens UI 통합**: `EmailPasswordPreBuiltUI` 라우트를 `getSuperTokensRoutesForReactRouterDom`으로 삽입하고, 보호 라우트는 `SessionAuth`로 감싸 인증된 사용자만 접근하도록 구성.
+
+### 인증 및 세션 흐름
+- **SuperTokens** (app/main.py, src/main.tsx): Email+Password + Session 조합으로 JWT 없이 세션을 관리하며, FastAPI 레이어에서는 `verify_session` 의존성으로 보호된 API를 강제합니다.
+- **레거시 JWT** (app/auth/jwt.py): SuperTokens 도입 이전 경로가 남아 있으며 `@deprecated` 상태로 유지됩니다.
+- **API 키 발급기** (app/auth/public_api.py): PBKDF2HMAC(SHA512, 210k iterations)을 이용한 결정적 키를 생성해 외부 파트너와 통합할 수 있습니다.
+
+### 요청 처리 & 응답 표준화
+1. FastAPI 엔드포인트는 `model` 계층의 Pydantic 타입으로 입력을 검증합니다.
+2. 메타데이터 필드는 `MetadataValidation`(app/query/metadata.py)이 SQLite 기준값과 비교하여 허용 여부를 판정합니다.
+3. MongoDB 작업은 `CreateDocument`/`SearchDocument` 추상 클래스를 상속한 쿼리 레이어를 통해 실행되고, Motor 비동기 클라이언트로 처리량을 확보합니다.
+4. 모든 성공/실패 응답은 `return_formatter` 또는 `problem_details_formatter`(RFC 9457)을 통해 일관된 JSON 스펙(`status`, `code`, `data`, `message`)을 유지합니다.
+
+### 이미지 파이프라인
+- 업로드된 바이너리는 `app/query/queries.py` → `Images.save_image_files_to_local_dir()` 경로를 통해 `data/images/<collection>/<documentId>/*.png`로 저장됩니다.
+- `Images.remove_image_files_in_local_dir()`와 MongoDB 문서 업데이트를 묶어 CRUD 시 이미지 정합성을 보장합니다.
+
+### 관측 및 성능 도구
+- **Structlog + orjson** (`app/utils/logger.py`): 모든 서버 로깅을 JSONL(`log/service.jsonl`)로 남겨 분석 파이프라인에 투입하기 쉽습니다.
+- **PyInstrument 미들웨어** (`?profile=true`): 어느 엔드포인트에서든 쿼리 파라미터만 추가하면 HTML/텍스트 프로파일을 확인할 수 있습니다.
+- **X-Server-Version 헤더**: FastAPI 미들웨어가 배포 버전을 응답 헤더에 삽입해 프론트 혹은 모니터링 툴이 실행 중인 빌드를 추적할 수 있습니다.
+
+### 주요 UI 라우트
+| 경로 | 컴포넌트 | 설명 |
+| --- | --- | --- |
+| `/` | `Home` (`src/App.tsx`) | 랜딩 + 기능 소개, CTA |
+| `/guide` | `CocktailGuide` | SuperTokens 세션이 필요한 단계별 가이드 |
+| `/dashboard` | `Dashboard` | 사용자별 재료/레시피 현황 위젯 |
+| `/register/spirits` | `SpiritsRegister` | 이미지 업로드 + 메타데이터 선택을 포함한 주류 등록 폼 |
+| `/register/liqueur` | `LiqueurRegister` | 리큐르 등록 폼 |
+| `/register/ingredient` | `IngredientRegister` | 비알코올 재료 등록 폼 |
+| `/auth/*` | SuperTokens PreBuilt UI | 이메일/비밀번호 가입·로그인, 비밀번호 찾기 |
 
 ## 🚀 빠른 시작
 
@@ -145,11 +178,11 @@ pnpm dev
 uv run mkdocs serve
 ```
 
-### 테스트
+### 테스트 & 품질
 
 ```bash
-# 커버리지를 포함한 Python 테스트 실행
-TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html
+# 커버리지 + HTML 리포트를 포함한 Python 테스트
+TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=tests/results/test-${TIMESTAMP}.html --self-contained-html
 
 # 코드 품질 검사 실행
 uvx ruff check --fix app/
@@ -166,6 +199,48 @@ pnpm build
 # Docker Compose로 실행
 docker compose -f compose/docker-compose-full-example.yaml up
 ```
+
+## ⚙️ 환경 변수 & 런타임 설정
+
+FastAPI와 SuperTokens는 모두 `.env`(루트 혹은 `app/.env`)에서 아래 키를 참고합니다. 값이 없으면 애플리케이션이 부팅 도중 `KeyError`를 발생시킵니다.
+
+| 이름 | 용도 | 정의 위치 | 예시 |
+| --- | --- | --- | --- |
+| `MONGODB_URL` | Motor가 연결할 MongoDB URI | `app/database/connector.py` | `mongodb://localhost:27017` |
+| `SQLITE_PATH` | 메타데이터 테이블이 위치한 SQLite 파일 경로 | `app/database/connector.py`, `app/database/table.py` | `../db.sqlite3` |
+| `SECRET_KEY` | (레거시) JWT 서명 키 | `app/auth/jwt.py` | 64‑byte hex 문자열 |
+| `SECRET_ALGORITHM` | JWT 서명 알고리즘 | `app/auth/jwt.py` | `HS256` |
+| `PUBLIC_API_MASTER_KEY` | API 키 파생용 마스터 키 | `app/auth/public_api.py` | 64‑byte hex |
+| `PUBLIC_API_SALT` | API 키 파생용 고정 솔트 | `app/auth/public_api.py` | 64‑byte hex |
+| `SUPERTOKEN_API_KEY` | SuperTokens Core에 전달될 API 키 | `app/main.py` | `dev-secret-key` |
+
+> 위 값은 운영 환경에서 반드시 시크릿 매니저(Vault, SSM 등)나 Docker/Compose 환경 변수로 주입하세요.
+
+```bash
+# 예시: app/.env 생성
+cat <<'EOF' > app/.env
+MONGODB_URL=mongodb://localhost:27017
+SQLITE_PATH=../db.sqlite3
+SECRET_KEY=change-me
+SECRET_ALGORITHM=HS256
+PUBLIC_API_MASTER_KEY=hex-string-from-openssl-rand-hex-64
+PUBLIC_API_SALT=hex-string-from-openssl-rand-hex-64
+SUPERTOKEN_API_KEY=dev-key
+EOF
+# 필요 시: openssl rand -hex 64
+```
+
+### SuperTokens Core
+- `app/main.py`와 `src/main.tsx` 모두 `http://localhost:3567`를 기본 Core 도메인으로 가정합니다.
+- 로컬 개발 시 아래와 같이 Core를 먼저 띄우세요.
+
+```bash
+docker run --rm -p 3567:3567 -e SUPERTOKENS_DEFAULT_API_KEY=dev-key supertokens/supertokens-core:5
+```
+
+### 스토리지 & 로그 경로
+- 모든 이미지 업로드는 `data/images/<collection>/<document_id>/<image>.png`에 저장되며 `app/query/query_child.py`가 디렉터리를 생성합니다.
+- JSONL 기반 애플리케이션 로그는 `log/service.jsonl`에 적재되므로 실행 계정에 쓰기 권한이 필요합니다.
 
 ## DB
 
@@ -196,6 +271,29 @@ docker compose -f compose/docker-compose-full-example.yaml up
   - **데이터 일관성**: 주류나 리큐르 정보를 등록할 때 사용될 수 있는 맛, 향, 여운의 값을 미리 정해진 목록으로 제한하여 데이터의 일관성을 유지합니다.
   - **데이터 무결성**: 관계형 모델을 사용하여 메타데이터 간의 관계를 명확히 하고, 잘못된 값이 입력되는 것을 방지합니다.
   - **검증**: 새로운 재료가 등록될 때 해당 재료의 맛, 향, 여운 속성이 SQLite에 저장된 유효한 값인지 검증하는 용도로 사용됩니다.
+
+## 📦 Docker & Compose 실행 옵션
+- **도커 이미지**: 루트 `Dockerfile`은 `uv` 캐시 마운트를 활용해 FastAPI 의존성을 미리 동결하고, `gunicorn main:cocktail_maker`를 기본 엔트리포인트로 설정합니다.
+- **베이스 빌드**
+  ```bash
+  docker build -t cocktail-maker:dev .
+  docker run --rm --env-file app/.env -p 8000:8000 cocktail-maker:dev
+  ```
+- **Compose 템플릿**
+  - `compose/docker-compose-full-example.yaml`: Compose 기능을 총망라한 학습용 "kitchen-sink" 예시로, 실제 배포 전 필요한 설정을 골라서 사용할 수 있습니다.
+  - `compose/cocktail-maker/docker-compose.yaml`: Swarm 배포용으로 `cocktail-maker` 서비스 3개와 HTTPS 종단(Nginx)을 구성하며, `/api/v1/health` 헬스체크를 통해 롤링 업데이트를 보조합니다.
+  - `compose/cocktail-maker-background/docker-compose.yaml`: 개발용 인프라(로컬 MongoDB, SuperTokens Core, Postgres 18)를 한 번에 올리는 도우미 파일입니다.
+- **환경 변수 전달**: Compose 파일에 `env_file: app/.env`를 추가하거나 `docker compose --env-file` 옵션을 사용해 앞서 정의한 시크릿을 주입하세요.
+
+## 📚 문서화 (MkDocs)
+- `mkdocs.yml`은 Material 테마 + `mkdocstrings`를 활성화하고 있어 Python docstring을 그대로 API 문서로 노출할 수 있습니다.
+- `docs/` 디렉터리에서 콘텐츠를 수정하면 `site/`에 정적 사이트가 생성됩니다.
+
+```bash
+uv run mkdocs serve -a 127.0.0.1:9000  # FastAPI(8000)와 포트 충돌을 피하면서 프리뷰
+uv run mkdocs build                    # site/ 에 정적 파일 생성
+uv run mkdocs gh-deploy                # GitHub Pages에 배포 (필요 시)
+```
 
 ## 📋 상세 기능
 
@@ -380,12 +478,21 @@ docker compose -f compose/docker-compose-full-example.yaml up
 - [ ] API 문서화 (FastAPI 자동 생성)
 - [ ] 성능 테스트 (필요시)
 
-## 🧪 테스트
+## 🧪 테스트 커버리지
 
-커버리지 리포트와 함께 전체 테스트 스위트를 실행합니다:
+| 파일 | 목적 |
+| --- | --- |
+| `tests/test_health_check.py` | `/api/v1/health` 엔드포인트를 동기/비동기 TaskGroup으로 반복 호출하며 안정성을 검증 |
+| `tests/test_error_response.py` | `problem_details_formatter`가 RFC 9457 스펙에 맞는 응답을 반환하는지 확인 |
+| `tests/test_encryption.py` | `auth.encryption` 유틸이 동일 입력에 대해 동일 솔트를 재사용하고 예외를 던지는지 검사 |
+| `tests/test_liqueur_delete.py` | `/api/v1/liqueur/{id}` 삭제 엔드포인트의 상태 코드, 유효성, TaskGroup 병렬 처리, `DeleteLiqueur` 호출 여부를 검증 |
 
 ```bash
-TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html
+# 백엔드 테스트 + HTML 리포트
+TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=tests/results/test-${TIMESTAMP}.html --self-contained-html
+
+# 프론트엔드 단위 테스트 / JSDOM 환경
+pnpm exec vitest run --coverage
 ```
 
 ## 🤝 기여하기

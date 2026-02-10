@@ -37,7 +37,7 @@ FastAPI와 React로 구축된 현대적인 한국어 칵테일 재료 데이터�
 ### 개발 도구
 
 - **[UV](https://github.com/astral-sh/uv)** - 빠른 Python 패키지 관리자
-- **[PNPM](https://pnpm.io/)** - 효율적인 Node.js 패키지 관리자
+- **[Bun](https://bun.sh/)** - 빠른 JavaScript 런타임 & 패키지 매니저
 - **[Ruff](https://github.com/astral-sh/ruff)** - 빠른 Python 린터 및 포맷터
 - **[Pyrefly](https://github.com/mauro-balades/pyrefly)** - Python 정적 타입 검사기 및 LSP
 - **[Biome](https://biomejs.dev/)** - 빠른 TypeScript/React 린터 및 포맷터
@@ -72,7 +72,7 @@ cocktail-maker/
 ├── public/                 # Vite public 에셋
 ├── .github/workflows/      # GitHub Actions CI/CD 워크플로우
 ├── pyproject.toml          # Python 프로젝트 및 의존성 설정 (uv)
-├── package.json            # Frontend 프로젝트 및 의존성 설정 (pnpm)
+├── package.json            # Frontend 프로젝트 및 의존성 설정 (bun)
 └── README.md
 ```
 
@@ -146,7 +146,7 @@ cocktail-maker/
 - **Python 3.13+**
 - **Node.js 18+**
 - **UV** (Python 패키지 관리자)
-- **PNPM** (Node.js 패키지 관리자)
+- **Bun 1.2+** (JavaScript 런타임 & 패키지 매니저)
 
 ### 설치
 
@@ -159,7 +159,7 @@ cd cocktail-maker
 uv sync
 
 # 프론트엔드 의존성 설치
-pnpm install
+bun install
 
 # 개발 환경 설정
 uv run pre-commit install
@@ -172,7 +172,7 @@ uv run pre-commit install
 uv run uvicorn app.main:cocktail_maker --reload --host 127.0.0.1 --port 8000
 
 # 프론트엔드 개발 서버 시작 (새 터미널)
-pnpm dev
+bun run dev
 
 # 문서 서버 시작 (선택사항)
 uv run mkdocs serve
@@ -189,15 +189,15 @@ uvx ruff check --fix app/
 uvx pyrefly check app/
 
 # 프론트엔드 정적 분석 & 단위 테스트
-pnpm lint
-pnpm exec vitest run --coverage
+bun run lint
+bun run test
 ```
 
 ### 프로덕션 배포
 
 ```bash
 # 프론트엔드 빌드
-pnpm build
+bun run build
 
 # Docker Compose로 실행
 docker compose -f compose/docker-compose-full-example.yaml up
@@ -495,7 +495,7 @@ uv run mkdocs gh-deploy                # GitHub Pages에 배포 (필요 시)
 TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=tests/results/test-${TIMESTAMP}.html --self-contained-html
 
 # 프론트엔드 단위 테스트 / JSDOM 환경
-pnpm exec vitest run --coverage
+bun run test
 ```
 
 ## 🤝 기여하기
@@ -512,8 +512,8 @@ pnpm exec vitest run --coverage
 uvx ruff check --fix app/
 uvx ruff format app/
 uvx pyrefly check app/
-pnpm lint
-pnpm format
+bun run lint
+bun run format
 uv run pytest tests/ --cov=app
 ```
 

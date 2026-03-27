@@ -10,6 +10,7 @@ from auth.encryption import Encryption
 from database import mongodb_conn
 from model import (
     CocktailDict,
+    CocktailSearchQuery,
     IngredientDict,
     IngredientSearch,
     LiqueurDict,
@@ -26,6 +27,7 @@ from utils import Logger
 
 from .query_child import (
     Images,
+    cocktail_search_query,
     ingredient_search_query,
     liqueur_search_query,
     spirits_search_query,
@@ -33,6 +35,43 @@ from .query_child import (
 from .query_parents import CreateDocument, RetrieveDocument, SearchDocument
 
 logger: BoundLogger = Logger().setup()
+
+
+def _object_id_or_422(document_id: str, detail: str) -> ObjectId:
+    if not ObjectId.is_valid(document_id):
+        raise HTTPException(status_code=422, detail=detail)
+
+    return ObjectId(document_id)
+
+
+def _normalize_recipe_collection_name(collection_name: str) -> str:
+    normalized_name = "liqueur" if collection_name == "liquor" else collection_name
+    allowed_names = {"spirits", "liqueur", "ingredient"}
+
+    if normalized_name not in allowed_names:
+        raise HTTPException(
+            status_code=422,
+            detail="Recipe ingredient type must be one of spirits, liqueur, ingredient",
+        )
+
+    return normalized_name
+
+
+async def _get_cocktail_document(document_id: str) -> dict[str, Any]:
+    try:
+        async with mongodb_conn("cocktail") as conn:
+            result: dict[str, Any] | None = await conn.find_one(
+                {"_id": _object_id_or_422(document_id, "Invalid cocktail document id")}
+            )
+            if result is None:
+                raise HTTPException(status_code=404, detail="Cocktail not found")
+    except Exception as e:
+        logger.error("Get Cocktail object has an error", error=str(e))
+        raise e
+
+    result["_id"] = str(result["_id"])
+
+    return result
 
 
 class CreateSpirits(CreateDocument):
@@ -553,16 +592,101 @@ class CreateCocktail(CreateDocument):
         return self.cocktail_item
 
 
+class RetrieveCocktail(RetrieveDocument):
+    def __init__(self, name: str, collection_name: str = "cocktail") -> None:
+        self.name = name
+        self.collection_name = collection_name
+
+    async def only_name(self) -> dict[str, Any]:
+        document: dict[str, Any] = await super().only_name()
+
+        return document
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_name(self) -> str:
+        return self.name
+
+
+class SearchCocktail(SearchDocument):
+    def __init__(
+        self, params: CocktailSearchQuery, collection_name: str = "cocktail"
+    ) -> None:
+        self.params = params
+        self.collection_name = collection_name
+
+    async def query(self) -> SearchResponse:
+        documents: SearchResponse = await super().query()
+
+        return documents
+
+    def get_collection_name(self) -> str:
+        return self.collection_name
+
+    def get_query(self) -> dict[str, Any]:
+        return cocktail_search_query(self.params)
+
+    def get_params(self) -> CocktailSearchQuery:
+        return self.params
+
+
 class UpdateRecipeIngredient:
     def __init__(self, ingredients: list[RecipeDict]) -> None:
         self.ingredients = ingredients
 
-    async def update(self, cocktail_document_id: str) -> None:
+    def _iter_unique_ingredients(self) -> list[tuple[str, str]]:
+        unique_ingredients: list[tuple[str, str]] = []
+        seen_targets: set[tuple[str, str]] = set()
+
         for ingredient in self.ingredients:
+            collection_name = _normalize_recipe_collection_name(ingredient["type"])
+            ingredient_id = ingredient["id"]
+            target = (collection_name, ingredient_id)
+
+            if target in seen_targets:
+                continue
+
+            seen_targets.add(target)
+            unique_ingredients.append(target)
+
+        return unique_ingredients
+
+    async def ensure_exists(self) -> None:
+        for collection_name, ingredient_id in self._iter_unique_ingredients():
             try:
-                async with mongodb_conn(ingredient["type"]) as conn:
+                async with mongodb_conn(collection_name) as conn:
+                    result: dict[str, Any] | None = await conn.find_one(
+                        {
+                            "_id": _object_id_or_422(
+                                ingredient_id, "Invalid recipe ingredient id"
+                            )
+                        }
+                    )
+                    if result is None:
+                        raise HTTPException(
+                            status_code=404, detail="Ingredient not found"
+                        )
+            except Exception as e:
+                logger.error(
+                    "Check recipe ingredient existence has an error", error=str(e)
+                )
+                raise e
+
+    async def update(self, cocktail_document_id: str) -> None:
+        await self.ensure_exists()
+        await self.add(cocktail_document_id)
+
+    async def add(self, cocktail_document_id: str) -> None:
+        for collection_name, ingredient_id in self._iter_unique_ingredients():
+            try:
+                async with mongodb_conn(collection_name) as conn:
                     result = await conn.update_one(
-                        {"_id": ObjectId(ingredient["id"])},
+                        {
+                            "_id": _object_id_or_422(
+                                ingredient_id, "Invalid recipe ingredient id"
+                            )
+                        },
                         {"$addToSet": {"recipe": cocktail_document_id}},
                     )
                     if result.matched_count == 0:
@@ -572,3 +696,90 @@ class UpdateRecipeIngredient:
             except Exception as e:
                 logger.error("Update Ingredient object has an error", error=str(e))
                 raise e
+
+    async def remove(self, cocktail_document_id: str, *, strict: bool = False) -> None:
+        for collection_name, ingredient_id in self._iter_unique_ingredients():
+            try:
+                async with mongodb_conn(collection_name) as conn:
+                    result = await conn.update_one(
+                        {
+                            "_id": _object_id_or_422(
+                                ingredient_id, "Invalid recipe ingredient id"
+                            )
+                        },
+                        {"$pull": {"recipe": cocktail_document_id}},
+                    )
+                    if result.matched_count == 0 and strict:
+                        raise HTTPException(
+                            status_code=404, detail="Ingredient not found"
+                        )
+                    if result.matched_count == 0 and not strict:
+                        logger.warning(
+                            "Recipe ingredient cleanup skipped because target is missing",
+                            collection_name=collection_name,
+                            ingredient_id=ingredient_id,
+                            cocktail_document_id=cocktail_document_id,
+                        )
+            except Exception as e:
+                logger.error(
+                    "Remove Ingredient recipe reference has an error", error=str(e)
+                )
+                raise e
+
+
+class UpdateCocktail:
+    def __init__(self, document_id: str, cocktail_item: CocktailDict) -> None:
+        self.document_id = document_id
+        self.cocktail_item = cocktail_item
+
+    async def update(self) -> None:
+        current_cocktail = await _get_cocktail_document(self.document_id)
+        current_recipe = UpdateRecipeIngredient(current_cocktail["ingredients"])
+        next_recipe = UpdateRecipeIngredient(self.cocktail_item["ingredients"])
+
+        await next_recipe.ensure_exists()
+
+        try:
+            async with mongodb_conn("cocktail") as conn:
+                self.cocktail_item["updated_at"] = datetime.now(tz=UTC)
+                result = await conn.update_one(
+                    {
+                        "_id": _object_id_or_422(
+                            self.document_id, "Invalid cocktail document id"
+                        )
+                    },
+                    {"$set": self.cocktail_item},
+                )
+                if result.matched_count == 0:
+                    raise HTTPException(status_code=404, detail="Cocktail not found")
+        except Exception as e:
+            logger.error("Update Cocktail object has an error", error=str(e))
+            raise e
+
+        await current_recipe.remove(self.document_id)
+        await next_recipe.add(self.document_id)
+
+
+class DeleteCocktail:
+    def __init__(self, document_id: str) -> None:
+        self.document_id = document_id
+
+    async def remove(self) -> None:
+        cocktail = await _get_cocktail_document(self.document_id)
+
+        await UpdateRecipeIngredient(cocktail["ingredients"]).remove(self.document_id)
+
+        try:
+            async with mongodb_conn("cocktail") as conn:
+                result = await conn.delete_one(
+                    {
+                        "_id": _object_id_or_422(
+                            self.document_id, "Invalid cocktail document id"
+                        )
+                    }
+                )
+                if result.deleted_count == 0:
+                    raise HTTPException(status_code=404, detail="Cocktail not found")
+        except Exception as e:
+            logger.error("Delete Cocktail object has an error", error=str(e))
+            raise e

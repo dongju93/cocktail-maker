@@ -11,10 +11,8 @@ from model import (
     CocktailDict,
     IngredientDict,
     LiqueurDict,
-    LiqueurSearchQuery,
     SearchResponse,
     SpiritsDict,
-    SpiritsSearch,
 )
 from utils import Logger
 
@@ -101,7 +99,7 @@ class SearchDocument(ABC):
 
         collection_name = self.get_collection_name()
         find_query: dict[str, Any] = self.get_query()
-        params: SpiritsSearch | LiqueurSearchQuery = self.get_params()
+        params: Any = self.get_params()
 
         skip_count: int = (params.page_number - 1) * params.page_size
 

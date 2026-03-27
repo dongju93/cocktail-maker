@@ -10,6 +10,7 @@ from structlog import BoundLogger
 from database import mongodb_conn
 from model import (
     COCKTAIL_DATA_KIND,
+    CocktailSearchQuery,
     IngredientSearch,
     LiqueurSearchQuery,
     SpiritsSearch,
@@ -17,6 +18,39 @@ from model import (
 from utils import Logger, save_image_to_local
 
 logger: BoundLogger = Logger().setup()
+
+
+def _set_regex_query(query: dict[str, Any], field_name: str, value: str | None) -> None:
+    if value is not None:
+        query[field_name] = {"$regex": value, "$options": "i"}
+
+
+def _set_exact_query(query: dict[str, Any], field_name: str, value: str | None) -> None:
+    if value is not None:
+        query[field_name] = value
+
+
+def _set_all_query(
+    query: dict[str, Any], field_name: str, value: list[str] | None
+) -> None:
+    if value is not None and len(value) > 0:
+        query[field_name] = {"$all": value}
+
+
+def _set_range_query(
+    query: dict[str, Any],
+    field_name: str,
+    min_value: float | None,
+    max_value: float | None,
+) -> None:
+    range_query: dict[str, float] = {}
+
+    if min_value is not None:
+        range_query["$gte"] = min_value
+    if max_value is not None:
+        range_query["$lte"] = max_value
+    if range_query:
+        query[field_name] = range_query
 
 
 def spirits_search_query(params: SpiritsSearch) -> dict[str, Any]:
@@ -87,59 +121,16 @@ def liqueur_search_query(params: LiqueurSearchQuery) -> dict[str, Any]:
     """
     query: dict[str, Any] = {}
 
-    # 이름 검색 (부분 일치)
-    if params.name is not None:
-        query["name"] = {"$regex": params.name, "$options": "i"}  # 대소문자 무시 옵션
+    _set_regex_query(query, "name", params.name)
+    _set_all_query(query, "taste", params.taste)
+    _set_all_query(query, "main_ingredients", params.main_ingredients)
+    _set_range_query(query, "volume", params.min_volume, params.max_volume)
+    _set_range_query(query, "abv", params.min_abv, params.max_abv)
+    _set_regex_query(query, "origin_location", params.origin_location)
+    _set_regex_query(query, "description", params.description)
 
-    # 브랜드 검색 (정확한 일치)
-    if params.brand is not None:
-        query["brand"] = params.brand
-
-    # 맛 검색 (목록 중 정확한 일치)
-    if params.taste is not None and len(params.taste) > 0:
-        query["taste"] = {"$all": params.taste}
-
-    # 종류 검색 (정확한 일치)
-    if params.kind is not None:
-        query["kind"] = params.kind
-
-    # 세부 종류 검색 (정확한 일치)
-    if params.sub_kind is not None:
-        query["sub_kind"] = params.sub_kind
-
-    # 주재료 검색 (목록 중 정확한 일치)
-    if params.main_ingredients is not None and len(params.main_ingredients) > 0:
-        query["main_ingredients"] = {"$all": params.main_ingredients}
-
-    # 용량 범위 검색
-    volume_query: dict[str, float] = {}
-    if params.min_volume is not None:
-        volume_query["$gte"] = params.min_volume
-    if params.max_volume is not None:
-        volume_query["$lte"] = params.max_volume
-    if volume_query:
-        query["volume"] = volume_query
-
-    # 알코올 도수 범위 검색
-    abv_query: dict[str, float] = {}
-    if params.min_abv is not None:
-        abv_query["$gte"] = params.min_abv
-    if params.max_abv is not None:
-        abv_query["$lte"] = params.max_abv
-    if abv_query:
-        query["abv"] = abv_query
-
-    # 원산지 국가 검색 (정확한 일치)
-    if params.origin_nation is not None:
-        query["origin_nation"] = params.origin_nation
-
-    # 원산지 지역 검색 (부분 일치)
-    if params.origin_location is not None:
-        query["origin_location"] = {"$regex": params.origin_location, "$options": "i"}
-
-    # 설명 검색 (부분 일치)
-    if params.description is not None:
-        query["description"] = {"$regex": params.description, "$options": "i"}
+    for field_name in ("brand", "kind", "sub_kind", "origin_nation"):
+        _set_exact_query(query, field_name, getattr(params, field_name))
 
     return query
 
@@ -171,6 +162,38 @@ def ingredient_search_query(params: IngredientSearch) -> dict[str, Any]:
     # 설명 검색 (부분 일치)
     if params.description is not None:
         query["description"] = {"$regex": params.description, "$options": "i"}
+
+    return query
+
+
+def cocktail_search_query(params: CocktailSearchQuery) -> dict[str, Any]:
+    """Convert cocktail search parameters to a MongoDB query."""
+
+    query: dict[str, Any] = {}
+
+    if params.name is not None:
+        query["name"] = {"$regex": params.name, "$options": "i"}
+
+    if params.aroma is not None and len(params.aroma) > 0:
+        query["aroma"] = {"$all": params.aroma}
+
+    if params.taste is not None and len(params.taste) > 0:
+        query["taste"] = {"$all": params.taste}
+
+    if params.finish is not None and len(params.finish) > 0:
+        query["finish"] = {"$all": params.finish}
+
+    if params.glass is not None:
+        query["glass"] = params.glass
+
+    if params.origin_nation is not None:
+        query["origin_nation"] = params.origin_nation
+
+    if params.description is not None:
+        query["description"] = {"$regex": params.description, "$options": "i"}
+
+    if params.ingredient_ids is not None and len(params.ingredient_ids) > 0:
+        query["ingredients.id"] = {"$all": params.ingredient_ids}
 
     return query
 

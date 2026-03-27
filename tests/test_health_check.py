@@ -8,7 +8,7 @@ from httpx import Response
 
 from conftest import api_service
 
-client = TestClient(api_service)
+client = TestClient(api_service, base_url="http://localhost")
 
 
 def test_health_check_success() -> None:

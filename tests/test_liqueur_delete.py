@@ -8,7 +8,7 @@ from httpx import Response
 
 from conftest import api_service
 
-client = TestClient(api_service)
+client = TestClient(api_service, base_url="http://localhost")
 
 
 def test_liqueur_delete_success() -> None:
@@ -20,7 +20,7 @@ def test_liqueur_delete_success() -> None:
         mock_delete.return_value = mock_instance
         mock_instance.remove.return_value = None
 
-        response: Response = client.delete(f"/api/v1/liqueur/{document_id}")
+        response: Response = client.delete(f"/api/v1/liqueurs/{document_id}")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json() == {
@@ -39,12 +39,12 @@ def test_liqueur_delete_invalid_document_id_length() -> None:
     """Test liqueur deletion with invalid document_id length"""
     # Test with too short document_id
     short_id = "507f1f77bcf"
-    response: Response = client.delete(f"/api/v1/liqueur/{short_id}")
+    response: Response = client.delete(f"/api/v1/liqueurs/{short_id}")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # Test with too long document_id
     long_id = "507f1f77bcf86cd799439011abc"
-    response = client.delete(f"/api/v1/liqueur/{long_id}")
+    response = client.delete(f"/api/v1/liqueurs/{long_id}")
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -59,7 +59,7 @@ def test_liqueur_delete_not_found() -> None:
             status_code=404, detail="Liqueur not found"
         )
 
-        response: Response = client.delete(f"/api/v1/liqueur/{document_id}")
+        response: Response = client.delete(f"/api/v1/liqueurs/{document_id}")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json() == {
@@ -79,7 +79,7 @@ def test_liqueur_delete_internal_server_error() -> None:
         mock_delete.return_value = mock_instance
         mock_instance.remove.side_effect = Exception("Database connection error")
 
-        response: Response = client.delete(f"/api/v1/liqueur/{document_id}")
+        response: Response = client.delete(f"/api/v1/liqueurs/{document_id}")
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert response.json() == {
@@ -95,7 +95,7 @@ def test_liqueur_delete_method_not_allowed() -> None:
     document_id = "507f1f77bcf86cd799439011"
 
     # Test POST method on delete endpoint
-    response: Response = client.post(f"/api/v1/liqueur/{document_id}")
+    response: Response = client.post(f"/api/v1/liqueurs/{document_id}")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
 
@@ -110,7 +110,7 @@ async def test_liqueur_delete_async_success() -> None:
         mock_instance.remove.return_value = None
 
         response = await asyncio.to_thread(
-            client.delete, f"/api/v1/liqueur/{document_id}"
+            client.delete, f"/api/v1/liqueurs/{document_id}"
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -135,7 +135,7 @@ async def test_liqueur_delete_multiple_concurrent_requests() -> None:
         async with asyncio.TaskGroup() as tg:
             tasks = [
                 tg.create_task(
-                    asyncio.to_thread(client.delete, f"/api/v1/liqueur/{doc_id}")
+                    asyncio.to_thread(client.delete, f"/api/v1/liqueurs/{doc_id}")
                 )
                 for doc_id in document_ids
             ]
@@ -158,11 +158,9 @@ async def test_liqueur_delete_mixed_success_failure() -> None:
 
     with patch("query.queries.DeleteLiqueur") as mock_delete:
 
-        def mock_delete_side_effect(document_id: str):
+        def mock_delete_side_effect(document_id: str) -> AsyncMock:
             mock_instance = AsyncMock()
             if document_id == not_found_id:
-                from fastapi import HTTPException
-
                 mock_instance.remove.side_effect = HTTPException(
                     status_code=404, detail="Liqueur not found"
                 )
@@ -174,10 +172,10 @@ async def test_liqueur_delete_mixed_success_failure() -> None:
 
         async with asyncio.TaskGroup() as tg:
             success_task = tg.create_task(
-                asyncio.to_thread(client.delete, f"/api/v1/liqueur/{valid_id}")
+                asyncio.to_thread(client.delete, f"/api/v1/liqueurs/{valid_id}")
             )
             failure_task = tg.create_task(
-                asyncio.to_thread(client.delete, f"/api/v1/liqueur/{not_found_id}")
+                asyncio.to_thread(client.delete, f"/api/v1/liqueurs/{not_found_id}")
             )
 
         success_response = success_task.result()
@@ -199,7 +197,7 @@ def test_liqueur_delete_response_headers() -> None:
         mock_delete.return_value = mock_instance
         mock_instance.remove.return_value = None
 
-        response: Response = client.delete(f"/api/v1/liqueur/{document_id}")
+        response: Response = client.delete(f"/api/v1/liqueurs/{document_id}")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["content-type"] == "application/json"
@@ -210,10 +208,10 @@ def test_liqueur_delete_response_headers() -> None:
 def test_liqueur_delete_invalid_endpoint() -> None:
     """Test invalid liqueur deletion endpoints"""
     # Test with missing document_id - this should return 405 because
-    # /api/v1/liqueur/ is a valid endpoint but DELETE is not allowed
-    response: Response = client.delete("/api/v1/liqueur/")
+    # /api/v1/liqueurs/ is a valid endpoint but DELETE is not allowed
+    response: Response = client.delete("/api/v1/liqueurs/")
     assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
 
     # Test with invalid path
-    response = client.delete("/api/v1/liqueur/delete/invalid")
+    response = client.delete("/api/v1/liqueurs/delete/invalid")
     assert response.status_code == status.HTTP_404_NOT_FOUND

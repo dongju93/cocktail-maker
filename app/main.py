@@ -51,6 +51,8 @@ from model import (
     ApiKeyPublish,
     CocktailDict,
     CocktailRegisterData,
+    CocktailSearchQuery,
+    CocktailUpdateData,
     IngredientDict,
     IngredientRegisterForm,
     IngredientSearch,
@@ -1371,7 +1373,7 @@ async def ingredient_remover(
 @cocktail_maker_v1.post("/cocktails", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
     body: Annotated[CocktailRegisterData, Body()],
-):
+) -> ORJSONResponse:
     COCKTAIL_REGISTER_FAILURE_MESSAGE = "Failed to register cocktail"
     try:
         # 이미지 검증 및 변환
@@ -1446,6 +1448,135 @@ async def cocktail_register(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
             f"{COCKTAIL_REGISTER_FAILURE_MESSAGE}: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get(
+    "/cocktails/{name}", summary="단일 칵테일 정보 조회", tags=["칵테일"]
+)
+async def cocktail_detail(
+    name: Annotated[str, Path(..., description="칵테일 이름, 정확한 일치")],
+) -> ORJSONResponse:
+    cocktail: dict[str, Any] = await queries.RetrieveCocktail(name).only_name()
+
+    formatted_response: ResponseFormat = return_formatter(
+        "success", status.HTTP_200_OK, cocktail, "Successfully get cocktail"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get("/cocktails", summary="칵테일 정보 검색", tags=["칵테일"])
+async def cocktail_search(
+    params: Annotated[CocktailSearchQuery, Depends()],
+) -> ORJSONResponse:
+    data: SearchResponse = await queries.SearchCocktail(params).query()
+
+    formatted_response: ResponseFormat = return_formatter(
+        "success", status.HTTP_200_OK, data, "Successfully search cocktails"
+    )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.put(
+    "/cocktails/{document_id}", summary="칵테일 정보 수정", tags=["칵테일"]
+)
+async def cocktail_update(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    body: Annotated[CocktailUpdateData, Body()],
+) -> Response:
+    COCKTAIL_UPDATE_FAILURE_MESSAGE = "Failed to update cocktail"
+
+    try:
+        validate_metadata = metadata.MetadataValidation(
+            "spirits",
+            body.taste,
+            body.aroma,
+            body.finish,
+        )
+        listed_taste, listed_aroma, listed_finish = validate_metadata()
+
+        item: CocktailDict = CocktailDict(
+            name=body.name,
+            aroma=listed_aroma,
+            taste=listed_taste,
+            finish=listed_finish,
+            ingredients=[
+                RecipeDict(
+                    id=ingredient.id,
+                    type=ingredient.type,
+                    amount=ingredient.amount,
+                    unit=ingredient.unit,
+                )
+                for ingredient in body.ingredients
+            ],
+            steps=[
+                RecipeStepDict(step=step.step, description=step.description)
+                for step in body.steps
+            ],
+            glass=body.glass,
+            description=body.description,
+            origin_nation=body.origin_nation,
+            updated_at=datetime.now(tz=UTC),
+        )
+
+        await queries.UpdateCocktail(document_id, item).update()
+
+        logger.info("Cocktail successfully updated", name=body.name)
+
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+        response = Response(formatted_response, formatted_response["code"])
+    except Exception as e:
+        logger.error(COCKTAIL_UPDATE_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_UPDATE_FAILURE_MESSAGE}: {e!s}",
+        )
+        response = Response(formatted_response, formatted_response["code"])
+
+    return response
+
+
+@cocktail_maker_v1.delete(
+    "/cocktails/{document_id}", summary="칵테일 정보 삭제", tags=["칵테일"]
+)
+async def cocktail_remover(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+) -> ORJSONResponse:
+    COCKTAIL_DELETE_FAILURE_MESSAGE = "Failed to delete cocktail"
+
+    try:
+        await queries.DeleteCocktail(document_id).remove()
+
+        logger.info("Cocktail successfully deleted", document_id=document_id)
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, None, "Successfully delete cocktail"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_DELETE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_DELETE_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_DELETE_FAILURE_MESSAGE}: {e!s}",
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])

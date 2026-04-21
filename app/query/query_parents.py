@@ -117,7 +117,8 @@ class SearchDocument(ABC):
                 )
         except Exception as e:
             logger.error(
-                "Search Spirits objects from mongodb has an error", error=str(e)
+                f"Search {collection_name} objects from mongodb has an error",
+                error=str(e),
             )
             raise e
         else:

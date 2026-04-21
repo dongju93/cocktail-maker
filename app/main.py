@@ -1373,6 +1373,7 @@ async def ingredient_remover(
 @cocktail_maker_v1.post("/cocktails", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
     body: Annotated[CocktailRegisterData, Body()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     COCKTAIL_REGISTER_FAILURE_MESSAGE = "Failed to register cocktail"
     try:
@@ -1457,13 +1458,30 @@ async def cocktail_register(
     "/cocktails/{name}", summary="단일 칵테일 정보 조회", tags=["칵테일"]
 )
 async def cocktail_detail(
-    name: Annotated[str, Path(..., description="칵테일 이름, 정확한 일치")],
+    name: Annotated[str, Path(..., description="칵테일 이름, 정확한 일치", max_length=100)],
 ) -> ORJSONResponse:
-    cocktail: dict[str, Any] = await queries.RetrieveCocktail(name).only_name()
+    COCKTAIL_DETAIL_FAILURE_MESSAGE = "Failed to get cocktail"
 
-    formatted_response: ResponseFormat = return_formatter(
-        "success", status.HTTP_200_OK, cocktail, "Successfully get cocktail"
-    )
+    try:
+        cocktail: dict[str, Any] = await queries.RetrieveCocktail(name).only_name()
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, cocktail, "Successfully get cocktail"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_DETAIL_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_DETAIL_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_DETAIL_FAILURE_MESSAGE}: {e!s}",
+        )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
@@ -1472,11 +1490,28 @@ async def cocktail_detail(
 async def cocktail_search(
     params: Annotated[CocktailSearchQuery, Depends()],
 ) -> ORJSONResponse:
-    data: SearchResponse = await queries.SearchCocktail(params).query()
+    COCKTAIL_SEARCH_FAILURE_MESSAGE = "Failed to search cocktails"
 
-    formatted_response: ResponseFormat = return_formatter(
-        "success", status.HTTP_200_OK, data, "Successfully search cocktails"
-    )
+    try:
+        data: SearchResponse = await queries.SearchCocktail(params).query()
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, data, "Successfully search cocktails"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_SEARCH_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_SEARCH_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_SEARCH_FAILURE_MESSAGE}: {e!s}",
+        )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
@@ -1487,6 +1522,7 @@ async def cocktail_search(
 async def cocktail_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
     body: Annotated[CocktailUpdateData, Body()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> Response:
     COCKTAIL_UPDATE_FAILURE_MESSAGE = "Failed to update cocktail"
 
@@ -1534,7 +1570,7 @@ async def cocktail_update(
             COCKTAIL_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
         )
         formatted_response = return_formatter("failed", he.status_code, None, he.detail)
-        response = Response(formatted_response, formatted_response["code"])
+        response = ORJSONResponse(formatted_response, formatted_response["code"])
     except Exception as e:
         logger.error(COCKTAIL_UPDATE_FAILURE_MESSAGE, error=str(e))
         formatted_response = return_formatter(
@@ -1543,7 +1579,7 @@ async def cocktail_update(
             None,
             f"{COCKTAIL_UPDATE_FAILURE_MESSAGE}: {e!s}",
         )
-        response = Response(formatted_response, formatted_response["code"])
+        response = ORJSONResponse(formatted_response, formatted_response["code"])
 
     return response
 
@@ -1553,6 +1589,7 @@ async def cocktail_update(
 )
 async def cocktail_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     COCKTAIL_DELETE_FAILURE_MESSAGE = "Failed to delete cocktail"
 

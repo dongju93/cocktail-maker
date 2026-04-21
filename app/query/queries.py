@@ -597,11 +597,6 @@ class RetrieveCocktail(RetrieveDocument):
         self.name = name
         self.collection_name = collection_name
 
-    async def only_name(self) -> dict[str, Any]:
-        document: dict[str, Any] = await super().only_name()
-
-        return document
-
     def get_collection_name(self) -> str:
         return self.collection_name
 
@@ -615,11 +610,6 @@ class SearchCocktail(SearchDocument):
     ) -> None:
         self.params = params
         self.collection_name = collection_name
-
-    async def query(self) -> SearchResponse:
-        documents: SearchResponse = await super().query()
-
-        return documents
 
     def get_collection_name(self) -> str:
         return self.collection_name

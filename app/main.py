@@ -962,6 +962,7 @@ async def metadata_register(
     kind: Annotated[COCKTAIL_DATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
     items: Annotated[MetadataRegister, Body(...)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     # // TODO: 중복된 항목만 등록 건너뛰기
     try:
@@ -1015,6 +1016,7 @@ async def metadata_details(
 )
 async def metadata_remover(
     id: Annotated[int, Path(..., description="메타데이터 인덱스")],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     try:
         metadata.Metadata.delete(id)
@@ -1044,6 +1046,7 @@ async def metadata_remover(
 )
 async def liqueur_register(
     form: Annotated[LiqueurRegisterForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     """
     단일 리큐르 정보 등록
@@ -1134,6 +1137,7 @@ async def liqueur_search(
 async def liqueur_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
     form: Annotated[LiqueurUpdateForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> Response:
     """
     주류 정보 수정
@@ -1194,6 +1198,7 @@ async def liqueur_update(
 )
 async def liqueur_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     """
     리큐르 정보 삭제
@@ -1232,6 +1237,7 @@ async def liqueur_remover(
 )
 async def ingredient_register(
     form: Annotated[IngredientRegisterForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     """
     단일 기타 재료 정보 등록
@@ -1312,6 +1318,7 @@ async def ingredient_search(
 async def ingredient_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
     form: Annotated[IngredientUpdateForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> Response:
     """
     기타 재료 정보 수정
@@ -1362,6 +1369,7 @@ async def ingredient_update(
 )
 async def ingredient_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     await queries.DeleteIngredient(document_id).remove()
 

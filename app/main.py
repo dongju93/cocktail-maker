@@ -78,17 +78,24 @@ from model.validation import ImageValidation
 from query import metadata, queries
 from utils import Logger, problem_details_formatter, return_formatter
 
+load_dotenv()
+logger: BoundLogger = Logger().setup()
+
 init(
     app_info=InputAppInfo(
         app_name="cocktail-maker",
-        api_domain="http://localhost:8000",
-        website_domain="http://localhost:3000",
+        api_domain=environ.get("SUPERTOKENS_API_DOMAIN", "http://localhost:8000"),
+        website_domain=environ.get(
+            "SUPERTOKENS_WEBSITE_DOMAIN", "http://localhost:3000"
+        ),
         api_base_path="/auth",
         website_base_path="/auth",
     ),
     supertokens_config=SupertokensConfig(
-        connection_uri="http://localhost:3567",
-        api_key="73a50f5ae216404588bbbcee4f05b143",
+        connection_uri=environ.get(
+            "SUPERTOKENS_CONNECTION_URI", "http://localhost:3567"
+        ),
+        api_key=environ["SUPERTOKEN_API_KEY"],
     ),
     framework="fastapi",
     recipe_list=[
@@ -99,11 +106,6 @@ init(
 )
 
 set_global_asyncio_event_loop_policy(uvloopEventLoopPolicy())
-
-load_dotenv()
-logger: BoundLogger = Logger().setup()
-
-SUPERTOKEN_API_KEY: str = environ["SUPERTOKEN_API_KEY"]
 
 cocktail_maker = FastAPI(
     title="Cocktail maker REST API",
@@ -1458,7 +1460,9 @@ async def cocktail_register(
     "/cocktails/{name}", summary="단일 칵테일 정보 조회", tags=["칵테일"]
 )
 async def cocktail_detail(
-    name: Annotated[str, Path(..., description="칵테일 이름, 정확한 일치", max_length=100)],
+    name: Annotated[
+        str, Path(..., description="칵테일 이름, 정확한 일치", max_length=100)
+    ],
 ) -> ORJSONResponse:
     COCKTAIL_DETAIL_FAILURE_MESSAGE = "Failed to get cocktail"
 

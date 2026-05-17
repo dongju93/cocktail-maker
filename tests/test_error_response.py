@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from conftest import api_service
 
-client = TestClient(api_service)
+client = TestClient(api_service, base_url="http://localhost")
 
 
 def test_server_error_returns_rfc9457_format() -> None:

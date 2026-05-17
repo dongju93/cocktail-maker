@@ -11,10 +11,8 @@ from model import (
     CocktailDict,
     IngredientDict,
     LiqueurDict,
-    LiqueurSearchQuery,
     SearchResponse,
     SpiritsDict,
-    SpiritsSearch,
 )
 from utils import Logger
 
@@ -101,7 +99,7 @@ class SearchDocument(ABC):
 
         collection_name = self.get_collection_name()
         find_query: dict[str, Any] = self.get_query()
-        params: SpiritsSearch | LiqueurSearchQuery = self.get_params()
+        params: Any = self.get_params()
 
         skip_count: int = (params.page_number - 1) * params.page_size
 
@@ -119,7 +117,8 @@ class SearchDocument(ABC):
                 )
         except Exception as e:
             logger.error(
-                "Search Spirits objects from mongodb has an error", error=str(e)
+                f"Search {collection_name} objects from mongodb has an error",
+                error=str(e),
             )
             raise e
         else:

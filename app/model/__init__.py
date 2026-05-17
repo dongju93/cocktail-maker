@@ -1,6 +1,7 @@
 from .cocktail import (
     CocktailDict,
     CocktailRegisterData,
+    CocktailSearchQuery,
     CocktailUpdateData,
     RecipeDict,
     RecipeStepDict,
@@ -27,6 +28,7 @@ __all__ = [
     "ApiKeyPublish",
     "CocktailDict",
     "CocktailRegisterData",
+    "CocktailSearchQuery",
     "CocktailUpdateData",
     "ImageField",
     "IngredientDict",

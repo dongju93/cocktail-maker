@@ -1,529 +1,529 @@
-# 칵테일 메이커
+# 칵테일 메이커 (Cocktail Maker)
 
-FastAPI와 React로 구축된 현대적인 한국어 칵테일 재료 데이터베이스 및 레시피 관리 시스템
+> FastAPI + React 기반의 한국어 칵테일 재료/레시피 관리 시스템으로, 재료 데이터 관리와 메타데이터 검증을 한 번에 제공합니다.
 
-## 🚀 개요
+![Docs Deploy](https://github.com/dongju93/cocktail-maker/actions/workflows/deploy.yaml/badge.svg)
 
-이 풀스택 웹 애플리케이션은 칵테일 재료, 레시피, 메타데이터를 관리하기 위한 종합 플랫폼을 제공합니다. 시스템은 주류, 리큐르, 보조 재료를 지원하며 상세한 속성 관리 및 검색 기능을 제공합니다.
+## Table of Contents
 
-### ✨ 주요 기능
+<!-- auto-generated TOC -->
 
-- **🍸 재료 관리**: 주류, 리큐르, 재료에 대한 완전한 CRUD 작업
-- **🔍 고급 검색**: 모든 속성에 대한 전체 텍스트 검색 및 페이지네이션
-- **🏷️ 메타데이터 시스템**: 맛 프로필을 위한 카테고리별 설명 속성
-- **📸 이미지 지원**: 제품 이미지를 위한 파일 업로드 검증 및 저장
-- **🔐 인증**: JWT 기반 역할별 접근 제어
-- **📱 반응형 디자인**: TailwindCSS를 사용한 현대적인 React 프론트엔드
-- **⚡ 성능**: MongoDB와 SQLite를 사용한 비동기 우선 Python 백엔드
+- [개요](#개요)
+- [아키텍처](#아키텍처)
+  - [시스템 다이어그램](#시스템-다이어그램)
+- [기술 스택](#기술-스택)
+- [프로젝트 구조](#프로젝트-구조)
+- [주요 기능](#주요-기능)
+- [시작하기](#시작하기)
+  - [사전 요구사항](#사전-요구사항)
+  - [환경 변수](#환경-변수)
+  - [설치](#설치)
+  - [실행](#실행)
+- [API 레퍼런스](#api-레퍼런스)
+- [테스트](#테스트)
+- [배포](#배포)
+- [설계 패턴 및 컨벤션](#설계-패턴-및-컨벤션)
+  - [코드 컨벤션](#코드-컨벤션)
+- [문제 해결](#문제-해결)
+- [기여하기](#기여하기)
+- [로드맵](#로드맵)
+- [라이선스](#라이선스)
 
-## 🛠️ 기술 스택
+## 개요
 
-### 백엔드
+이 프로젝트는 주류(Spirits), 리큐르(Liqueur), 기타 재료(Ingredient), 칵테일(Cocktail) 데이터를 통합 관리하는 풀스택 애플리케이션입니다.
+핵심 목적은 다음과 같습니다.
 
-- **[FastAPI](https://fastapi.tiangolo.com/)** - 현대적인 비동기 Python 웹 프레임워크
-- **Python 3.13+** - uvloop 이벤트 루프 정책을 사용한 최신 Python
-- **[MongoDB](https://www.mongodb.com/)** - Motor(비동기 드라이버)를 통한 주 데이터 저장소
-- **[SQLite](https://www.sqlite.org/)** - SQLAlchemy ORM을 사용한 메타데이터 저장소
-- **[Pydantic](https://pydantic.dev/)** - 데이터 검증 및 설정 관리
-- **JWT** - 역할 기반 접근을 제공하는 커스텀 인증 시스템
-- **[Gunicorn](https://gunicorn.org/) + [Uvicorn](https://www.uvicorn.org/)** - 프로덕션 ASGI 서버
+- 재료 등록/검색/수정/삭제 API 제공
+- 맛/향/여운 메타데이터를 SQLite 기준값으로 검증해 데이터 일관성 유지
+- 이미지 업로드(최대 2MB)와 로컬 파일 저장 파이프라인 제공
+- SuperTokens 기반 세션 인증 및 React 보호 라우트 제공
 
-### 프론트엔드
+주요 사용 대상:
 
-- **[React 19](https://react.dev/)** - TypeScript를 사용한 최신 React
-- **[Vite](https://vite.dev/)** - Rolldown 번들러를 사용한 빌드 도구
-- **[TailwindCSS v4](https://tailwindcss.com/)** - 유틸리티 우선 CSS 프레임워크
-- **[React Router v7](https://reactrouter.com/)** - 클라이언트 사이드 라우팅
-- **[TypeScript](https://www.typescriptlang.org/)** - 정적 타입 검사
+- 칵테일 데이터 운영/관리자
+- 바텐딩 학습/실험 사용자
+- 칵테일 도메인 API를 확장하려는 개발자
 
-### 개발 도구
+## 아키텍처
 
-- **[UV](https://github.com/astral-sh/uv)** - 빠른 Python 패키지 관리자
-- **[PNPM](https://pnpm.io/)** - 효율적인 Node.js 패키지 관리자
-- **[Ruff](https://github.com/astral-sh/ruff)** - 빠른 Python 린터 및 포맷터
-- **[Pyright](https://github.com/microsoft/pyright)** - Python 정적 타입 검사기
-- **[Biome](https://biomejs.dev/)** - 빠른 TypeScript/React 린터 및 포맷터
-- **[MkDocs](https://www.mkdocs.org/)** - 문서 생성기
+### 엔트리 포인트
 
-## 🏗️ 아키텍처
+- Backend API: `app/main.py` (`cocktail_maker` FastAPI 앱)
+- Frontend: `src/main.tsx`
+- Production Server: `Dockerfile` → `gunicorn main:cocktail_maker --config app/gunicorn.conf.py`
+- 문서 사이트: `mkdocs.yml` + `docs/` → `site/`
+- 보안 정적 분석 스크립트: `codeql.sh`
 
-### 애플리케이션 구조
+### 핵심 컴포넌트
 
+- **API 계층**: FastAPI 라우터(`/api/v1`) + 예외 핸들러(RFC 9457)
+- **인증 계층**:
+  - 기본: SuperTokens (`/auth/*`, 세션 기반)
+  - 레거시(Deprecated): JWT (`/api/v1/auth/*`, `/api/v1/api-keys`)
+- **쿼리 계층**: `app/query/query_parents.py`의 추상 클래스(`CreateDocument`, `RetrieveDocument`, `SearchDocument`) + 구현체(`queries.py`)
+- **스토리지 계층**:
+  - MongoDB: 주류/리큐르/기타재료/칵테일/유저 문서
+  - SQLite(SQLModel): 메타데이터(`metadata` 테이블)
+- **파일 계층**: `data/images/<collection>/<document_id>/...`
+- **관측성 계층**: `structlog` JSONL 로그(`log/service.jsonl`), `?profile=true` 프로파일링
+
+### 설계 패턴 및 트레이드오프
+
+- **Query/Repository 유사 패턴**: 공통 CRUD/검색 로직 재사용, 엔티티별 구현 분리
+- **Dual-DB 패턴**: MongoDB 유연성 + SQLite 검증 일관성
+- **Middleware 중심 횡단 관심사 처리**: CORS/압축/헤더/예외/프로파일링 분리
+- **트레이드오프**: DB가 이원화되어 운영 복잡도는 증가하지만, 메타데이터 품질 제어가 쉬워짐
+
+### 데이터 흐름
+
+1. 클라이언트(React/외부 API)가 `/api/v1/*` 또는 `/auth/*` 호출
+2. FastAPI가 Pydantic 모델/Form으로 입력 검증
+3. 메타데이터 값은 SQLite 기준값(`MetadataValidation`)으로 검증
+4. Query 계층이 MongoDB 문서 저장/조회
+5. 이미지가 있으면 로컬 파일 저장 후 문서 이미지 경로 갱신
+6. 응답은 `return_formatter(status, code, data, message)`로 표준화 반환
+7. 에러는 `problem_details_formatter()`로 RFC 9457 형식 반환
+
+### 시스템 다이어그램
+
+```mermaid
+graph TD
+    C[Web Client / API Client] --> FE[React 19 + Vite]
+    C --> API[FastAPI app/main.py]
+    FE -->|/api proxy| API
+    FE -->|/auth| ST[SuperTokens Core]
+    API --> Q[Query Layer app/query]
+    Q --> M[(MongoDB)]
+    Q --> S[(SQLite metadata)]
+    API --> IMG[(data/images)]
+    API --> LOG[(log/service.jsonl)]
+    DOCS[docs + mkdocs.yml] --> SITE[site/]
 ```
+
+## 기술 스택
+
+| Layer       | Technology                                           | Purpose                      |
+| ----------- | ---------------------------------------------------- | ---------------------------- |
+| Runtime     | Python 3.13+, Bun 1.2.15                             | 백엔드/프론트 실행           |
+| Backend     | FastAPI, ORJSON, Uvicorn/Gunicorn                    | API 서버 및 고성능 JSON 응답 |
+| Frontend    | React 19, TypeScript, Vite(Rolldown), TailwindCSS v4 | SPA UI 및 번들링             |
+| Auth        | SuperTokens, (Legacy) PyJWT                          | 세션 인증 + 레거시 JWT       |
+| Database    | MongoDB, SQLite(SQLModel)                            | 문서 저장 + 메타데이터 검증  |
+| Query       | pymongo async client, SQLModel                       | 비동기 DB 접근 추상화        |
+| Logging     | structlog                                            | JSONL 구조화 로그            |
+| Testing     | pytest, pytest-asyncio, pytest-cov, vitest           | 백엔드/프론트 테스트         |
+| Lint/Format | Ruff, Pyrefly, Biome                                 | 정적분석/포맷/타입검사       |
+| Docs        | MkDocs, mkdocstrings                                 | 문서 사이트 생성             |
+| CI/CD       | GitHub Actions (`deploy.yaml`)                       | `site/` GitHub Pages 배포    |
+
+## 프로젝트 구조
+
+```text
 cocktail-maker/
-├── app/                    # FastAPI 백엔드
-│   ├── auth/               # 인증 (JWT, 역할, 암호화)
-│   ├── database/           # 데이터베이스 연결 (MongoDB, SQLite)
-│   ├── model/              # Pydantic 데이터 모델 및 유효성 검사
-│   ├── query/              # 데이터베이스 쿼리 로직 (추상화 포함)
-│   ├── utils/              # 로깅, 시간 등 공통 유틸리티
-│   ├── gunicorn.conf.py    # Gunicorn 서버 설정
-│   └── main.py             # FastAPI 애플리케이션 진입점 및 라우팅
-├── src/                    # React 프론트엔드
-│   ├── assets/             # 정적 에셋 (이미지, SVG)
-│   ├── components/         # 재사용 가능한 React 컴포넌트
-│   ├── contexts/           # React 컨텍스트 (테마 등)
-│   ├── hooks/              # 커스텀 훅 (API 호출, 테마 관리)
-│   ├── types/              # TypeScript 타입 정의
-│   ├── App.tsx             # 메인 애플리케이션 컴포넌트 및 라우팅
-│   └── main.tsx            # React 애플리케이션 진입점
-├── tests/                  # Pytest 테스트 스위트
-├── docs/                   # MkDocs 문서
-├── compose/                # Docker Compose 설정
-├── data/                   # 이미지 등 데이터 저장소
-├── public/                 # Vite public 에셋
-├── .github/workflows/      # GitHub Actions CI/CD 워크플로우
-├── pyproject.toml          # Python 프로젝트 및 의존성 설정 (uv)
-├── package.json            # Frontend 프로젝트 및 의존성 설정 (pnpm)
-└── README.md
+├── app/                           # FastAPI 백엔드
+│   ├── main.py                    # API 엔트리 포인트
+│   ├── auth/                      # SuperTokens 보조/레거시 JWT/API Key
+│   ├── database/                  # MongoDB/SQLite 커넥터 및 테이블
+│   ├── model/                     # Pydantic/Form/TypedDict 모델
+│   ├── query/                     # CRUD/검색/메타데이터 쿼리 계층
+│   ├── utils/                     # 응답 포맷/로그/시간 유틸
+│   └── gunicorn.conf.py           # 운영 서버 튜닝
+├── src/                           # React 프론트엔드
+│   ├── App.tsx                    # 라우팅 및 보호 라우트 구성
+│   ├── components/                # 화면 컴포넌트(가이드/대시보드/등록 폼)
+│   ├── hooks/                     # API/메타데이터/테마 훅
+│   ├── contexts/                  # Theme Context
+│   └── types/                     # 폼 타입 정의
+├── tests/                         # pytest 테스트
+├── docs/                          # MkDocs 원본 문서
+├── compose/                       # Docker Compose 템플릿(운영/개발 인프라)
+├── data/                          # 이미지 저장 루트
+├── log/                           # 서비스 로그 JSONL 출력
+├── schema/                        # JSON Schema 샘플
+├── .github/workflows/deploy.yaml  # GitHub Pages 배포 워크플로우
+├── Dockerfile                     # 앱 이미지 빌드
+├── pyproject.toml                 # Python 의존성 및 툴 설정
+├── package.json                   # 프론트 스크립트/의존성
+└── mkdocs.yml                     # 문서 사이트 설정
 ```
 
-### 백엔드 (app/)
+> 참고: `compose/docker-compose-full-example.yaml`은 Compose 스펙 예시 성격이 강한 파일입니다.
 
-- **듀얼 데이터베이스 시스템**:
-  - **MongoDB**: 주 데이터(주류, 리큐르, 재료, 칵테일) 저장을 위해 `Motor` 비동기 드라이버 사용.
-  - **SQLite**: 맛, 향 등 메타데이터를 `SQLAlchemy` ORM을 통해 관계형으로 관리하여 데이터 일관성 보장.
-- **비동기 우선 설계**:
-  - `FastAPI`와 `uvloop` 이벤트 루프 정책을 채택하여 모든 데이터베이스 작업을 `async/await`으로 처리, 높은 처리량 달성.
-- **인증 시스템**:
-  - **JWT 토큰**: 액세스(15분) 및 리프레시(7일) 토큰 패턴을 사용한 상태 비저장 인증.
-  - **역할 기반 접근 제어(RBAC)**: `Admin`, `User`, `Guest` 역할을 정의하고 `Security` 의존성을 통해 엔드포인트 보호.
-  - **보안 쿠키**: `HttpOnly` 및 `Secure` 속성을 적용한 쿠키로 토큰을 전송하여 XSS 공격 방지.
-- **추상화된 쿼리 레이어 (`app/query/`)**:
-  - `CreateDocument`, `RetrieveDocument`, `SearchDocument` 등 추상 기본 클래스를 정의하여 CRUD 작업 표준화.
-  - 각 엔티티(주류, 리큐르 등)에 대한 구체적인 쿼리 클래스를 구현하여 재사용성 및 유지보수성 향상.
-- **표준화된 API 응답**:
-  - 모든 API는 `{"status", "code", "data", "message"}` 형식의 일관된 JSON 구조로 응답하여 클라이언트 처리 용이성 증대.
-- **이미지 처리**:
-  - `multipart/form-data`를 통한 파일 업로드 및 `Pillow`를 이용한 이미지 유효성 검사 및 처리.
+## 주요 기능
 
-### 프론트엔드 (src/)
+- [x] 주류(Spirits) CRUD + 검색 + 페이지네이션
+- [x] 리큐르(Liqueurs) CRUD + 검색
+- [x] 기타 재료(Ingredients) CRUD + 검색
+- [x] 칵테일 등록(`POST /api/v1/cocktails`) 및 재료 레시피 참조 업데이트
+- [x] SQLite 기반 메타데이터 등록/조회/삭제
+- [x] 이미지 업로드 검증(형식/2MB 제한) 및 로컬 저장
+- [x] 표준 응답 포맷 + RFC 9457 오류 응답
+- [x] SuperTokens 인증 라우트(`/auth/*`) + 보호 라우트(SessionAuth)
+- [x] 구조화 로그 + 요청 프로파일링(`?profile=true`)
 
-- **React 19 및 TypeScript**: 최신 React 기능과 강력한 타입 시스템을 활용하여 안정적인 UI 개발.
-- **Vite 빌드 시스템**: `Rolldown` 번들러 기반의 Vite를 사용하여 빠른 개발 서버와 최적화된 프로덕션 빌드 제공.
-- **TailwindCSS v4**: 유틸리티 우선 CSS 프레임워크를 통해 일관되고 반응형 디자인 시스템 구축.
-- **클라이언트 사이드 라우팅**: `React Router v7`을 사용하여 모던하고 직관적인 페이지 네비게이션 구현.
-- **서버 상태 관리**: `@tanstack/react-query`를 사용하여 API 데이터 캐싱, 동기화, 재요청 등 서버 상태를 효율적으로 관리.
-- **커스텀 훅 (`src/hooks/`)**: `useApi`, `useMetadata` 등 API 호출 및 비즈니스 로직을 추상화한 커스텀 훅을 통해 코드 중복 최소화 및 재사용성 극대화.
-- **컴포넌트 기반 아키텍처**: 기능별로 분리된 재사용 가능한 컴포넌트(`SpiritsRegister`, `ImageUpload` 등)를 통해 유지보수성 및 확장성 확보.
-- **테마 관리**: `ThemeContext`를 사용하여 라이트/다크 모드 등 전역 테마를 손쉽게 관리.
-
-## 🚀 빠른 시작
+## 시작하기
 
 ### 사전 요구사항
 
-- **Python 3.13+**
-- **Node.js 18+**
-- **UV** (Python 패키지 관리자)
-- **PNPM** (Node.js 패키지 관리자)
+- `Python >= 3.13`
+- `uv` (버전 고정 없음, 최신 권장)
+- `bun = 1.2.15` (packageManager 기준)
+- `Docker` / `Docker Compose` (선택)
+
+### 환경 변수
+
+이 저장소에는 `.env.example`이 없습니다.
+코드상 필수 키는 아래와 같습니다 (`environ[...]` 참조).
+
+| Variable                | Required | Default | Description                        |
+| ----------------------- | :------: | ------- | ---------------------------------- |
+| `MONGODB_URL`           |    ✅    | —       | MongoDB 연결 URI                   |
+| `SQLITE_PATH`           |    ✅    | —       | SQLite 파일 경로                   |
+| `SUPERTOKEN_API_KEY`    |    ✅    | —       | SuperTokens API 키(환경 변수 읽음) |
+| `SECRET_KEY`            |    ✅    | —       | 레거시 JWT 서명 키                 |
+| `SECRET_ALGORITHM`      |    ✅    | —       | 레거시 JWT 알고리즘                |
+| `PUBLIC_API_MASTER_KEY` |    ✅    | —       | API 키 파생 마스터 키(hex)         |
+| `PUBLIC_API_SALT`       |    ✅    | —       | API 키 파생 솔트(hex)              |
+
+```bash
+cat <<'ENV' > app/.env
+MONGODB_URL=mongodb://localhost:27017
+SQLITE_PATH=../db.sqlite3
+SUPERTOKEN_API_KEY=change-me
+SECRET_KEY=change-me
+SECRET_ALGORITHM=HS256
+PUBLIC_API_MASTER_KEY=hex-64bytes
+PUBLIC_API_SALT=hex-64bytes
+ENV
+```
 
 ### 설치
 
 ```bash
-# 저장소 복제
-git clone <repository-url>
+git clone https://github.com/dongju93/cocktail-maker.git
 cd cocktail-maker
 
-# 백엔드 의존성 설치
+# Python dependencies
 uv sync
 
-# 프론트엔드 의존성 설치
-pnpm install
-
-# 개발 환경 설정
-uv run pre-commit install
+# Frontend dependencies
+bun install
 ```
 
-### 개발
+### 실행
 
 ```bash
-# 백엔드 서버 시작
+# Backend (dev)
 uv run uvicorn app.main:cocktail_maker --reload --host 127.0.0.1 --port 8000
 
-# 프론트엔드 개발 서버 시작 (새 터미널)
-pnpm dev
+# Frontend (dev, new terminal)
+bun run dev
 
-# 문서 서버 시작 (선택사항)
-uv run mkdocs serve
+# Docs (optional)
+uv run mkdocs serve -a 127.0.0.1:9000
 ```
 
-### 테스트
-
 ```bash
-# 커버리지를 포함한 Python 테스트 실행
-TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html
+# Frontend production build
+bun run build
 
-# 코드 품질 검사 실행
-uvx ruff check --fix app/
-uvx pyright app/
-pnpm lint
+# Backend production-like run
+cd app
+gunicorn main:cocktail_maker --config gunicorn.conf.py
 ```
 
-### 프로덕션 배포
-
 ```bash
-# 프론트엔드 빌드
-pnpm build
+# Docker image
+docker build -t cocktail-maker:dev .
+docker run --rm --env-file app/.env -p 8000:8000 cocktail-maker:dev
 
-# Docker Compose로 실행
-docker compose -f compose/docker-compose-full-example.yaml up
+# Development infra (MongoDB + SuperTokens + Postgres)
+docker compose -f compose/cocktail-maker-background/docker-compose.yaml up -d
+
+# Swarm-oriented compose template
+docker compose -f compose/cocktail-maker/docker-compose.yaml up
 ```
 
-## DB
+## API 레퍼런스
 
-### 주류 및 리큐르
+- OpenAPI(Swagger): `http://127.0.0.1:8000/api/docs`
+- ReDoc: `http://127.0.0.1:8000/api/redoc`
+- Base URL: `http://127.0.0.1:8000/api/v1`
 
-속성
+### 엔드포인트 요약
 
-- 주류별 ID, 명칭, 향, 맛, 여운, 종류, 용량, 도수, 국가, 지역, 설명, 사진
+| Module                   | Endpoints                                                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Health                   | `GET /health`                                                                                                                             |
+| Spirits                  | `POST /spirits`, `GET /spirits`, `GET /spirits/{name}`, `PUT /spirits/{document_id}`, `DELETE /spirits/{id}`                              |
+| Liqueurs                 | `POST /liqueurs`, `GET /liqueurs`, `GET /liqueurs/{name}`, `PUT /liqueurs/{document_id}`, `DELETE /liqueurs/{document_id}`                |
+| Ingredients              | `POST /ingredients`, `GET /ingredients`, `GET /ingredients/{name}`, `PUT /ingredients/{document_id}`, `DELETE /ingredients/{document_id}` |
+| Cocktails                | `POST /cocktails`                                                                                                                         |
+| Metadata                 | `POST /metadata/{kind}/{category}`, `GET /metadata/{kind}/{category}`, `DELETE /metadata/{id}`                                            |
+| Legacy Auth (Deprecated) | `POST /auth/users`, `POST /auth/sessions`, `POST /auth/tokens`, `GET /auth/session`, `POST /api-keys`                                     |
+| SuperTokens              | `/auth/*` (recipe routes via middleware)                                                                                                  |
 
-### 보조 재료
-
-속성
-
-- 보조별 ID, 명칭, 종류, 설명, 사진
-
-### 메타데이터
-
-속성
-
-- 메타 ID, 명칭, 설명, 사진
-
-## 기능
-
-- **재료 관리 (Ingredient Management):** 주류, 리큐르, 기타 재료에 대한 완전한 CRUD 및 이미지 업로드 기능.
-- **칵테일 레시피 관리 (Cocktail Recipe Management):** 칵테일 레시피 등록, 조회, 검색, 수정, 삭제 기능.
-- **고급 검색 및 필터링 (Advanced Search & Filtering):** 재료 및 칵테일에 대한 다중 조건(이름, 도수, 원산지, 맛, 향 등) 검색, 페이지네이션, 정렬 기능.
-- **한국어 초성 검색 (Korean Consonant Search):** 자음을 이용한 빠른 재료 검색.
-- **메타데이터 시스템 (Metadata System):** 맛, 향, 여운 등 프로파일링을 위한 동적 속성 관리.
-- **추천 시스템 (Recommendation System):** 보유한 재료를 기반으로 제조 가능한 칵테일 추천.
-- **인증 및 권한 관리 (Authentication & Authorization):** JWT 토큰 기반 로그인, 역할(관리자, 사용자)에 따른 API 접근 제어, API 키 발급.
-- **사용자 맞춤 기능 (User Personalization):** 즐겨찾기, 평점 및 리뷰, 나만의 레시피 컬렉션 관리.
-- **커뮤니티 (Community):** 사용자들이 소통할 수 있는 게시판, 댓글, 좋아요 기능.
-- **관리자 대시보드 (Admin Dashboard):** 사용자 및 시스템 통계, 콘텐츠 관리 기능.
-- **성능 및 안정성 (Performance & Stability):** 비동기 처리, 결과 캐싱, API 요청 제한(Rate Limiting), 구조화된 로깅을 통한 고성능 및 안정적인 서비스 제공.
-
-## 📝 백엔드 개발 로드맵
-
-### 🚀 우선순위 높음 (핵심 기능)
-
-#### 1. 칵테일 레시피 CRUD 완성
-
-- [ ] **칵테일 레시피 상세 조회 API** (`GET /api/v1/cocktail/{name}`)
-  - 칵테일 이름으로 단일 레시피 조회
-  - 사용된 재료 정보와 연결하여 반환
-  - 메타데이터(맛, 향, 여운) 정보 포함
-- [ ] **칵테일 레시피 검색 API** (`GET /api/v1/cocktail/search`)
-  - 칵테일명, 재료, 글래스 타입, 원산지별 검색
-  - 페이지네이션 지원
-  - 검색 결과 정렬 (관련성, 이름순)
-- [ ] **칵테일 레시피 수정 API** (`PUT /api/v1/cocktail/{id}`)
-  - 기존 레시피 정보 업데이트
-  - 재료 목록 및 제조 단계 수정
-  - 이미지 업로드 및 교체
-- [ ] **칵테일 레시피 삭제 API** (`DELETE /api/v1/cocktail/{id}`)
-  - 레시피 소프트 삭제 또는 하드 삭제 구현
-  - 관련 이미지 파일 정리
-
-#### 2. 한국어 자음 검색 기능
-
-- [ ] **한국어 초성 검색 라이브러리 통합**
-  - 주류/리큐르/재료명에 대한 초성 검색 지원
-  - 예: "ㅂㅅㅋ" 입력 시 "보스턴 칵테일" 검색
-- [ ] **자음 검색 API 엔드포인트 추가**
-  - `/api/v1/spirits/search/consonant`
-  - `/api/v1/liqueur/search/consonant`
-  - `/api/v1/ingredient/search/consonant`
-- [ ] **검색 성능 최적화**
-  - MongoDB 인덱스 설정 (한글명 필드)
-  - 자음 매핑 테이블 구축
-
-#### 3. 재료-칵테일 관계 시스템
-
-- [ ] **재료별 칵테일 목록 API** (`GET /api/v1/spirits/{id}/cocktails`)
-  - 특정 주류/리큐르를 사용하는 칵테일 목록 반환
-  - 주재료/부재료 구분 표시
-- [ ] **칵테일별 재료 정보 확장**
-  - 필수/선택 재료 구분
-  - 대체 가능 재료 제안
-  - 재료별 중요도/비율 정보
-- [ ] **제조 가능한 칵테일 추천 API** (`POST /api/v1/cocktail/recommend`)
-  - 보유 재료 목록을 전송하면 제조 가능한 칵테일 반환
-  - 부족한 재료 개수별로 정렬
-  - 대체 재료 제안 포함
-
-### 📱 중간 우선순위 (사용자 경험)
-
-#### 4. 이메일 인증 시스템
-
-- [ ] **회원가입 시 이메일 중복 확인** (`POST /api/v1/auth/check-email`)
-  - 실시간 이메일 중복 검사
-  - 도메인 유효성 검증
-- [ ] **이메일 인증 토큰 발송**
-  - SMTP 서버 설정 (Gmail/SendGrid/AWS SES)
-  - 인증 토큰 생성 및 만료 처리
-  - 인증 이메일 템플릿 작성
-- [ ] **이메일 인증 확인 API** (`POST /api/v1/auth/verify-email`)
-  - 토큰 검증 후 계정 활성화
-  - 인증 실패 시 재발송 기능
-
-#### 5. 고급 검색 및 필터링
-
-- [ ] **복합 검색 조건 지원**
-  - 도수 범위 필터 (예: 20-40도)
-  - 다중 카테고리 선택
-  - 가격대별 필터링 (추가 필드 필요)
-- [ ] **검색 결과 정렬 옵션**
-  - 관련성, 이름순, 도수순, 평점순 정렬
-  - 오름차순/내림차순 선택
-- [ ] **검색 기록 및 인기 검색어**
-  - 사용자별 최근 검색 기록 저장
-  - 실시간 인기 검색어 집계
-
-#### 6. 파일 업로드 시스템 개선
-
-- [ ] **이미지 최적화 파이프라인**
-  - 자동 리사이징 (썸네일, 중간, 원본)
-  - WebP 형식 변환 지원
-  - 이미지 메타데이터 추출
-- [ ] **클라우드 스토리지 연동**
-  - AWS S3/Google Cloud Storage 연동
-  - CDN을 통한 이미지 서빙
-  - 이미지 URL 관리
-
-### 🌟 낮은 우선순위 (확장 기능)
-
-#### 7. 커뮤니티 게시판 시스템
-
-- [ ] **게시판 데이터 모델 설계**
-  - 게시글, 댓글, 대댓글 스키마
-  - 카테고리, 태그 시스템
-  - 첨부파일 지원
-- [ ] **게시글 CRUD API**
-  - `/api/v1/board/posts` - 게시글 목록/작성
-  - `/api/v1/board/posts/{id}` - 게시글 상세/수정/삭제
-  - 마크다운 에디터 지원
-- [ ] **댓글 시스템 API**
-  - `/api/v1/board/posts/{id}/comments` - 댓글 CRUD
-  - 대댓글(nested comments) 지원
-  - 댓글 정렬 옵션 (최신순, 추천순)
-- [ ] **좋아요/싫어요 시스템**
-  - 게시글/댓글별 평가 기능
-  - 중복 평가 방지 로직
-  - 실시간 평가 수 집계
-- [ ] **실시간 알림 시스템**
-  - 댓글 작성 시 원글 작성자 알림
-  - WebSocket 또는 Server-Sent Events 구현
-  - 알림 설정 관리 API
-
-#### 8. 사용자 개인화 기능
-
-- [ ] **즐겨찾기 시스템**
-  - 주류/칵테일 즐겨찾기 추가/제거
-  - 개인 즐겨찾기 목록 조회
-- [ ] **평점 및 리뷰 시스템**
-  - 주류/칵테일별 평점 (1-5점)
-  - 리뷰 작성 및 관리
-  - 평점 기반 추천 알고리즘
-- [ ] **개인 칵테일 레시피 컬렉션**
-  - 사용자가 직접 작성한 레시피 관리
-  - 공개/비공개 설정
-  - 다른 사용자와 레시피 공유
-
-#### 9. 관리자 기능 강화
-
-- [ ] **관리자 대시보드 API**
-  - 사용자 통계, 인기 검색어
-  - 시스템 사용량 모니터링
-- [ ] **컨텐츠 관리 기능**
-  - 부적절한 게시글/댓글 신고 처리
-  - 일괄 데이터 등록/수정 도구
-  - 이미지 일괄 처리
-
-#### 10. API 성능 및 안정성
-
-- [ ] **캐싱 시스템 도입**
-  - Redis를 이용한 검색 결과 캐싱
-  - 메타데이터 캐싱으로 응답 속도 향상
-- [ ] **API 속도 제한 (Rate Limiting)**
-  - 사용자별/IP별 요청 제한
-  - API 키별 차등 제한
-- [ ] **로깅 및 모니터링 강화**
-  - 구조화된 로그 형식 정립
-  - 성능 메트릭 수집
-  - 에러 추적 시스템
-
-### 📋 개발 진행 가이드
-
-#### 단계별 구현 순서
-
-1. **1단계**: 칵테일 CRUD 완성 → 자음 검색 → 재료-칵테일 관계
-2. **2단계**: 이메일 인증 → 고급 검색 → 파일 업로드 개선
-3. **3단계**: 커뮤니티 기능 → 개인화 → 관리자 기능 → 성능 최적화
-
-#### 각 기능 구현 시 체크리스트
-
-- [ ] Pydantic 모델 정의 (`app/model/`)
-- [ ] MongoDB 컬렉션 스키마 설계
-- [ ] 쿼리 클래스 구현 (`app/query/`)
-- [ ] API 엔드포인트 구현 (`app/main.py`)
-- [ ] 에러 핸들링 및 로깅
-- [ ] 단위 테스트 작성 (`tests/`)
-- [ ] API 문서화 (FastAPI 자동 생성)
-- [ ] 성능 테스트 (필요시)
-
-## 🧪 테스트
-
-커버리지 리포트와 함께 전체 테스트 스위트를 실행합니다:
+### 대표 요청/응답
 
 ```bash
-TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=../tests/results/test-${TIMESTAMP}.html --self-contained-html
+curl "http://127.0.0.1:8000/api/v1/health"
 ```
 
-## 🤝 기여하기
-
-1. **코드 품질**: 모든 코드는 린팅, 타입 검사, 테스트를 통과해야 합니다
-2. **Pre-commit 훅**: `uv run pre-commit install`로 설치
-3. **테스트**: 새로운 기능과 버그 수정에 대한 테스트 작성
-4. **문서**: API 변경사항에 대한 문서 업데이트
-
-### 개발 워크플로우
+```json
+{
+  "status": "success",
+  "code": 200,
+  "data": { "status": "ok" },
+  "message": "Service is running"
+}
+```
 
 ```bash
-# 커밋하기 전에
+curl "http://127.0.0.1:8000/api/v1/spirits?pageNumber=1&pageSize=10"
+```
+
+```json
+{
+  "status": "success",
+  "code": 200,
+  "data": {
+    "totalPage": 0,
+    "currentPage": 1,
+    "totalSize": 0,
+    "currentPageSize": 0,
+    "items": []
+  },
+  "message": "Successfully search spirits"
+}
+```
+
+## 테스트
+
+```bash
+# Backend: pytest + coverage + HTML report
+TIMESTAMP=$(date +%Y%m%d-%H%M%S) && uv run pytest -s --cov=app --html=tests/results/test-${TIMESTAMP}.html --self-contained-html
+
+# Python lint / format / type check
 uvx ruff check --fix app/
 uvx ruff format app/
-uvx pyright app/
-pnpm lint
-pnpm format
+uvx pyrefly check app/
+
+# Frontend lint / format / tests
+bun run lint
+bun run format
+bun run test
+```
+
+테스트 전략:
+
+- `tests/test_health_check.py`: 헬스체크 안정성/동시성(TaskGroup)
+- `tests/test_error_response.py`: RFC 9457 오류 응답 형식
+- `tests/test_encryption.py`: 암호화 유틸 일관성
+- `tests/test_liqueur_delete.py`: 리큐르 삭제 API 예외/성공 시나리오
+
+## 배포
+
+### 배포 대상
+
+- **애플리케이션**: Docker 이미지 + Gunicorn/FastAPI
+- **리버스 프록시 템플릿**: `compose/cocktail-maker/nginx.conf`
+- **문서 사이트**: GitHub Pages (`site/`)
+
+### CI/CD
+
+- `.github/workflows/deploy.yaml`
+  - 트리거: `main` 브랜치 push
+  - 동작: `peaceiris/actions-gh-pages@v4`로 `site/` 디렉터리 배포
+
+### 환경별 차이
+
+- **개발(로컬)**: `uvicorn --reload` + `bun run dev` + Vite `/api` 프록시
+- **운영(앱)**: Dockerfile CMD의 Gunicorn (`app/gunicorn.conf.py`)
+- **운영(네트워크)**: `compose/cocktail-maker/`의 Nginx TLS 종단 템플릿
+- **스테이징**: 저장소 내 별도 스테이징 구성은 명시되어 있지 않음
+
+## 설계 패턴 및 컨벤션
+
+| Pattern                    | Where Used                                           | Rationale                                 |
+| -------------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| Query/Repository 유사 패턴 | `app/query/query_parents.py`, `app/query/queries.py` | 데이터 접근 공통화, 구현체 분리           |
+| Dual Database              | `app/database/connector.py`, `app/query/metadata.py` | 유연한 문서 저장 + 엄격한 메타데이터 검증 |
+| Middleware 패턴            | `app/main.py`                                        | CORS/압축/헤더/예외/프로파일링 분리       |
+| 표준 응답 포맷             | `app/utils/etc.py`                                   | 클라이언트 응답 구조 일관성               |
+| RFC 9457 Problem Details   | `problem_details_formatter` + exception handlers     | 오류 응답 표준화                          |
+
+### 코드 컨벤션
+
+- Python
+  - Ruff: line length 88, double quote
+  - Pyrefly 타입 검사 사용
+- Frontend
+  - Biome: 2-space indent, single quote, lineWidth 100
+  - TypeScript strict mode
+- 패키지 매니저
+  - Python: `uv`
+  - JavaScript: `bun`
+- 커밋 메시지 규칙
+  - 저장소 내 별도 명시 문서 없음
+
+## 문제 해결
+
+- **서버 시작 시 KeyError 발생**
+  - `app/.env`에 필수 환경변수 누락 여부 확인
+- **인증 관련 오류**
+  - SuperTokens Core(`http://localhost:3567`) 실행 여부 확인
+- **MongoDB 연결 실패**
+  - `MONGODB_URL` 및 MongoDB 인스턴스 상태 확인
+- **프론트에서 API 호출 실패**
+  - `bun run dev` 실행 시 Vite 프록시(`/api` → `127.0.0.1:8000`) 확인
+- **문서/API 경로 혼동**
+  - 백엔드 라우트 기준으로는 `/liqueurs`, `/ingredients`(복수형) 사용
+- **성능 병목 분석**
+  - 요청 URL에 `?profile=true` 추가
+
+## 기여하기
+
+현재 루트에 `CONTRIBUTING.md`는 없습니다.
+
+권장 흐름:
+
+1. `main`에서 브랜치 생성
+2. 변경 후 품질 체크 실행
+3. Pull Request 생성 및 리뷰 반영
+
+```bash
+uvx ruff check --fix app/
+uvx ruff format app/
+uvx pyrefly check app/
+bun run lint
+bun run format
 uv run pytest tests/ --cov=app
 ```
 
-## 📄 라이선스
+## 로드맵
 
-이 프로젝트는 여러 오픈소스 의존성을 포함합니다. 자세한 정보는 아래 라이선스 표를 참조하세요.
+우선 순위 선정 기준
 
-## Licenses
+- 현재 구현 여부
+- 이 앱의 핵심 목적과의 적합성
+- 운영 안전성 및 유지보수 비용
+- 기존 FastAPI + React + SuperTokens 구조와의 연결성 |
 
-| Name                       | Version     | License                                             |
-| -------------------------- | ----------- | --------------------------------------------------- |
-| Brotli                     | 1.1.0       | MIT License                                         |
-| Deprecated                 | 1.2.18      | MIT License                                         |
-| Jinja2                     | 3.1.6       | BSD License                                         |
-| Markdown                   | 3.9         | UNKNOWN                                             |
-| MarkupSafe                 | 3.0.2       | BSD License                                         |
-| PyJWT                      | 2.10.1      | MIT License                                         |
-| PyYAML                     | 6.0.2       | MIT License                                         |
-| Pygments                   | 2.19.2      | BSD License                                         |
-| SQLAlchemy                 | 2.0.43      | MIT                                                 |
-| Secweb                     | 1.25.2      | UNKNOWN                                             |
-| aiofiles                   | 24.1.0      | Apache Software License                             |
-| aiohappyeyeballs           | 2.6.1       | Python Software Foundation License                  |
-| aiohttp                    | 3.12.15     | Apache-2.0 AND MIT                                  |
-| aiohttp-retry              | 2.9.1       | MIT License                                         |
-| aiosignal                  | 1.4.0       | Apache Software License                             |
-| aiosmtplib                 | 3.0.2       | MIT                                                 |
-| annotated-types            | 0.7.0       | MIT License                                         |
-| anyio                      | 4.10.0      | UNKNOWN                                             |
-| asgiref                    | 3.9.1       | BSD License                                         |
-| attrs                      | 25.3.0      | UNKNOWN                                             |
-| babel                      | 2.17.0      | BSD License                                         |
-| backrefs                   | 5.9         | MIT License                                         |
-| certifi                    | 2025.8.3    | Mozilla Public License 2.0 (MPL 2.0)                |
-| cffi                       | 2.0.0       | UNKNOWN                                             |
-| cfgv                       | 3.4.0       | MIT License                                         |
-| charset-normalizer         | 3.4.3       | MIT                                                 |
-| click                      | 8.2.1       | UNKNOWN                                             |
-| colorama                   | 0.4.6       | BSD License                                         |
-| coverage                   | 7.10.6      | Apache-2.0                                          |
-| cryptography               | 45.0.7      | Apache-2.0 OR BSD-3-Clause                          |
-| distlib                    | 0.4.0       | Python Software Foundation License                  |
-| dnspython                  | 2.8.0       | ISC License (ISCL)                                  |
-| email-validator            | 2.3.0       | The Unlicense (Unlicense)                           |
-| fastapi                    | 0.116.1     | MIT License                                         |
-| fastapi-cli                | 0.0.11      | MIT License                                         |
-| fastapi-cloud-cli          | 0.1.5       | MIT License                                         |
-| filelock                   | 3.19.1      | The Unlicense (Unlicense)                           |
-| frozenlist                 | 1.7.0       | Apache-2.0                                          |
-| ghp-import                 | 2.1.0       | Apache Software License                             |
-| griffe                     | 1.14.0      | UNKNOWN                                             |
-| gunicorn                   | 23.0.0      | MIT License                                         |
-| h11                        | 0.16.0      | MIT License                                         |
-| httpcore                   | 1.0.9       | BSD License                                         |
-| httptools                  | 0.6.4       | MIT License                                         |
-| httpx                      | 0.28.1      | BSD License                                         |
-| identify                   | 2.6.14      | MIT                                                 |
-| idna                       | 3.10        | BSD License                                         |
-| iniconfig                  | 2.1.0       | MIT License                                         |
-| markdown-it-py             | 4.0.0       | MIT License                                         |
-| mdurl                      | 0.1.2       | MIT License                                         |
-| mergedeep                  | 1.3.4       | MIT License                                         |
-| mkdocs                     | 1.6.1       | BSD License                                         |
-| mkdocs-autorefs            | 1.4.3       | UNKNOWN                                             |
-| mkdocs-get-deps            | 0.2.0       | MIT License                                         |
-| mkdocs-material            | 9.6.19      | MIT License                                         |
-| mkdocs-material-extensions | 1.3.1       | MIT License                                         |
-| mkdocstrings               | 0.30.0      | UNKNOWN                                             |
-| mkdocstrings-python        | 1.18.2      | UNKNOWN                                             |
-| multidict                  | 6.6.4       | Apache License 2.0                                  |
-| nodeenv                    | 1.9.1       | BSD License                                         |
-| orjson                     | 3.11.3      | Apache Software License; MIT License                |
-| packaging                  | 25.0        | Apache Software License; BSD License                |
-| paginate                   | 0.5.7       | MIT License                                         |
-| pathspec                   | 0.12.1      | Mozilla Public License 2.0 (MPL 2.0)                |
-| phonenumbers               | 8.13.55     | Apache Software License                             |
-| pillow                     | 11.3.0      | UNKNOWN                                             |
-| pkce                       | 1.0.3       | MIT License                                         |
-| platformdirs               | 4.4.0       | MIT License                                         |
-| pluggy                     | 1.6.0       | MIT License                                         |
-| pre_commit                 | 4.3.0       | MIT                                                 |
-| propcache                  | 0.3.2       | Apache Software License                             |
-| pycparser                  | 2.23        | BSD License                                         |
-| pycryptodome               | 3.20.0      | Apache Software License; BSD License; Public Domain |
-| pydantic                   | 2.11.7      | MIT License                                         |
-| pydantic_core              | 2.33.2      | MIT License                                         |
-| pyinstrument               | 5.1.1       | BSD License                                         |
-| pymdown-extensions         | 10.16.1     | MIT License                                         |
-| pymongo                    | 4.15.0      | Apache Software License                             |
-| pyotp                      | 2.9.0       | MIT License                                         |
-| pytest                     | 8.4.2       | MIT License                                         |
-| pytest-asyncio             | 1.1.0       | UNKNOWN                                             |
-| pytest-cov                 | 7.0.0       | MIT License                                         |
-| pytest-dotenv              | 0.5.2       | MIT License                                         |
-| pytest-html                | 4.1.1       | MIT License                                         |
-| pytest-metadata            | 3.1.1       | Mozilla Public License 2.0 (MPL 2.0)                |
-| python-dateutil            | 2.9.0.post0 | Apache Software License; BSD License                |
-| python-dotenv              | 1.1.1       | BSD License                                         |
-| python-multipart           | 0.0.20      | Apache Software License                             |
-| pyyaml_env_tag             | 1.1         | UNKNOWN                                             |
-| requests                   | 2.32.5      | Apache Software License                             |
-| requests-file              | 2.1.0       | Apache Software License                             |
-| rich                       | 14.1.0      | MIT License                                         |
-| rich-toolkit               | 0.15.1      | MIT License                                         |
-| rignore                    | 0.6.4       | MIT                                                 |
-| sentry-sdk                 | 2.37.1      | BSD License                                         |
-| setproctitle               | 1.3.7       | BSD License                                         |
-| shellingham                | 1.5.4       | ISC License (ISCL)                                  |
-| six                        | 1.17.0      | MIT License                                         |
-| sniffio                    | 1.3.1       | Apache Software License; MIT License                |
-| sqlmodel                   | 0.0.24      | MIT License                                         |
-| starlette                  | 0.47.3      | BSD License                                         |
-| starlette-compress         | 1.6.1       | Zero-Clause BSD (0BSD)                              |
-| structlog                  | 25.4.0      | Apache Software License; MIT License                |
-| supertokens_python         | 0.30.2      | Apache Software License                             |
-| tldextract                 | 5.3.0       | BSD License                                         |
-| twilio                     | 9.8.0       | MIT License                                         |
-| typer                      | 0.17.4      | MIT License                                         |
-| typing-inspection          | 0.4.1       | UNKNOWN                                             |
-| typing_extensions          | 4.15.0      | UNKNOWN                                             |
-| urllib3                    | 2.5.0       | UNKNOWN                                             |
-| uvicorn                    | 0.35.0      | BSD License                                         |
-| uvicorn-worker             | 0.3.0       | MIT License                                         |
-| uvloop                     | 0.21.0      | Apache Software License; MIT License                |
-| virtualenv                 | 20.34.0     | MIT License                                         |
-| watchdog                   | 6.0.0       | Apache Software License                             |
-| watchfiles                 | 1.1.0       | MIT License                                         |
-| websockets                 | 15.0.1      | BSD License                                         |
-| wrapt                      | 1.17.3      | BSD License                                         |
-| yarl                       | 1.20.1      | Apache Software License                             |
-| zstandard                  | 0.24.0      | BSD License                                         |
+### 높은 우선순위
+
+#### 1. 탐색/조회 경험 완성
+
+- [ ] **재료/칵테일 검색 화면 추가**
+  - 주류, 리큐르, 기타 재료, 칵테일 목록/상세 페이지 추가
+  - 검색, 필터, 페이지네이션을 프론트에서 실제 사용 가능하게 연결
+  - 프론트 훅과 백엔드 쿼리 파라미터 규약 일치화
+- [ ] **칵테일 관리 UI 추가**
+  - 이미 존재하는 칵테일 등록/조회/수정/삭제 API를 프론트에서 노출
+  - 레시피 재료 선택기와 제조 단계 편집 UI 제공
+  - 대시보드/가이드의 더미 데이터를 실제 데이터 흐름으로 교체
+
+#### 2. 재료-칵테일 연결 기능 제품화
+
+- [ ] **재료 상세에서 사용된 칵테일 목록 조회**
+  - 특정 주류/리큐르/재료를 사용하는 칵테일 목록 반환
+  - 주재료/보조재료 구분 정보 노출
+- [ ] **보유 재료 기반 추천**
+  - 사용자가 가진 재료 목록으로 제조 가능한 칵테일 추천
+  - 부족한 재료 수 기준 정렬
+  - 대체 재료 제안은 2단계로 분리
+- [ ] **대시보드용 보유 재료 모델 정리**
+  - 사용자별 보유 재료 저장 구조 정의
+  - 추천/즐겨찾기/대시보드가 공통으로 참조하도록 설계
+
+#### 3. 권한 및 운영 안전성 강화
+
+- [ ] **쓰기 엔드포인트 인증 일관화**
+  - 메타데이터 등록/삭제, 재료 등록/수정/삭제의 보호 범위 재정리
+  - `verify_session` 기반 보호와 관리자/운영자 권한 분리
+- [ ] **레거시 JWT 표면 축소**
+  - deprecated 경로 유지 범위를 명시
+  - SuperTokens 이후 기준 인증 흐름 문서화
+- [ ] **운영 감사 로그 추가**
+  - 메타데이터 변경, API 키 발급, 삭제 작업에 대한 감사 로그
+  - 누가 언제 무엇을 변경했는지 추적 가능하게 정리
+
+### 중간 우선순위
+
+#### 4. 검색 품질 개선
+
+- [ ] **정렬/필터 일관성 개선**
+  - 이름순 외 정렬 옵션 추가
+  - 엔티티별 검색 파라미터와 응답 포맷 일관화
+- [ ] **한국어 검색 품질 향상**
+  - 초성 검색 또는 정규화 기반 한글 검색 검토
+  - 별도 엔드포인트 추가보다 공통 검색 전략 우선 검토
+- [ ] **검색 사용성 개선**
+  - 최근 검색, 자주 쓰는 필터, 빈 결과 처리 UX 개선
+
+#### 5. 개인화 기능 최소 단위 도입
+
+- [ ] **즐겨찾기**
+  - 칵테일/주류 즐겨찾기 추가 및 조회
+- [ ] **개인 컬렉션**
+  - 공개 공유가 아닌 개인 저장 중심의 레시피 컬렉션
+- [ ] **실데이터 기반 대시보드**
+  - 더미 통계 대신 즐겨찾기 수, 보유 재료 수, 추천 수 등 실제 지표 반영
+
+#### 6. 파일 및 배포 스토리지 확장
+
+- [ ] **이미지 최적화 파이프라인**
+  - 썸네일/중간 크기 생성
+  - WebP 변환 및 메타데이터 정리
+- [ ] **외부 스토리지 연동**
+  - S3 또는 GCS 연동
+  - CDN 서빙 및 URL 관리 전략 수립
+
+#### 7. 운영 성능 관리
+
+- [ ] **API 속도 제한**
+  - 사용자/IP/API 키 단위 제한
+- [ ] **캐싱**
+  - 메타데이터 및 검색 결과 캐싱
+- [ ] **모니터링**
+  - 성능 메트릭, 에러 추적, 구조화 로그 정리
+
+### 보류 또는 범위 재검토
+
+#### 8. 이메일 인증 확장
+
+- [ ] **필요 시에만 도입**
+  - 공개 가입 정책이 정해질 때 이메일 검증 활성화 검토
+  - 커스텀 인증 API 추가는 마지막 수단으로 유지
+
+#### 9. 평점/리뷰/공개 레시피 공유
+
+- [ ] **제품 방향이 커뮤니티형으로 바뀔 때 검토**
+  - 평점 및 리뷰
+  - 공개/비공개 레시피 공유
+  - 추천 알고리즘 고도화
+
+#### 10. 커뮤니티 게시판
+
+- [ ] **현 단계에서는 착수하지 않음**
+  - 게시판/댓글/좋아요/실시간 알림은 제품 방향 재합의 후 검토
+
+### 구현 순서
+
+1. **1단계**: 탐색/조회 UI 완성 → 칵테일 관리 UI → 권한 일관화
+2. **2단계**: 재료-칵테일 연결 조회 → 보유 재료 기반 추천 → 대시보드 실데이터화
+3. **3단계**: 검색 품질 향상 → 개인화 최소 기능 → 운영 성능 관리
+4. **4단계**: 외부 스토리지, 이메일 검증 확장, 커뮤니티성 기능 여부 재판단
+
+### 공통 체크리스트
+
+- 기존 모델/쿼리 계층을 우선 재사용할 것
+- 인증/권한 영향이 있으면 `verify_session` 및 역할 정책을 함께 설계할 것
+- 프론트와 백엔드 파라미터/응답 계약을 동시에 검증할 것
+- 기능 추가 시 테스트 또는 회귀 검증 경로를 함께 마련할 것
+- README/OpenAPI/화면 흐름 문서를 구현 상태에 맞게 갱신할 것
+
+## 라이선스
+
+- 저장소 루트에 `LICENSE` 파일은 현재 없습니다.
+- FastAPI 앱 메타데이터(`app/main.py`)에는 MIT 라이선스 정보가 선언되어 있습니다.

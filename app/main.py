@@ -36,6 +36,8 @@ from supertokens_python import (
 )
 from supertokens_python.framework.fastapi import get_middleware
 from supertokens_python.recipe import emailpassword, session
+from supertokens_python.recipe.session import SessionContainer
+from supertokens_python.recipe.session.framework.fastapi import verify_session
 from uvloop import EventLoopPolicy as uvloopEventLoopPolicy
 
 from auth import (
@@ -49,6 +51,8 @@ from model import (
     ApiKeyPublish,
     CocktailDict,
     CocktailRegisterData,
+    CocktailSearchQuery,
+    CocktailUpdateData,
     IngredientDict,
     IngredientRegisterForm,
     IngredientSearch,
@@ -491,7 +495,13 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 cocktail_maker_v1 = APIRouter(prefix="/api/v1")
 
 
-@cocktail_maker_v1.post("/signup", summary="회원가입", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/users",
+    summary="회원가입",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens `/auth/signup` instead",
+)
 async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     """회원가입과 동시에 로그인을 수행하므로, 회원가입 성공 시 메시지와 함께 JWT 를 반환
 
@@ -554,7 +564,13 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post("/signin", summary="로그인", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/sessions",
+    summary="로그인",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens `/auth/signin` instead",
+)
 async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     """로그인
 
@@ -599,7 +615,7 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
         value=jwt["refreshToken"],
         httponly=True,
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/refresh-token",
+        path="/auth/tokens",
         secure=True,
         samesite="lax",
     )
@@ -607,7 +623,13 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post("/refresh-token", summary="액세스 토큰 갱신", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/auth/tokens",
+    summary="액세스 토큰 갱신",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens session refresh mechanism instead",
+)
 async def refresh_token(request: Request) -> Response:
     """액세스 토큰 갱신
 
@@ -656,7 +678,13 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
-@cocktail_maker_v1.get("/my-role", summary="내 JWT 권한 확인", tags=["인증"])
+@cocktail_maker_v1.get(
+    "/auth/session",
+    summary="내 JWT 권한 확인",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Use SuperTokens session verification instead",
+)
 async def my_role(
     _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
@@ -675,7 +703,13 @@ async def my_role(
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
-@cocktail_maker_v1.post("/publish-api-key", summary="API 키 발급", tags=["인증"])
+@cocktail_maker_v1.post(
+    "/api-keys",
+    summary="API 키 발급",
+    tags=["인증"],
+    deprecated=True,
+    description="⚠️ DEPRECATED: Migrate to SuperTokens-based API key generation",
+)
 async def publish_api_key(
     api_key_publish: Annotated[ApiKeyPublish, Body(...)],
     _: Annotated[None, Security(VerifyToken(["admin"]))],
@@ -725,6 +759,7 @@ async def health_check() -> ORJSONResponse:
 )
 async def spirits_register(
     form: Annotated[SpiritsRegisterForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     """
     단일 주류 정보 등록
@@ -803,6 +838,7 @@ async def spirits_register(
 async def spirits_update(
     document_id: Annotated[str, Path(description="주류의 문서 ID")],
     form: Annotated[SpiritsUpdateForm, Form()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> Response:
     """
     주류 정보 수정
@@ -876,7 +912,7 @@ async def spirits_update(
 @cocktail_maker_v1.get("/spirits/{name}", summary="단일 주류 정보 조회", tags=["주류"])
 async def spirits_detail(
     name: Annotated[str, Path(..., description="주류의 이름, 정확한 일치")],
-    # _: Annotated[SessionContainer, Depends(verify_session())],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     spirits: dict[str, Any] = await queries.RetrieveSpirits(name).only_name()
 
@@ -890,7 +926,7 @@ async def spirits_detail(
 @cocktail_maker_v1.get("/spirits", summary="주류 정보 검색", tags=["주류"])
 async def spirits_search(
     params: Annotated[SpiritsSearch, Depends()],
-    # _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchSpirits(params).query()
 
@@ -904,6 +940,7 @@ async def spirits_search(
 @cocktail_maker_v1.delete("/spirits/{id}", summary="주류 정보 삭제", tags=["주류"])
 async def spirits_remover(
     id: Annotated[str, Path(...)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
 ) -> ORJSONResponse:
     await queries.DeleteSpirits(id).remove()
 
@@ -999,7 +1036,7 @@ async def metadata_remover(
 
 
 @cocktail_maker_v1.post(
-    "/liqueur",
+    "/liqueurs",
     summary="리큐르 정보 등록",
     tags=["리큐르"],
 )
@@ -1062,7 +1099,7 @@ async def liqueur_register(
 
 
 @cocktail_maker_v1.get(
-    "/liqueur/{name}", summary="단일 리큐르 정보 조회", tags=["주류"]
+    "/liqueurs/{name}", summary="단일 리큐르 정보 조회", tags=["주류"]
 )
 async def liqueur_detail(
     name: Annotated[str, Path(..., description="리큐르의 이름, 정확한 일치")],
@@ -1076,10 +1113,9 @@ async def liqueur_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.get("/liqueur", summary="리큐르 정보 검색", tags=["주류"])
+@cocktail_maker_v1.get("/liqueurs", summary="리큐르 정보 검색", tags=["주류"])
 async def liqueur_search(
     params: Annotated[LiqueurSearchQuery, Depends()],
-    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchLiqueur(params).query()
 
@@ -1091,7 +1127,7 @@ async def liqueur_search(
 
 
 @cocktail_maker_v1.put(
-    "/liqueur/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
+    "/liqueurs/{document_id}", summary="리큐르 정보 수정", tags=["리큐르"]
 )
 async def liqueur_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1152,7 +1188,7 @@ async def liqueur_update(
 
 
 @cocktail_maker_v1.delete(
-    "/liqueur/{document_id}", summary="리큐르 정보 삭제", tags=["리큐르"]
+    "/liqueurs/{document_id}", summary="리큐르 정보 삭제", tags=["리큐르"]
 )
 async def liqueur_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1188,7 +1224,7 @@ async def liqueur_remover(
 
 
 @cocktail_maker_v1.post(
-    "/ingredient",
+    "/ingredients",
     summary="기타 재료 정보 등록",
     tags=["기타 재료"],
 )
@@ -1239,7 +1275,7 @@ async def ingredient_register(
 
 
 @cocktail_maker_v1.get(
-    "/ingredient/{name}", summary="단일 기타 재료 정보 조회", tags=["기타 재료"]
+    "/ingredients/{name}", summary="단일 기타 재료 정보 조회", tags=["기타 재료"]
 )
 async def ingredient_detail(
     name: Annotated[str, Path(..., description="기타 재료의 이름, 정확한 일치")],
@@ -1253,10 +1289,11 @@ async def ingredient_detail(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.get("/ingredient", summary="기타 재료 정보 검색", tags=["기타 재료"])
+@cocktail_maker_v1.get(
+    "/ingredients", summary="기타 재료 정보 검색", tags=["기타 재료"]
+)
 async def ingredient_search(
     params: Annotated[IngredientSearch, Query()],
-    _: Annotated[None, Security(VerifyToken(["admin", "user"]))],
 ) -> ORJSONResponse:
     data: SearchResponse = await queries.SearchIngredient(params).query()
 
@@ -1268,7 +1305,7 @@ async def ingredient_search(
 
 
 @cocktail_maker_v1.put(
-    "/ingredient/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
+    "/ingredients/{document_id}", summary="기타 재료 정보 수정", tags=["기타 재료"]
 )
 async def ingredient_update(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1319,7 +1356,7 @@ async def ingredient_update(
 
 
 @cocktail_maker_v1.delete(
-    "/ingredient/{document_id}", summary="기타 재료 정보 삭제", tags=["기타 재료"]
+    "/ingredients/{document_id}", summary="기타 재료 정보 삭제", tags=["기타 재료"]
 )
 async def ingredient_remover(
     document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
@@ -1333,10 +1370,11 @@ async def ingredient_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
-@cocktail_maker_v1.post("/cocktail", summary="칵테일 정보 등록", tags=["칵테일"])
+@cocktail_maker_v1.post("/cocktails", summary="칵테일 정보 등록", tags=["칵테일"])
 async def cocktail_register(
     body: Annotated[CocktailRegisterData, Body()],
-):
+    _: Annotated[SessionContainer, Depends(verify_session())],
+) -> ORJSONResponse:
     COCKTAIL_REGISTER_FAILURE_MESSAGE = "Failed to register cocktail"
     try:
         # 이미지 검증 및 변환
@@ -1411,6 +1449,171 @@ async def cocktail_register(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             None,
             f"{COCKTAIL_REGISTER_FAILURE_MESSAGE}: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get(
+    "/cocktails/{name}", summary="단일 칵테일 정보 조회", tags=["칵테일"]
+)
+async def cocktail_detail(
+    name: Annotated[str, Path(..., description="칵테일 이름, 정확한 일치", max_length=100)],
+) -> ORJSONResponse:
+    COCKTAIL_DETAIL_FAILURE_MESSAGE = "Failed to get cocktail"
+
+    try:
+        cocktail: dict[str, Any] = await queries.RetrieveCocktail(name).only_name()
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, cocktail, "Successfully get cocktail"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_DETAIL_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_DETAIL_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_DETAIL_FAILURE_MESSAGE}: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.get("/cocktails", summary="칵테일 정보 검색", tags=["칵테일"])
+async def cocktail_search(
+    params: Annotated[CocktailSearchQuery, Depends()],
+) -> ORJSONResponse:
+    COCKTAIL_SEARCH_FAILURE_MESSAGE = "Failed to search cocktails"
+
+    try:
+        data: SearchResponse = await queries.SearchCocktail(params).query()
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, data, "Successfully search cocktails"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_SEARCH_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_SEARCH_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_SEARCH_FAILURE_MESSAGE}: {e!s}",
+        )
+
+    return ORJSONResponse(formatted_response, formatted_response["code"])
+
+
+@cocktail_maker_v1.put(
+    "/cocktails/{document_id}", summary="칵테일 정보 수정", tags=["칵테일"]
+)
+async def cocktail_update(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    body: Annotated[CocktailUpdateData, Body()],
+    _: Annotated[SessionContainer, Depends(verify_session())],
+) -> Response:
+    COCKTAIL_UPDATE_FAILURE_MESSAGE = "Failed to update cocktail"
+
+    try:
+        validate_metadata = metadata.MetadataValidation(
+            "spirits",
+            body.taste,
+            body.aroma,
+            body.finish,
+        )
+        listed_taste, listed_aroma, listed_finish = validate_metadata()
+
+        item: CocktailDict = CocktailDict(
+            name=body.name,
+            aroma=listed_aroma,
+            taste=listed_taste,
+            finish=listed_finish,
+            ingredients=[
+                RecipeDict(
+                    id=ingredient.id,
+                    type=ingredient.type,
+                    amount=ingredient.amount,
+                    unit=ingredient.unit,
+                )
+                for ingredient in body.ingredients
+            ],
+            steps=[
+                RecipeStepDict(step=step.step, description=step.description)
+                for step in body.steps
+            ],
+            glass=body.glass,
+            description=body.description,
+            origin_nation=body.origin_nation,
+            updated_at=datetime.now(tz=UTC),
+        )
+
+        await queries.UpdateCocktail(document_id, item).update()
+
+        logger.info("Cocktail successfully updated", name=body.name)
+
+        response = Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_UPDATE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+        response = ORJSONResponse(formatted_response, formatted_response["code"])
+    except Exception as e:
+        logger.error(COCKTAIL_UPDATE_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_UPDATE_FAILURE_MESSAGE}: {e!s}",
+        )
+        response = ORJSONResponse(formatted_response, formatted_response["code"])
+
+    return response
+
+
+@cocktail_maker_v1.delete(
+    "/cocktails/{document_id}", summary="칵테일 정보 삭제", tags=["칵테일"]
+)
+async def cocktail_remover(
+    document_id: Annotated[str, Path(..., min_length=24, max_length=24)],
+    _: Annotated[SessionContainer, Depends(verify_session())],
+) -> ORJSONResponse:
+    COCKTAIL_DELETE_FAILURE_MESSAGE = "Failed to delete cocktail"
+
+    try:
+        await queries.DeleteCocktail(document_id).remove()
+
+        logger.info("Cocktail successfully deleted", document_id=document_id)
+
+        formatted_response: ResponseFormat = return_formatter(
+            "success", status.HTTP_200_OK, None, "Successfully delete cocktail"
+        )
+
+    except HTTPException as he:
+        logger.error(
+            COCKTAIL_DELETE_FAILURE_MESSAGE, code=he.status_code, message=he.detail
+        )
+        formatted_response = return_formatter("failed", he.status_code, None, he.detail)
+    except Exception as e:
+        logger.error(COCKTAIL_DELETE_FAILURE_MESSAGE, error=str(e))
+        formatted_response = return_formatter(
+            "failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+            f"{COCKTAIL_DELETE_FAILURE_MESSAGE}: {e!s}",
         )
 
     return ORJSONResponse(formatted_response, formatted_response["code"])

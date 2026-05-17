@@ -40,7 +40,7 @@
 - **TypeScript**: 타입 안전성을 위한 정적 타입 검사
 - **Vite**: 고성능 빌드 도구 및 개발 서버
 - **TailwindCSS v4**: 유틸리티 우선 CSS 프레임워크
-- **PNPM**: 고성능 패키지 매니저
+- **Bun**: 고성능 JavaScript 런타임 & 패키지 매니저
 
 ### 코드 품질 (Code Quality)
 - **Python 도구**:

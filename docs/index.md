@@ -28,10 +28,11 @@ RESTful API 서비스입니다.
 - **이미지 검증**: 지원 형식 및 크기 자동 검증
 
 ### 🔐 안전한 인증 시스템
-- **JWT 기반 인증**: 상태 비저장 토큰 기반 보안
+- **SuperTokens 세션 인증**: 이메일+비밀번호 기반 세션 관리 (기본 인증 방식)
 - **역할 기반 접근 제어**: 관리자/사용자 권한 분리
-- **토큰 갱신**: 자동 액세스 토큰 갱신 시스템
+- **자동 토큰 갱신**: SuperTokens 세션 자동 갱신
 - **쿠키 기반 세션**: HttpOnly 쿠키로 XSS 방지
+- **레거시 JWT**: `/api/v1/legacy/` 경로로 분리됨 (하위 호환성 전용, 추후 제거 예정)
 
 ### ⚙️ 메타데이터 관리
 검색 및 분류를 위한 구조화된 메타데이터:
@@ -45,19 +46,19 @@ RESTful API 서비스입니다.
 ### API 기본 정보
 - **Base URL**: `http://localhost:8000/api/v1`
 - **Content-Type**: `application/json` (대부분의 엔드포인트)
-- **인증**: JWT 토큰 (쿠키 기반)
+- **인증**: SuperTokens 세션 (이메일+비밀번호)
 
 ### 인증하기
 ```bash
-# 회원가입
-curl -X POST "http://localhost:8000/api/v1/signup" \
+# 회원가입 (SuperTokens)
+curl -X POST "http://localhost:8000/auth/signup" \
   -H "Content-Type: application/json" \
-  -d '{"userId": "your_id", "password": "your_password"}'
+  -d '{"formFields": [{"id": "email", "value": "you@example.com"}, {"id": "password", "value": "your_password"}]}'
 
-# 로그인
-curl -X POST "http://localhost:8000/api/v1/signin" \
+# 로그인 (SuperTokens)
+curl -X POST "http://localhost:8000/auth/signin" \
   -H "Content-Type: application/json" \
-  -d '{"userId": "your_id", "password": "your_password"}'
+  -d '{"formFields": [{"id": "email", "value": "you@example.com"}, {"id": "password", "value": "your_password"}]}'
 ```
 
 ### 주류 검색해보기

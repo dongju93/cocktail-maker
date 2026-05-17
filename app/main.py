@@ -120,10 +120,12 @@ cocktail_maker = FastAPI(
     - **Liqueur Management**: Complete liqueur database with metadata
     - **Ingredient Tracking**: Non-alcoholic cocktail ingredients
     - **Metadata System**: Taste profiles, aromas, and finish characteristics
-    - **User Authentication**: JWT-based auth with role-based access control
+    - **User Authentication**: SuperTokens session-based auth (email + password)
 
     ## Authentication
-    All endpoints except `/health` require authentication. Use `/auth` endpoints for login.
+    All write endpoints require a valid SuperTokens session. Use the `/auth/signin` and
+    `/auth/signup` routes provided by SuperTokens. Legacy JWT endpoints are available
+    under `/api/v1/legacy/` for backward compatibility only and will be removed in a future release.
     """,
     contact={
         "name": "Cocktail Maker Team",
@@ -243,23 +245,6 @@ async def profile_request(
             time="percent_of_total",
         )
 
-        # File write
-        # # 파일명에 번호 추가 로직
-        # base_filename = "profile.speedscope"
-        # extension = ".json"
-        # filename = f"{base_filename}-0{extension}"
-        # counter = 0
-
-        # # 파일이 존재하면 번호를 증가시켜 새로운 파일명 생성
-        # while PathLib(filename).exists():
-        #     counter += 1
-        #     filename = f"{base_filename}-{counter}{extension}"
-
-        # async with aiofiles.open(filename, "w") as out:
-        #     await out.write(profiler.output(renderer=SpeedscopeRenderer()))
-
-        # HTML view
-        # return HTMLResponse(profiler.output_html())
         return response
     else:
         return await call_next(request)
@@ -495,12 +480,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 500  # 테스트 환경
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 cocktail_maker_v1 = APIRouter(prefix="/api/v1")
+legacy_jwt_router = APIRouter(prefix="/api/v1/legacy")
 
 
-@cocktail_maker_v1.post(
+@legacy_jwt_router.post(
     "/auth/users",
     summary="회원가입",
-    tags=["인증"],
+    tags=["레거시 인증 (JWT)"],
     deprecated=True,
     description="⚠️ DEPRECATED: Use SuperTokens `/auth/signup` instead",
 )
@@ -566,10 +552,10 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post(
+@legacy_jwt_router.post(
     "/auth/sessions",
     summary="로그인",
-    tags=["인증"],
+    tags=["레거시 인증 (JWT)"],
     deprecated=True,
     description="⚠️ DEPRECATED: Use SuperTokens `/auth/signin` instead",
 )
@@ -625,10 +611,10 @@ async def sign_in(login: Annotated[Login, Body(...)]) -> Response:
     return response
 
 
-@cocktail_maker_v1.post(
+@legacy_jwt_router.post(
     "/auth/tokens",
     summary="액세스 토큰 갱신",
-    tags=["인증"],
+    tags=["레거시 인증 (JWT)"],
     deprecated=True,
     description="⚠️ DEPRECATED: Use SuperTokens session refresh mechanism instead",
 )
@@ -680,10 +666,10 @@ async def refresh_token(request: Request) -> Response:
     return response
 
 
-@cocktail_maker_v1.get(
+@legacy_jwt_router.get(
     "/auth/session",
     summary="내 JWT 권한 확인",
-    tags=["인증"],
+    tags=["레거시 인증 (JWT)"],
     deprecated=True,
     description="⚠️ DEPRECATED: Use SuperTokens session verification instead",
 )
@@ -705,10 +691,10 @@ async def my_role(
     return ORJSONResponse(formatted_response, status.HTTP_200_OK)
 
 
-@cocktail_maker_v1.post(
+@legacy_jwt_router.post(
     "/api-keys",
     summary="API 키 발급",
-    tags=["인증"],
+    tags=["레거시 인증 (JWT)"],
     deprecated=True,
     description="⚠️ DEPRECATED: Migrate to SuperTokens-based API key generation",
 )
@@ -992,16 +978,7 @@ async def metadata_register(
 async def metadata_details(
     kind: Annotated[COCKTAIL_DATA_KIND, Path(..., description="메타데이터 종류")],
     category: Annotated[MetadataCategory, Path(..., description="메타데이터 카테고리")],
-    # Header 표준 값
-    # authorization: Annotated[str | None, Header(alias="Authorization")] = None,
-    # date: Annotated[str | None, Header(alias="Date")] = None,
-    # if_modified_since: Annotated[str | None, Header(alias="If-Modified-Since")] = None,
-    # forwarded: Annotated[str | None, Header(alias="Forwarded")] = None,
 ) -> ORJSONResponse:
-    # print(f"authorization: {authorization}")
-    # print("date: ", date)
-    # print("if_modified_since: ", if_modified_since)
-    # print("forwarded: ", forwarded)
     metadata_list: list[dict[str, int | str]] = metadata.Metadata.read(category, kind)
 
     formatted_response: ResponseFormat = return_formatter(
@@ -1428,14 +1405,7 @@ async def cocktail_register(
             origin_nation=body.origin_nation,
             created_at=datetime.now(tz=UTC),
         )
-        data: str = await queries.CreateCocktail(
-            item,
-            # read_main_image,
-            # read_sub_image1,
-            # read_sub_image2,
-            # read_sub_image3,
-            # read_sub_image4,
-        ).save()
+        data: str = await queries.CreateCocktail(item).save()
 
         # Update recipe ingredients
         update_recipe = queries.UpdateRecipeIngredient(item["ingredients"])
@@ -1631,4 +1601,5 @@ async def cocktail_remover(
     return ORJSONResponse(formatted_response, formatted_response["code"])
 
 
+cocktail_maker.include_router(legacy_jwt_router)
 cocktail_maker.include_router(cocktail_maker_v1)

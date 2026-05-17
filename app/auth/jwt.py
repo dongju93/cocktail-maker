@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from os import environ
@@ -123,10 +124,10 @@ class PublishToken:
 
 class VerifyToken:
     @deprecated("Use SuperToken authentication instead")
-    def __call__(self, required_roles: list[str]):
+    def __call__(self, required_roles: list[str]) -> Callable[..., None]:
         def verify(
             credentials: Annotated[HTTPAuthorizationCredentials, Security(security)],
-        ):
+        ) -> None:
             try:
                 payload: dict[str, Any] = jwt.decode(
                     credentials.credentials,

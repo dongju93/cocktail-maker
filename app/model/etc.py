@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Literal, TypedDict
 
 from pydantic import BaseModel, Field
@@ -14,7 +14,7 @@ class ImageField(TypedDict, total=False):
     sub_image_4: str
 
 
-class MetadataCategory(str, Enum):
+class MetadataCategory(StrEnum):
     AROMA = "aroma"
     TASTE = "taste"
     FINISH = "finish"

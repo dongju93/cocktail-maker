@@ -17,14 +17,14 @@ class User(BaseModel):
 
     @field_validator("user_id", "firstname", "lastname")
     @classmethod
-    def user_id_alphanumeric(cls, v):
+    def user_id_alphanumeric(cls, v: str) -> str:
         if not v.isalnum():
             raise ValueError("Field must be alphanumeric")
         return v
 
     @field_validator("phone_number")
     @classmethod
-    def phone_number_numeric(cls, v):
+    def phone_number_numeric(cls, v: str) -> str:
         if not v.isnumeric():
             raise ValueError("Phone Number must be numeric")
         return v
@@ -36,7 +36,7 @@ class Login(BaseModel):
 
     @field_validator("userId")
     @classmethod
-    def user_id_alphanumeric(cls, v):
+    def user_id_alphanumeric(cls, v: str) -> str:
         if not v.isalnum():
             raise ValueError("userId must be alphanumeric")
         return v

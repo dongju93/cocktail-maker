@@ -504,7 +504,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
         Response:
             - 성공 시: 204 No Content, JWT 토큰이 쿠키로 설정됨
                 - accessToken: httponly 쿠키 (15분 만료)
-                - refreshToken: httponly 쿠키 (7일 만료, /refresh-token 경로 제한)
+                - refreshToken: httponly 쿠키 (7일 만료, /auth/tokens 경로 제한)
             - 실패 시: 해당 상태 코드와 에러 메시지가 포함된 JSON 응답
     """
     try:
@@ -544,7 +544,7 @@ async def sign_up(user: Annotated[User, Body(...)]) -> Response:
         value=jwt["refreshToken"],
         httponly=True,
         max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # 7일 (초 단위)
-        path="/refresh-token",  # 사용 가능 엔드포인트 제한
+        path="/auth/tokens",  # 사용 가능 엔드포인트 제한
         secure=True,
         samesite="strict",
     )

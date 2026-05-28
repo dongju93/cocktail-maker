@@ -41,7 +41,7 @@ class RecipeStep(BaseModel):
 
 
 class CocktailData(BaseModel):
-    name: Annotated[str, Field()]
+    name: Annotated[str, Field(max_length=100)]
     aroma: Annotated[list[str], Field(min_length=1)]
     taste: Annotated[list[str], Field(min_length=1)]
     finish: Annotated[list[str], Field(min_length=1)]
